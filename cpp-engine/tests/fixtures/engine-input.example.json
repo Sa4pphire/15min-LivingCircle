@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "thresholdSeconds": 900,
+  "gridStepMeters": 50,
+  "boundsMeters": {
+    "minX": -1600,
+    "maxX": 1600,
+    "minY": -1600,
+    "maxY": 1600
+  },
+  "samples": [
+    {
+      "xMeters": 0,
+      "yMeters": 0,
+      "durationSeconds": 0,
+      "distanceMeters": 0
+    }
+  ]
+}
