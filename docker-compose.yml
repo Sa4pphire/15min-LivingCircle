@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      ANALYSIS_CACHE_DIR: /app/data/cache
+      CPP_ENGINE_PATH: /app/bin/isochrone_engine
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

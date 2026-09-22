@@ -1,0 +1,29 @@
+{
+  "analysisId": "example-analysis",
+  "status": "completed",
+  "progress": {
+    "stage": "completed",
+    "percent": 100
+  },
+  "result": {
+    "isochrone": null,
+    "durationSamples": [],
+    "facilities": {
+      "type": "FeatureCollection",
+      "features": []
+    },
+    "blindZones": {
+      "type": "FeatureCollection",
+      "features": []
+    },
+    "metrics": {},
+    "recommendations": [],
+    "warnings": [],
+    "metadata": {
+      "schemaVersion": 1,
+      "sampleCount": 0,
+      "elapsedMs": 0
+    }
+  },
+  "error": null
+}

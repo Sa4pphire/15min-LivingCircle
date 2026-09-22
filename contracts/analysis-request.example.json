@@ -1,0 +1,9 @@
+{
+  "center": {
+    "lng": 121.5,
+    "lat": 31.3,
+    "coordType": "bd09ll"
+  },
+  "minutes": 15,
+  "forceRefresh": false
+}

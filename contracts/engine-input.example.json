@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "thresholdSeconds": 900,
+  "gridStepMeters": 50,
+  "center": {
+    "lng": 121.5,
+    "lat": 31.3
+  },
+  "samples": [
+    {
+      "xMeters": 0,
+      "yMeters": 0,
+      "lng": 121.5,
+      "lat": 31.3,
+      "durationSeconds": 0,
+      "distanceMeters": 0
+    },
+    {
+      "xMeters": 150,
+      "yMeters": 0,
+      "lng": 121.501576,
+      "lat": 31.3,
+      "durationSeconds": 135,
+      "distanceMeters": 172
+    }
+  ]
+}
