@@ -1,20 +1,20 @@
-# Test Plan
+# 测试计划
 
-## Automated
+## 自动化
 
-- Python API schema and analysis task lifecycle.
-- Walking graph right turns without waiting, crossings with 20-second waiting, and disconnected geometric intersections.
-- Retry, timeout, quota-error and partial-result behavior.
-- POI UID deduplication and category filtering.
-- C++ health check, invalid graph, origin snapping, 900-second edge clipping and display polygon generation.
-- Contract v2 fixture round trip from Python to C++ when testing resumes; the synthetic fixture does not verify a real area.
-- Frontend production build and Docker image build.
+- Python API schema 和分析任务生命周期。
+- 步行图右转无需等待、交叉口等待 20 秒，以及几何相交但拓扑不连通的交叉口。
+- 重试、超时、配额错误和部分结果行为。
+- POI UID 去重和类别过滤。
+- C++ 健康检查、无效图、起点吸附、900 秒边裁剪和显示多边形生成。
+- 测试恢复时，契约 v2 测试夹具从 Python 到 C++ 的往返；合成夹具不验证真实区域。
+- 前端生产构建和 Docker 镜像构建。
 
-## Manual acceptance
+## 手动验收
 
-- Primary preset: 上海市杨浦区新江湾城街道.
-- Eight reachable street segments and four crossing locations are checked against the manually annotated map.
-- Twenty returned POIs are checked for category correctness and duplicates.
-- Ten blind-zone grid cells are checked against the two nearest facilities.
-- Live analysis target: under 30 seconds; cached preset target: under 2 seconds.
-- The UI remains usable and explains failures when Baidu or the engine is unavailable.
+- 主要预设：上海市杨浦区新江湾城街道。
+- 对照人工标注地图，检查 8 个可达街段和 4 个交叉口位置。
+- 检查返回的 20 个 POI 的类别正确性和重复情况。
+- 对照最近的两个设施，检查 10 个盲区网格单元。
+- 实时分析目标：30 秒内；缓存预设目标：2 秒内。
+- 当百度或引擎不可用时，UI 保持可用并说明失败原因。
