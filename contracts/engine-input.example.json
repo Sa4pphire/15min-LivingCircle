@@ -20,7 +20,9 @@
     { "id": "turn0", "xMeters": 800, "yMeters": -10 },
     { "id": "turn1", "xMeters": 800, "yMeters": -410 },
     { "id": "far0", "xMeters": 820, "yMeters": -10 },
-    { "id": "far1", "xMeters": 820, "yMeters": -410 }
+    { "id": "far1", "xMeters": 820, "yMeters": -410 },
+    { "id": "shared0", "xMeters": 0, "yMeters": -10 },
+    { "id": "shared1", "xMeters": 200, "yMeters": -10 }
   ],
   "edges": [
     { "id": "west_south_sidewalk", "from": "sw0", "to": "sw1", "kind": "sidewalk", "streetBlockId": "west", "side": "left", "pathMeters": [[0, 0], [800, 0]] },
@@ -31,6 +33,11 @@
     { "id": "southeast_sidewalk", "from": "far0", "to": "far1", "kind": "sidewalk", "streetBlockId": "south", "side": "right", "pathMeters": [[820, -10], [820, -410]] },
     { "id": "right_turn", "from": "sw1", "to": "turn0", "kind": "turn", "pathMeters": [[800, 0], [800, -10]] },
     { "id": "west_crossing", "from": "sw0", "to": "nw0", "kind": "crossing", "pathMeters": [[0, 0], [0, 20]] },
-    { "id": "middle_crossing", "from": "sw1", "to": "nw1", "kind": "crossing", "pathMeters": [[800, 0], [800, 20]] }
+    { "id": "middle_crossing", "from": "sw1", "to": "nw1", "kind": "crossing", "pathMeters": [[800, 0], [800, 20]] },
+    { "id": "shared_entry", "from": "sw0", "to": "shared0", "kind": "turn", "pathMeters": [[0, 0], [0, -10]] },
+    { "id": "pedestrian_lane", "from": "shared0", "to": "shared1", "kind": "shared_way", "streetBlockId": "pedestrian-demo", "sharedWayType": "pedestrian_street", "widthMeters": 8, "pathMeters": [[0, -10], [200, -10]] }
+  ],
+  "facilities": [
+    { "id": "synthetic_shop", "accessEdgeId": "pedestrian_lane", "accessPointMeters": [100, -14] }
   ]
 }

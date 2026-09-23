@@ -1,7 +1,6 @@
-# C++ 等时圈引擎
+# C++ 15 分钟步行引擎
 
-该目录包含演示的纯空间计算组件。
-它不得调用百度 API 或读取凭据。
+该目录只做路网计算，不调用百度 API、不读取凭据。Python 负责读取人工标注的路网、把 BD-09 坐标换成局部米制坐标，并通过标准输入发送 v2 JSON；C++ 向标准输出返回一个 JSON 对象，日志和调试信息只写标准错误。完整字段见 [输入样例](../contracts/engine-input.example.json)、[输出样例](../contracts/engine-output.example.json) 和 [v2 契约](../contracts/engine-v2.README.md)。
 
 ## 构建
 
@@ -11,17 +10,44 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-## 约定
+从仓库根目录可用合成数据手工联调：
 
-- 输入：标准输入上的一个 JSON 对象。
-- 输出：标准输出上的一个 JSON 对象。
-- 日志：仅输出到标准错误。
-- 坐标：相对于路网固定坐标原点的本地米制偏移量，X 向东、Y 向北。
+```bash
+./cpp-engine/build/isochrone_engine < contracts/engine-input.example.json
+```
 
-## 路网算法
+Windows 下可将可执行文件名改为 `isochrone_engine.exe`。上述样例明确是合成路网，不代表真实街区。
 
-正式计算入口使用 v2 步行图契约，见 `../contracts/engine-v2.README.md`。`engine.hpp` 定义节点、街段、连接边及引擎结果；`json_parser.cpp` 解析输入；`engine.cpp` 校验图并执行 Dijkstra。两侧人行道分别建边，右转用 `turn`，合法过街用 `crossing`。过街边额外增加 20 秒等待。所有边默认可双向通行，坐标相交不会自动连通。
+## 路网如何表示
 
-精确结果是可达街段；展示面由可达街段缓冲并复用现有网格、Marching Squares 和环拼接代码生成。原 IDW 模块保留供历史实验，但不进入 v2 主计算流程。
+坐标是相对于固定原点的局部米制偏移量，X 向东、Y 向北。节点 ID 决定拓扑；两条线即使几何相交，只要没有共享节点或显式连接边，就不能互通。所有边默认可双向行走。
 
-`../contracts/engine-input.example.json` 是合成示例，不代表真实区域。真实区域数据应按 `../data/networks/README.md` 标注后再启用。
+| 边 `kind` | 标注方式 | 耗时 |
+| --- | --- | --- |
+| `sidewalk` | 普通道路左右两侧各一条；必须有 `streetBlockId` 和 `side` | 折线长度 ÷ 步速 |
+| `shared_way` | 经核实可自由穿行的步行街／共享小巷只标一条中心线；必须有类型和宽度 | 沿线及横向接入距离 ÷ 步速 |
+| `turn` | 同侧转向、进出共享通道等显式路口连接 | 折线长度 ÷ 步速 |
+| `crossing` | 合法过街点；不能用 `turn` 代替 | 折线长度 ÷ 步速 + 20 秒等待 |
+
+普通道路同一街段的左右侧不能共用节点，也不能通过 `turn` 直接连通。`shared_way` 允许两侧在任意位置接入，但只对人工确认可自由穿行的路段使用；不会按道路名称或宽度自动推断。
+
+## 一次计算的流程
+
+1. `json_parser.cpp` 解析输入，`engine.cpp` 校验节点 ID、边端点、路型和设施接入点。无效输入返回结构化错误，不输出半成品结果。
+2. 起点投影到人行道或共享通道，并在投影位置拆边。普通道路两侧同样接近时必须给 `originEdgeId`；共享通道只能吸附在估计路面半宽外 3 米内。起点到投影线的横向距离也计入步行时间。
+3. 从起点运行 Dijkstra，得到各节点最短步行时间。设施按 `accessEdgeId` 和 `accessPointMeters` 投影到对应边，取从两端到设施位置的最短耗时，再加横向接入耗时。连通但超过 900 秒的设施仍返回实际耗时；不连通才返回 `null`。
+4. 按 900 秒截取人行道、共享通道及转向边；过街边只有完整走完时才显示可达。边界可能落在边内部、节点或过街终点，输出在 `frontierMeters`。
+5. 对可达边做展示缓冲，在 10 米网格上使用 Marching Squares 和环拼接生成近似面。输出保留多面及内洞；它只用于画图，**设施覆盖统计必须依据路网耗时**。
+
+## Python 应如何消费输出
+
+先检查 `success`；为 `false` 时读取 `error.code`，不要解析 `result`。成功时：
+
+- `reachableEdges`：实际路网可达的折线，适合单独画线；共享通道边另有 `widthMeters`。
+- `facilityTravelTimes`：逐设施 `reachable` 与 `travelTimeSeconds`，用于覆盖统计。
+- `displayGeometryMeters`：便于处理的 Polygon/MultiPolygon 风格对象，当前固定为 `{"type":"MultiPolygon","coordinates":[[[[x,y],...],...],...]}`；每个 Polygon 的第一个环是外环，后续是洞。旧字段 `displayPolygonMeters` 是同一坐标数组，为兼容现有调用方暂时保留。
+- `frontierMeters`：边界点；`diagnostics`：节点数、完整可达的过街边数和警告。
+
+注意 `displayGeometryMeters` **不是 RFC 7946 GeoJSON**：坐标仍是局部米数。Python 必须将每个点转为地图使用的 BD-09 经纬度，再输出最终 GeoJSON `MultiPolygon`。不要把米制数组直接交给百度地图，也不要用近似面判定设施是否可达。
+
+共享通道用中心线近似路面内部路径，同侧斜向步行可能被高估；原 IDW 模块保留供历史实验，不参与 v2 主流程。真实路网尚未提供，标注要求见 [数据说明](../data/networks/README.md)。

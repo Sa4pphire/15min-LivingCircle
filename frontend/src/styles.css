@@ -122,6 +122,7 @@ h1 {
 }
 
 .reachable-walkway,
+.reachable-shared-way,
 .reachable-crossing {
   fill: none;
   stroke-linecap: round;
@@ -131,6 +132,11 @@ h1 {
 
 .reachable-walkway {
   stroke: #087f83;
+}
+
+.reachable-shared-way {
+  stroke: #18a6a0;
+  stroke-width: 6;
 }
 
 .reachable-crossing {

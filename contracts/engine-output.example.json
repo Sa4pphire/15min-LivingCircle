@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 2,
+  "success": true,
+  "result": {
+    "snappedOriginMeters": [0, 0],
+    "snapDistanceMeters": 0,
+    "reachableEdges": [
+      {
+        "edgeId": "lane",
+        "kind": "shared_way",
+        "pathMeters": [[0, 0], [40, 0]],
+        "widthMeters": 8
+      }
+    ],
+    "frontierMeters": [],
+    "displayPolygonMeters": [
+      [
+        [
+          [5, -15], [5, -15], [15, -15], [25, -15], [35, -15],
+          [35, -15], [45, -14.0716721407811], [54.0716721407811, -5],
+          [54.0716721407811, 5], [45, 14.0716721407811], [35, 15],
+          [25, 15], [15, 15], [5, 15], [-5, 14.0716721407811],
+          [-14.0716721407811, 5], [-14.0716721407811, -5],
+          [-5, -14.0716721407811], [5, -15]
+        ]
+      ]
+    ],
+    "displayGeometryMeters": {
+      "type": "MultiPolygon",
+      "coordinates": [
+        [
+          [
+            [5, -15], [5, -15], [15, -15], [25, -15], [35, -15],
+            [35, -15], [45, -14.0716721407811], [54.0716721407811, -5],
+            [54.0716721407811, 5], [45, 14.0716721407811], [35, 15],
+            [25, 15], [15, 15], [5, 15], [-5, 14.0716721407811],
+            [-14.0716721407811, 5], [-14.0716721407811, -5],
+            [-5, -14.0716721407811], [5, -15]
+          ]
+        ]
+      ]
+    },
+    "facilityTravelTimes": [
+      {
+        "id": "synthetic_shop",
+        "accessEdgeId": "lane",
+        "reachable": true,
+        "travelTimeSeconds": 18.4615384615385
+      }
+    ],
+    "diagnostics": {
+      "reachableNodeCount": 2,
+      "reachableCrossingCount": 0,
+      "warnings": ["NETWORK_MAY_END_BEFORE_TIME_LIMIT"]
+    }
+  }
+}

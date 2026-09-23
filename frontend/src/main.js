@@ -24,7 +24,7 @@ app.innerHTML = `
           <p>分析完成后显示可达街段和近似等时圈。</p>
         </div>
       </div>
-      <p class="map-legend">蓝绿色：可达步行街段　橙色：可达过街连接　浅绿色：近似展示范围</p>
+      <p class="map-legend">蓝绿色：可达人行道　青色：可达共享通道　橙色：可达过街连接　浅绿色：近似展示范围</p>
     </section>
     <aside class="report-panel">
       <p class="eyebrow">ANALYSIS REPORT</p>
@@ -38,6 +38,7 @@ app.innerHTML = `
         <article><span>可达路网节点</span><strong id="reachable-nodes">--</strong></article>
         <article><span>可达过街连接</span><strong id="reachable-crossings">--</strong></article>
         <article><span>可达街段</span><strong id="reachable-edges">--</strong></article>
+        <article><span>15 分钟内设施</span><strong id="reachable-facilities">--</strong></article>
         <article><span>路网来源</span><strong id="network-source">--</strong></article>
       </div>
       <p id="analysis-note" class="hint">等时圈面仅供展示；设施可达性以路网步行耗时为准。</p>
@@ -93,10 +94,13 @@ function renderNetwork(result) {
   ].join(",");
   const ns = "http://www.w3.org/2000/svg";
   networkView.replaceChildren();
-  for (const ring of polygonRings) {
-    if (ring.length < 4) continue;
-    const polygon = document.createElementNS(ns, "polygon");
-    polygon.setAttribute("points", ring.map(drawPoint).join(" "));
+  for (const polygonRingsForArea of result.isochrone?.geometry?.coordinates ?? []) {
+    const pathData = polygonRingsForArea.filter((ring) => ring.length >= 4)
+      .map((ring) => `M ${ring.map(drawPoint).join(" L ")} Z`).join(" ");
+    if (!pathData) continue;
+    const polygon = document.createElementNS(ns, "path");
+    polygon.setAttribute("d", pathData);
+    polygon.setAttribute("fill-rule", "evenodd");
     polygon.setAttribute("class", "reachable-area");
     networkView.append(polygon);
   }
@@ -106,7 +110,8 @@ function renderNetwork(result) {
     const line = document.createElementNS(ns, "polyline");
     line.setAttribute("points", path.map(drawPoint).join(" "));
     line.setAttribute("class", feature.properties?.kind === "crossing"
-      ? "reachable-crossing" : "reachable-walkway");
+      ? "reachable-crossing" : feature.properties?.kind === "shared_way"
+        ? "reachable-shared-way" : "reachable-walkway");
     networkView.append(line);
   }
   networkView.hidden = false;
@@ -151,6 +156,8 @@ analysisForm.addEventListener("submit", async (event) => {
       String(completed.metrics.reachableCrossingCount);
     document.querySelector("#reachable-edges").textContent =
       String(completed.reachableWalkways.features.length);
+    document.querySelector("#reachable-facilities").textContent =
+      `${completed.metrics.reachableFacilityCount}/${completed.metrics.facilityCount}`;
     document.querySelector("#network-source").textContent =
       completed.metadata.networkSource === "synthetic" ? "合成样例" : "人工标注";
     analysisNote.textContent = completed.metadata.networkSource === "synthetic"

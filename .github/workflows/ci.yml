@@ -20,17 +20,24 @@ jobs:
             backend/requirements.txt
             backend/requirements-dev.txt
 
-      - name: Test Python API
+      - name: Install Python test dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r backend/requirements-dev.txt
-          pytest backend/tests
 
-      - name: Build and test C++ engine
+      - name: Build and test C++ engine (Debug and Release)
         run: |
-          cmake -S cpp-engine -B cpp-engine/build -DCMAKE_BUILD_TYPE=Release
-          cmake --build cpp-engine/build --parallel
-          ctest --test-dir cpp-engine/build --output-on-failure
+          cmake -S cpp-engine -B cpp-engine/build/debug -DCMAKE_BUILD_TYPE=Debug
+          cmake --build cpp-engine/build/debug --parallel
+          ctest --test-dir cpp-engine/build/debug --output-on-failure
+          cmake -S cpp-engine -B cpp-engine/build/release -DCMAKE_BUILD_TYPE=Release
+          cmake --build cpp-engine/build/release --parallel
+          ctest --test-dir cpp-engine/build/release --output-on-failure
+
+      - name: Test Python API and C++ contract
+        env:
+          CPP_ENGINE_PATH: cpp-engine/build/release/isochrone_engine
+        run: pytest backend/tests
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

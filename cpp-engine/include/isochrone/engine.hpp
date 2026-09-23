@@ -10,9 +10,14 @@
 
 namespace isochrone {
 
-enum class EdgeKind { sidewalk, turn, crossing };
+enum class EdgeKind { sidewalk, shared_way, turn, crossing };
 
 class OriginNotOnWalkway : public std::runtime_error {
+ public:
+  using std::runtime_error::runtime_error;
+};
+
+class AmbiguousOriginSide : public std::runtime_error {
  public:
   using std::runtime_error::runtime_error;
 };
@@ -30,6 +35,14 @@ struct WalkEdge {
   std::vector<Point> path;
   std::string street_block_id;
   std::string side;
+  std::string shared_way_type;
+  double width_meters{};
+};
+
+struct FacilityAccess {
+  std::string id;
+  std::string access_edge_id;
+  Point access_point;
 };
 
 struct EngineInput {
@@ -43,12 +56,26 @@ struct EngineInput {
   double display_grid_step_meters{10.0};
   std::vector<WalkNode> nodes;
   std::vector<WalkEdge> edges;
+  std::vector<FacilityAccess> facilities;
 };
 
 struct ReachableEdge {
   std::string edge_id;
   EdgeKind kind;
   std::vector<Point> path;
+  double width_meters{};
+};
+
+struct DisplayPolygon {
+  Ring outer;
+  std::vector<Ring> holes;
+};
+
+struct FacilityTravelTime {
+  std::string id;
+  std::string access_edge_id;
+  std::optional<double> travel_time_seconds;
+  bool reachable{};
 };
 
 struct EngineResult {
@@ -56,7 +83,8 @@ struct EngineResult {
   double snap_distance_meters{};
   std::vector<ReachableEdge> reachable_edges;
   std::vector<Point> frontier;
-  std::vector<Ring> display_polygons;
+  std::vector<DisplayPolygon> display_polygons;
+  std::vector<FacilityTravelTime> facility_travel_times;
   std::size_t reachable_node_count{};
   std::size_t reachable_crossing_count{};
   std::vector<std::string> warnings;

@@ -286,6 +286,7 @@ Point path_point(const JsonValue& value) {
 
 EdgeKind edge_kind(const std::string& value) {
   if (value == "sidewalk") return EdgeKind::sidewalk;
+  if (value == "shared_way") return EdgeKind::shared_way;
   if (value == "turn") return EdgeKind::turn;
   if (value == "crossing") return EdgeKind::crossing;
   throw std::invalid_argument("unknown edge kind: " + value);
@@ -339,10 +340,26 @@ EngineInput parse_engine_input(std::string_view input) {
     if (const auto* side = optional_field(value, "side")) {
       edge.side = string(*side);
     }
+    if (const auto* type = optional_field(value, "sharedWayType")) {
+      edge.shared_way_type = string(*type);
+    }
+    if (const auto* width = optional_field(value, "widthMeters")) {
+      edge.width_meters = number(*width);
+    }
     for (const auto& coordinate : array(field(value, "pathMeters"))) {
       edge.path.push_back(path_point(coordinate));
     }
     result.edges.push_back(std::move(edge));
+  }
+  if (const auto* facilities = optional_field(root, "facilities")) {
+    if (array(*facilities).size() > 10'000) {
+      throw std::invalid_argument("too many facilities");
+    }
+    for (const auto& value : array(*facilities)) {
+      result.facilities.push_back({string(field(value, "id")),
+          string(field(value, "accessEdgeId")),
+          path_point(field(value, "accessPointMeters"))});
+    }
   }
   validate_graph(result);
   return result;

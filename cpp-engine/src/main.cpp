@@ -28,6 +28,10 @@ int main(int argc, char* argv[]) {
     std::cout << isochrone::error_json("ORIGIN_NOT_ON_WALKWAY", error.what())
               << '\n';
     return 3;
+  } catch (const isochrone::AmbiguousOriginSide& error) {
+    std::cout << isochrone::error_json("AMBIGUOUS_ORIGIN_SIDE", error.what())
+              << '\n';
+    return 3;
   } catch (const std::out_of_range& error) {
     std::cout << isochrone::error_json("INVALID_INPUT", error.what()) << '\n';
     return 2;

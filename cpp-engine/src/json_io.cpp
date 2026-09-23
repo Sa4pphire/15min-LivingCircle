@@ -84,6 +84,22 @@ std::string serialize_engine_result(const EngineResult& result) {
     }
     output << ']';
   };
+  auto write_polygons = [&write_path, &output](
+                            const std::vector<DisplayPolygon>& polygons) {
+    output << '[';
+    for (std::size_t i = 0; i < polygons.size(); ++i) {
+      if (i) output << ',';
+      const auto& polygon = polygons[i];
+      output << '[';
+      write_path(polygon.outer);
+      for (const auto& hole : polygon.holes) {
+        output << ',';
+        write_path(hole);
+      }
+      output << ']';
+    }
+    output << ']';
+  };
   output << "{\"schemaVersion\":2,\"success\":true,\"result\":{"
          << "\"snappedOriginMeters\":";
   write_point(result.snapped_origin);
@@ -96,14 +112,28 @@ std::string serialize_engine_result(const EngineResult& result) {
            << "\",\"kind\":\"" << edge_kind_name(edge.kind)
            << "\",\"pathMeters\":";
     write_path(edge.path);
+    if (edge.kind == EdgeKind::shared_way) {
+      output << ",\"widthMeters\":" << edge.width_meters;
+    }
     output << '}';
   }
   output << "],\"frontierMeters\":";
   write_path(result.frontier);
-  output << ",\"displayPolygonMeters\":[";
-  for (std::size_t i = 0; i < result.display_polygons.size(); ++i) {
+  output << ",\"displayPolygonMeters\":";
+  write_polygons(result.display_polygons);
+  output << ",\"displayGeometryMeters\":{\"type\":\"MultiPolygon\",\"coordinates\":";
+  write_polygons(result.display_polygons);
+  output << "},\"facilityTravelTimes\":[";
+  for (std::size_t i = 0; i < result.facility_travel_times.size(); ++i) {
     if (i) output << ',';
-    write_path(result.display_polygons[i]);
+    const auto& facility = result.facility_travel_times[i];
+    output << "{\"id\":\"" << escape_json(facility.id)
+           << "\",\"accessEdgeId\":\"" << escape_json(facility.access_edge_id)
+           << "\",\"reachable\":" << (facility.reachable ? "true" : "false")
+           << ",\"travelTimeSeconds\":";
+    if (facility.travel_time_seconds) output << *facility.travel_time_seconds;
+    else output << "null";
+    output << '}';
   }
   output << "],\"diagnostics\":{\"reachableNodeCount\":"
          << result.reachable_node_count
