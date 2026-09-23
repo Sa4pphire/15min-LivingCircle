@@ -1,39 +1,39 @@
-# Architecture
+# 架构
 
-## Responsibilities
+## 职责
 
-### Browser
+### 浏览器
 
-- Select a center point.
-- Poll analysis progress.
-- Render exact reachable walkways and an approximate display polygon.
+- 选择中心点。
+- 轮询分析进度。
+- 渲染精确可达步行道和近似显示多边形。
 
-### FastAPI service
+### FastAPI 服务
 
-- Own all Baidu credentials and Web API calls used by other analysis features.
-- Enforce batching, rate limits, retries and cache policy.
-- Clean POIs, calculate coverage metrics and build the report.
-- Invoke the C++ engine with a versioned JSON contract.
+- 持有其他分析功能所使用的所有百度凭据和 Web API 调用。
+- 实施批处理、速率限制、重试和缓存策略。
+- 清洗 POI、计算覆盖指标并构建报告。
+- 使用带版本的 JSON 契约调用 C++ 引擎。
 
-### C++ engine
+### C++ 引擎
 
-- Accept a manually annotated local walking graph and algorithm parameters.
-- Run Dijkstra on explicit sidewalk, turn and crossing edges; crossing edges add 20 seconds.
-- Return exact reachable edge portions, frontier points and a buffered display polygon.
-- Never call Baidu APIs or read credentials.
+- 接收人工标注的局部步行图和算法参数。
+- 在显式人行道、转向和过街边上运行 Dijkstra；过街边增加 20 秒。
+- 返回精确可达边部分、前沿点和缓冲显示多边形。
+- 绝不调用百度 API 或读取凭据。
 
-## Coordinate policy
+## 坐标策略
 
-- Public and provider-facing coordinates use BD-09 longitude/latitude.
-- Spatial computation uses local meter offsets from the annotated network origin.
-- Time values use seconds; distance values use meters.
-- Python converts the local result to BD-09 map coordinates and returns GeoJSON-shaped features with coordinate metadata.
-- A display polygon is approximate and must not be used for facility reachability decisions.
+- 公共和面向提供方的坐标使用 BD-09 经纬度。
+- 空间计算使用相对于标注网络原点的局部米偏移。
+- 时间值使用秒；距离值使用米。
+- Python 将局部结果转换为 BD-09 地图坐标，并返回带有坐标元数据的 GeoJSON 形状要素。
+- 显示多边形是近似的，不得用于设施可达性判断。
 
-## Failure policy
+## 失败策略
 
-- External requests have bounded retries and explicit timeouts.
-- Partial data is returned only with user-visible warnings.
-- Cached preset results are labeled as cached, never presented as live.
-- The C++ engine writes machine-readable output only to stdout and logs to stderr.
-- If the real annotated network is absent or the center is outside its supported bounds, the API returns `UNSUPPORTED_AREA`.
+- 外部请求具有有界重试和显式超时。
+- 仅当带有用户可见警告时，才返回部分数据。
+- 缓存预设结果会标记为缓存，绝不作为实时结果呈现。
+- C++ 引擎仅将机器可读输出写入 stdout，日志写入 stderr。
+- 如果真实标注网络不存在，或中心点超出其支持边界，API 返回 `UNSUPPORTED_AREA`。
