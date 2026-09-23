@@ -1,10 +1,10 @@
 # 15 分钟生活圈智能体检与规划助手
 
-面向比赛演示的 Web Demo：基于百度地图开放能力，对指定中心点生成近似 15 分钟步行等时圈，统计菜市场、药店、小学等设施覆盖情况，并识别步行服务盲区。
+面向比赛演示的 Web Demo：依据人工标注的双侧人行道路网，对指定中心点计算 15 分钟内可达街段，并生成近似展示范围。设施覆盖和服务盲区仍是后续功能。
 
 ## 技术架构
 
-- 前端：Vite + 原生 JavaScript + 百度地图 JavaScript API
+- 前端：Vite + 原生 JavaScript；目前提供路网示意图，百度地图底图尚待接入
 - 主服务：Python 3.12 + FastAPI + httpx
 - 算法引擎：C++20 命令行程序，通过标准输入/输出交换 JSON
 - 部署：Docker Compose
@@ -13,24 +13,24 @@
 ```text
 Browser
   -> FastAPI REST API
-      -> Baidu Place / RouteMatrix / Geocoding
+      -> manually annotated walking network
       -> C++ isochrone engine
-      -> GeoJSON analysis result
+      -> reachable walkways + approximate display polygon
 ```
 
 ## 当前状态
 
-仓库骨架已建立，包含：
+当前已建立：
 
 - FastAPI 健康检查和分析任务接口
-- C++ 引擎健康检查程序
-- Vite 单页演示界面
+- C++ 双侧人行道最短路引擎、过街等待和展示面生成
+- Vite 路网结果双图层示意界面
 - Python/C++ 测试骨架
 - Docker 多阶段构建
 - GitHub Actions CI
 - API 与 C++ 引擎 JSON 契约示例
 
-空间分析和百度 API 接入将在后续里程碑中实现。
+真实演示区域尚无人工核实的步行路网。默认分析会返回 `UNSUPPORTED_AREA`；`contracts/engine-input.example.json` 仅是合成联调样例，不能作为上海街道数据使用。如何标注真实路网见 `data/networks/README.md`。
 
 ## 快速启动
 
@@ -40,7 +40,7 @@ Browser
    cp .env.example .env
    ```
 
-2. 填写百度地图浏览器 AK 和服务端 AK。
+2. 若要分析真实区域，按 `data/networks/README.md` 提供已核实的路网，并设置 `WALKING_NETWORK_PATH`。百度地图 AK 将用于后续底图和 POI 功能。
 
 3. 构建并启动：
 

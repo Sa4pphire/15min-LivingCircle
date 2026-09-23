@@ -27,6 +27,8 @@ WORKDIR /app
 COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app/ ./app/
+COPY data/networks/ ./data/networks/
+COPY contracts/engine-input.example.json ./contracts/engine-input.example.json
 COPY --from=frontend-builder /src/frontend/dist/ ./static/
 COPY --from=cpp-builder /src/cpp-engine/build/isochrone_engine ./bin/isochrone_engine
 RUN mkdir -p /app/data/cache

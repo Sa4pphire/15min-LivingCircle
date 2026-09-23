@@ -13,6 +13,9 @@ class Settings:
     analysis_cache_dir: Path = Path(
         os.getenv("ANALYSIS_CACHE_DIR", "data/cache")
     )
+    walking_network_path: Path = Path(
+        os.getenv("WALKING_NETWORK_PATH", "data/networks/shanghai-new-jiangwan.json")
+    )
     baidu_server_ak: str = os.getenv("BAIDU_SERVER_AK", "")
 
 

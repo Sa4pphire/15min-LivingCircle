@@ -1,10 +1,11 @@
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 
-from .engine import check_engine
+from .engine import EngineError, check_engine, run_engine
+from .network import UnsupportedAreaError, build_analysis_result, load_engine_request
 from .schemas import (
     AnalysisAccepted,
     AnalysisRequest,
@@ -49,15 +50,39 @@ async def presets() -> dict:
     }
 
 
+async def _run_analysis(analysis_id: str, engine_input: dict,
+                        network_meta: dict) -> None:
+    analysis = _analyses[analysis_id]
+    analysis.status = "running"
+    analysis.progress = Progress(stage="walking-graph", percent=30)
+    try:
+        engine_result = await run_engine(engine_input)
+        analysis.result = build_analysis_result(engine_result, network_meta)
+        analysis.status = "completed"
+        analysis.progress = Progress(stage="completed", percent=100)
+    except (EngineError, KeyError, TypeError, ValueError) as exc:
+        analysis.status = "failed"
+        analysis.error = str(exc)
+        analysis.progress = Progress(stage="failed", percent=100)
+
+
 @app.post("/api/v1/analyses", status_code=202, response_model=AnalysisAccepted)
-async def create_analysis(request: AnalysisRequest) -> AnalysisAccepted:
+async def create_analysis(request: AnalysisRequest,
+                          background_tasks: BackgroundTasks) -> AnalysisAccepted:
+    try:
+        engine_input, network_meta = load_engine_request(request.center)
+    except UnsupportedAreaError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "UNSUPPORTED_AREA", "message": str(exc)},
+        ) from exc
     analysis_id = uuid4().hex
     _analyses[analysis_id] = AnalysisState(
         analysisId=analysis_id,
         status="queued",
-        progress=Progress(stage="scaffold", percent=0),
-        result={"request": request.model_dump()},
+        progress=Progress(stage="queued", percent=0),
     )
+    background_tasks.add_task(_run_analysis, analysis_id, engine_input, network_meta)
     return AnalysisAccepted(analysisId=analysis_id, status="queued")
 
 

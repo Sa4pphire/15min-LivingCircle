@@ -1,27 +1,36 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "synthetic": true,
+  "originBd09": { "lng": 121.5, "lat": 31.3 },
+  "supportedCenterBoundsMeters": { "minX": -10, "maxX": 10, "minY": -10, "maxY": 10 },
+  "originMeters": { "xMeters": 0, "yMeters": 0 },
+  "originEdgeId": "west_south_sidewalk",
   "thresholdSeconds": 900,
-  "gridStepMeters": 50,
-  "center": {
-    "lng": 121.5,
-    "lat": 31.3
-  },
-  "samples": [
-    {
-      "xMeters": 0,
-      "yMeters": 0,
-      "lng": 121.5,
-      "lat": 31.3,
-      "durationSeconds": 0,
-      "distanceMeters": 0
-    },
-    {
-      "xMeters": 150,
-      "yMeters": 0,
-      "lng": 121.501576,
-      "lat": 31.3,
-      "durationSeconds": 135,
-      "distanceMeters": 172
-    }
+  "walkingSpeedMetersPerSecond": 1.3,
+  "crossingWaitSeconds": 20,
+  "displayBufferMeters": 15,
+  "displayGridStepMeters": 10,
+  "nodes": [
+    { "id": "sw0", "xMeters": 0, "yMeters": 0 },
+    { "id": "sw1", "xMeters": 800, "yMeters": 0 },
+    { "id": "sw2", "xMeters": 1600, "yMeters": 0 },
+    { "id": "nw0", "xMeters": 0, "yMeters": 20 },
+    { "id": "nw1", "xMeters": 800, "yMeters": 20 },
+    { "id": "nw2", "xMeters": 1600, "yMeters": 20 },
+    { "id": "turn0", "xMeters": 800, "yMeters": -10 },
+    { "id": "turn1", "xMeters": 800, "yMeters": -410 },
+    { "id": "far0", "xMeters": 820, "yMeters": -10 },
+    { "id": "far1", "xMeters": 820, "yMeters": -410 }
+  ],
+  "edges": [
+    { "id": "west_south_sidewalk", "from": "sw0", "to": "sw1", "kind": "sidewalk", "streetBlockId": "west", "side": "left", "pathMeters": [[0, 0], [800, 0]] },
+    { "id": "west_north_sidewalk", "from": "nw0", "to": "nw1", "kind": "sidewalk", "streetBlockId": "west", "side": "right", "pathMeters": [[0, 20], [800, 20]] },
+    { "id": "east_south_sidewalk", "from": "sw1", "to": "sw2", "kind": "sidewalk", "streetBlockId": "east", "side": "left", "pathMeters": [[800, 0], [1600, 0]] },
+    { "id": "east_north_sidewalk", "from": "nw1", "to": "nw2", "kind": "sidewalk", "streetBlockId": "east", "side": "right", "pathMeters": [[800, 20], [1600, 20]] },
+    { "id": "southwest_sidewalk", "from": "turn0", "to": "turn1", "kind": "sidewalk", "streetBlockId": "south", "side": "left", "pathMeters": [[800, -10], [800, -410]] },
+    { "id": "southeast_sidewalk", "from": "far0", "to": "far1", "kind": "sidewalk", "streetBlockId": "south", "side": "right", "pathMeters": [[820, -10], [820, -410]] },
+    { "id": "right_turn", "from": "sw1", "to": "turn0", "kind": "turn", "pathMeters": [[800, 0], [800, -10]] },
+    { "id": "west_crossing", "from": "sw0", "to": "nw0", "kind": "crossing", "pathMeters": [[0, 0], [0, 20]] },
+    { "id": "middle_crossing", "from": "sw1", "to": "nw1", "kind": "crossing", "pathMeters": [[800, 0], [800, 20]] }
   ]
 }

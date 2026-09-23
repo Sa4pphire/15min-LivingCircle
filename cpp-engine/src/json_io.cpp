@@ -1,6 +1,7 @@
 #include "isochrone/json_io.hpp"
 
 #include <cctype>
+#include <iomanip>
 #include <sstream>
 
 namespace isochrone {
@@ -27,7 +28,14 @@ std::string escape_json(const std::string_view value) {
         escaped += "\\t";
         break;
       default:
-        escaped += character;
+        if (static_cast<unsigned char>(character) < 0x20) {
+          constexpr char digits[] = "0123456789abcdef";
+          escaped += "\\u00";
+          escaped += digits[(static_cast<unsigned char>(character) >> 4) & 0xf];
+          escaped += digits[static_cast<unsigned char>(character) & 0xf];
+        } else {
+          escaped += character;
+        }
         break;
     }
   }
@@ -52,14 +60,61 @@ bool has_non_whitespace(const std::string_view input) {
 }
 
 std::string health_json() {
-  return R"({"status":"ok","engine":"isochrone_engine","schemaVersion":1})";
+  return R"({"status":"ok","engine":"isochrone_engine","schemaVersion":2})";
 }
 
 std::string error_json(const std::string_view code,
                        const std::string_view message) {
-  return "{\"schemaVersion\":1,\"success\":false,\"error\":{\"code\":\"" +
+  return "{\"schemaVersion\":2,\"success\":false,\"error\":{\"code\":\"" +
          escape_json(code) + "\",\"message\":\"" + escape_json(message) +
          "\"}}";
+}
+
+std::string serialize_engine_result(const EngineResult& result) {
+  std::ostringstream output;
+  output << std::setprecision(15);
+  auto write_point = [&output](Point point) {
+    output << '[' << point.x << ',' << point.y << ']';
+  };
+  auto write_path = [&write_point, &output](const std::vector<Point>& path) {
+    output << '[';
+    for (std::size_t i = 0; i < path.size(); ++i) {
+      if (i) output << ',';
+      write_point(path[i]);
+    }
+    output << ']';
+  };
+  output << "{\"schemaVersion\":2,\"success\":true,\"result\":{"
+         << "\"snappedOriginMeters\":";
+  write_point(result.snapped_origin);
+  output << ",\"snapDistanceMeters\":" << result.snap_distance_meters
+         << ",\"reachableEdges\":[";
+  for (std::size_t i = 0; i < result.reachable_edges.size(); ++i) {
+    if (i) output << ',';
+    const auto& edge = result.reachable_edges[i];
+    output << "{\"edgeId\":\"" << escape_json(edge.edge_id)
+           << "\",\"kind\":\"" << edge_kind_name(edge.kind)
+           << "\",\"pathMeters\":";
+    write_path(edge.path);
+    output << '}';
+  }
+  output << "],\"frontierMeters\":";
+  write_path(result.frontier);
+  output << ",\"displayPolygonMeters\":[";
+  for (std::size_t i = 0; i < result.display_polygons.size(); ++i) {
+    if (i) output << ',';
+    write_path(result.display_polygons[i]);
+  }
+  output << "],\"diagnostics\":{\"reachableNodeCount\":"
+         << result.reachable_node_count
+         << ",\"reachableCrossingCount\":"
+         << result.reachable_crossing_count << ",\"warnings\":[";
+  for (std::size_t i = 0; i < result.warnings.size(); ++i) {
+    if (i) output << ',';
+    output << '"' << escape_json(result.warnings[i]) << '"';
+  }
+  output << "]}}}";
+  return output.str();
 }
 
 }  // namespace isochrone

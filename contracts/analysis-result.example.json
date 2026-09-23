@@ -6,7 +6,15 @@
     "percent": 100
   },
   "result": {
-    "isochrone": null,
+    "isochrone": {
+      "type": "Feature",
+      "geometry": { "type": "MultiPolygon", "coordinates": [] },
+      "properties": { "approximate": true, "coordType": "bd09ll" }
+    },
+    "reachableWalkways": {
+      "type": "FeatureCollection",
+      "features": []
+    },
     "durationSamples": [],
     "facilities": {
       "type": "FeatureCollection",
@@ -16,13 +24,18 @@
       "type": "FeatureCollection",
       "features": []
     },
-    "metrics": {},
+    "metrics": {
+      "reachableNodeCount": 0,
+      "reachableCrossingCount": 0
+    },
     "recommendations": [],
     "warnings": [],
     "metadata": {
       "schemaVersion": 1,
-      "sampleCount": 0,
-      "elapsedMs": 0
+      "engineSchemaVersion": 2,
+      "isochroneApproximate": true,
+      "networkSource": "manual",
+      "originSnapMeters": 0
     }
   },
   "error": null

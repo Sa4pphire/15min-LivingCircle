@@ -14,7 +14,9 @@ add_library(
   isochrone_core
   src/grid.cpp
   src/idw.cpp
+  src/engine.cpp
   src/json_io.cpp
+  src/json_parser.cpp
   src/marching_squares.cpp
   src/ring_builder.cpp
   src/simplify.cpp
