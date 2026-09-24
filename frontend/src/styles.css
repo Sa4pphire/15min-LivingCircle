@@ -121,6 +121,25 @@ h1 {
   stroke-width: 1.5;
 }
 
+.gray-area {
+  fill: rgb(82 88 90 / 38%);
+  stroke: #52585a;
+  stroke-width: 1;
+}
+
+.gray-walkway {
+  fill: none;
+  stroke: #343a3c;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.gray-zone-summary {
+  margin-top: 1rem;
+  color: #45534b;
+  font-size: 0.85rem;
+}
+
 .reachable-walkway,
 .reachable-shared-way,
 .reachable-crossing {

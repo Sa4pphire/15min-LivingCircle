@@ -295,7 +295,7 @@ EdgeKind edge_kind(const std::string& value) {
 }  // namespace
 
 EngineInput parse_engine_input(std::string_view input) {
-  if (input.size() > 5'000'000) {
+  if (input.size() > 20'000'000) {
     throw std::invalid_argument("engine input is too large");
   }
   const JsonValue root = Parser(input).parse();
@@ -314,6 +314,9 @@ EngineInput parse_engine_input(std::string_view input) {
   result.walking_speed_meters_per_second =
       number(field(root, "walkingSpeedMetersPerSecond"));
   result.crossing_wait_seconds = number(field(root, "crossingWaitSeconds"));
+  if (const auto* value = optional_field(root, "maxOriginSnapMeters")) {
+    result.max_origin_snap_meters = number(*value);
+  }
   if (const auto* value = optional_field(root, "displayBufferMeters")) {
     result.display_buffer_meters = number(*value);
   }
@@ -346,6 +349,9 @@ EngineInput parse_engine_input(std::string_view input) {
     if (const auto* width = optional_field(value, "widthMeters")) {
       edge.width_meters = number(*width);
     }
+    if (const auto* wait = optional_field(value, "waitSeconds")) {
+      edge.wait_seconds = number(*wait);
+    }
     for (const auto& coordinate : array(field(value, "pathMeters"))) {
       edge.path.push_back(path_point(coordinate));
     }
@@ -356,9 +362,42 @@ EngineInput parse_engine_input(std::string_view input) {
       throw std::invalid_argument("too many facilities");
     }
     for (const auto& value : array(*facilities)) {
-      result.facilities.push_back({string(field(value, "id")),
-          string(field(value, "accessEdgeId")),
-          path_point(field(value, "accessPointMeters"))});
+      FacilityAccess facility;
+      facility.id = string(field(value, "id"));
+      if (const auto* category = optional_field(value, "category")) {
+        facility.category = string(*category);
+      }
+      if (const auto* entrances = optional_field(value, "entrances")) {
+        if (array(*entrances).size() > 100) {
+          throw std::invalid_argument("too many entrances for one facility");
+        }
+        for (const auto& entry : array(*entrances)) {
+          FacilityEntrance entrance;
+          entrance.id = string(field(entry, "id"));
+          entrance.access_edge_id = string(field(entry, "accessEdgeId"));
+          entrance.street_access_point =
+              path_point(field(entry, "streetAccessPointMeters"));
+          if (const auto* path = optional_field(entry, "accessPathMeters")) {
+            for (const auto& coordinate : array(*path)) {
+              entrance.access_path.push_back(path_point(coordinate));
+            }
+          }
+          facility.entrances.push_back(std::move(entrance));
+        }
+      } else {
+        facility.access_edge_id = string(field(value, "accessEdgeId"));
+        facility.access_point = path_point(field(value, "accessPointMeters"));
+      }
+      result.facilities.push_back(std::move(facility));
+    }
+  }
+  if (const auto* categories = optional_field(root, "serviceCategories")) {
+    if (array(*categories).size() > 10) {
+      throw std::invalid_argument("too many service categories");
+    }
+    for (const auto& value : array(*categories)) {
+      result.service_categories.push_back({string(field(value, "id")),
+          string(field(value, "dataStatus"))});
     }
   }
   validate_graph(result);

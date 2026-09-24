@@ -15,6 +15,7 @@ app.innerHTML = `
       <form id="analysis-form" class="analysis-form">
         <label>中心点经度 <input id="center-lng" type="number" step="any" value="121.5" required /></label>
         <label>中心点纬度 <input id="center-lat" type="number" step="any" value="31.3" required /></label>
+        <label>步行边 ID（道路侧不明确时） <input id="origin-edge-id" type="text" placeholder="可选" /></label>
         <button type="submit">计算 15 分钟步行范围</button>
       </form>
       <div class="map-placeholder" id="map-region">
@@ -24,7 +25,7 @@ app.innerHTML = `
           <p>分析完成后显示可达街段和近似等时圈。</p>
         </div>
       </div>
-      <p class="map-legend">蓝绿色：可达人行道　青色：可达共享通道　橙色：可达过街连接　浅绿色：近似展示范围</p>
+      <p class="map-legend">蓝绿色：可达人行道　青色：可达共享通道　橙色：过街连接　浅绿色：近似等时圈　灰色：疑似设施服务缺口</p>
     </section>
     <aside class="report-panel">
       <p class="eyebrow">ANALYSIS REPORT</p>
@@ -41,6 +42,7 @@ app.innerHTML = `
         <article><span>15 分钟内设施</span><strong id="reachable-facilities">--</strong></article>
         <article><span>路网来源</span><strong id="network-source">--</strong></article>
       </div>
+      <div id="gray-zone-summary" class="gray-zone-summary"></div>
       <p id="analysis-note" class="hint">等时圈面仅供展示；设施可达性以路网步行耗时为准。</p>
     </aside>
   </main>
@@ -69,10 +71,13 @@ const mapEmpty = document.querySelector("#map-empty");
 
 function renderNetwork(result) {
   const polygonRings = result.isochrone?.geometry?.coordinates?.flat() ?? [];
+  const grayFeatures = result.blindZones?.features ?? [];
+  const grayLines = result.blindZoneWalkways?.features ?? [];
   const features = result.reachableWalkways?.features ?? [];
   const points = [
     ...polygonRings.flat(),
     ...features.flatMap((feature) => feature.geometry?.coordinates ?? []),
+    ...grayFeatures.flatMap((feature) => feature.geometry?.coordinates?.flat() ?? []),
   ].filter((point) => Array.isArray(point) && point.length === 2 &&
     point.every(Number.isFinite));
   if (points.length === 0) throw new Error("结果中没有可绘制的路网坐标");
@@ -104,6 +109,17 @@ function renderNetwork(result) {
     polygon.setAttribute("class", "reachable-area");
     networkView.append(polygon);
   }
+  for (const feature of grayFeatures) {
+    const rings = feature.geometry?.coordinates ?? [];
+    const pathData = rings.filter((ring) => ring.length >= 4)
+      .map((ring) => `M ${ring.map(drawPoint).join(" L ")} Z`).join(" ");
+    if (!pathData) continue;
+    const polygon = document.createElementNS(ns, "path");
+    polygon.setAttribute("d", pathData);
+    polygon.setAttribute("fill-rule", "evenodd");
+    polygon.setAttribute("class", "gray-area");
+    networkView.append(polygon);
+  }
   for (const feature of features) {
     const path = feature.geometry?.coordinates;
     if (!Array.isArray(path) || path.length < 2) continue;
@@ -112,6 +128,14 @@ function renderNetwork(result) {
     line.setAttribute("class", feature.properties?.kind === "crossing"
       ? "reachable-crossing" : feature.properties?.kind === "shared_way"
         ? "reachable-shared-way" : "reachable-walkway");
+    networkView.append(line);
+  }
+  for (const feature of grayLines) {
+    const path = feature.geometry?.coordinates;
+    if (!Array.isArray(path) || path.length < 2) continue;
+    const line = document.createElementNS(ns, "polyline");
+    line.setAttribute("points", path.map(drawPoint).join(" "));
+    line.setAttribute("class", "gray-walkway");
     networkView.append(line);
   }
   networkView.hidden = false;
@@ -129,7 +153,9 @@ analysisForm.addEventListener("submit", async (event) => {
     const created = await fetch("/api/v1/analyses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ center: { lng, lat, coordType: "bd09ll" }, minutes: 15 }),
+      body: JSON.stringify({ center: { lng, lat, coordType: "bd09ll" },
+        originEdgeId: document.querySelector("#origin-edge-id").value.trim() || null,
+        minutes: 15 }),
     });
     const accepted = await created.json();
     if (!created.ok) {
@@ -160,9 +186,18 @@ analysisForm.addEventListener("submit", async (event) => {
       `${completed.metrics.reachableFacilityCount}/${completed.metrics.facilityCount}`;
     document.querySelector("#network-source").textContent =
       completed.metadata.networkSource === "synthetic" ? "合成样例" : "人工标注";
+    const graySummary = document.querySelector("#gray-zone-summary");
+    graySummary.replaceChildren();
+    for (const item of completed.metrics.grayZonesByCategory ?? []) {
+      const row = document.createElement("p");
+      row.textContent = item.status === "data_insufficient"
+        ? `${item.category}：设施数据不足，暂不判断灰区`
+        : `${item.category}：疑似未覆盖街段 ${item.uncoveredLengthMeters.toFixed(0)} 米（${(item.uncoveredLengthRatio * 100).toFixed(1)}%）`;
+      graySummary.append(row);
+    }
     analysisNote.textContent = completed.metadata.networkSource === "synthetic"
       ? "当前为合成测试路网，不代表真实街道；展示面仅供示意。"
-      : "等时圈面仅供展示；设施可达性以路网步行耗时为准。";
+      : "等时圈和灰区面仅供展示；灰区为基于在线核查数据的疑似缺口，精确判定以街段和路网耗时为准。";
     analysisStatus.textContent = "分析完成";
   } catch (error) {
     analysisStatus.textContent = `无法完成分析：${error.message}`;

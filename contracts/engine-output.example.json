@@ -8,7 +8,13 @@
       {
         "edgeId": "lane",
         "kind": "shared_way",
-        "pathMeters": [[0, 0], [40, 0]],
+        "pathMeters": [[0, 0], [20, 0]],
+        "widthMeters": 8
+      },
+      {
+        "edgeId": "lane",
+        "kind": "shared_way",
+        "pathMeters": [[20, 0], [40, 0]],
         "widthMeters": 8
       }
     ],
@@ -45,9 +51,12 @@
         "id": "synthetic_shop",
         "accessEdgeId": "lane",
         "reachable": true,
-        "travelTimeSeconds": 18.4615384615385
+        "travelTimeSeconds": 18.4615384615385,
+        "category": "",
+        "bestEntranceId": "synthetic_shop"
       }
     ],
+    "grayZones": [],
     "diagnostics": {
       "reachableNodeCount": 2,
       "reachableCrossingCount": 0,

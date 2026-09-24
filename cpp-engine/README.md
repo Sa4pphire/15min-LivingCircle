@@ -35,9 +35,10 @@ Windows 下可将可执行文件名改为 `isochrone_engine.exe`。上述样例�
 
 1. `json_parser.cpp` 解析输入，`engine.cpp` 校验节点 ID、边端点、路型和设施接入点。无效输入返回结构化错误，不输出半成品结果。
 2. 起点投影到人行道或共享通道，并在投影位置拆边。普通道路两侧同样接近时必须给 `originEdgeId`；共享通道只能吸附在估计路面半宽外 3 米内。起点到投影线的横向距离也计入步行时间。
-3. 从起点运行 Dijkstra，得到各节点最短步行时间。设施按 `accessEdgeId` 和 `accessPointMeters` 投影到对应边，取从两端到设施位置的最短耗时，再加横向接入耗时。连通但超过 900 秒的设施仍返回实际耗时；不连通才返回 `null`。
+3. 起点和所有设施入口都在投影位置拆边，统一进入图。入口可有经核实的离街接入折线；从起点运行 Dijkstra，设施在多个入口中取最短耗时。连通但超过 900 秒仍返回实际耗时；不连通才返回 `null`。
 4. 按 900 秒截取人行道、共享通道及转向边；过街边只有完整走完时才显示可达。边界可能落在边内部、节点或过街终点，输出在 `frontierMeters`。
 5. 对可达边做展示缓冲，在 10 米网格上使用 Marching Squares 和环拼接生成近似面。输出保留多面及内洞；它只用于画图，**设施覆盖统计必须依据路网耗时**。
+6. 对每个在线核查完成的设施类别，以其所有入口为多源运行 Dijkstra，将类别服务街段从起点可达街段中精确扣除；输出剩余灰色街段及近似面。数据未核齐的类别输出“数据不足”，不推断设施匮乏。
 
 ## Python 应如何消费输出
 
@@ -45,6 +46,7 @@ Windows 下可将可执行文件名改为 `isochrone_engine.exe`。上述样例�
 
 - `reachableEdges`：实际路网可达的折线，适合单独画线；共享通道边另有 `widthMeters`。
 - `facilityTravelTimes`：逐设施 `reachable` 与 `travelTimeSeconds`，用于覆盖统计。
+- `grayZones`：逐类别精确未覆盖街段、长度比例及近似展示面；`status: "candidate"` 表示在线核查数据下的疑似缺口，`data_insufficient` 表示不应画灰区。
 - `displayGeometryMeters`：便于处理的 Polygon/MultiPolygon 风格对象，当前固定为 `{"type":"MultiPolygon","coordinates":[[[[x,y],...],...],...]}`；每个 Polygon 的第一个环是外环，后续是洞。旧字段 `displayPolygonMeters` 是同一坐标数组，为兼容现有调用方暂时保留。
 - `frontierMeters`：边界点；`diagnostics`：节点数、完整可达的过街边数和警告。
 

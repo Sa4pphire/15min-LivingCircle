@@ -37,12 +37,28 @@ struct WalkEdge {
   std::string side;
   std::string shared_way_type;
   double width_meters{};
+  std::optional<double> wait_seconds;
+};
+
+struct FacilityEntrance {
+  std::string id;
+  std::string access_edge_id;
+  Point street_access_point;
+  std::vector<Point> access_path;
 };
 
 struct FacilityAccess {
   std::string id;
+  // Retained for legacy single-entrance v2 input.
   std::string access_edge_id;
   Point access_point;
+  std::string category;
+  std::vector<FacilityEntrance> entrances;
+};
+
+struct ServiceCategory {
+  std::string id;
+  std::string data_status;
 };
 
 struct EngineInput {
@@ -52,11 +68,13 @@ struct EngineInput {
   double threshold_seconds{900.0};
   double walking_speed_meters_per_second{1.3};
   double crossing_wait_seconds{20.0};
+  double max_origin_snap_meters{30.0};
   double display_buffer_meters{15.0};
   double display_grid_step_meters{10.0};
   std::vector<WalkNode> nodes;
   std::vector<WalkEdge> edges;
   std::vector<FacilityAccess> facilities;
+  std::vector<ServiceCategory> service_categories;
 };
 
 struct ReachableEdge {
@@ -76,6 +94,17 @@ struct FacilityTravelTime {
   std::string access_edge_id;
   std::optional<double> travel_time_seconds;
   bool reachable{};
+  std::string category;
+  std::optional<std::string> best_entrance_id;
+};
+
+struct GrayZone {
+  std::string category;
+  std::string status;
+  std::vector<ReachableEdge> uncovered_edges;
+  std::vector<DisplayPolygon> display_polygons;
+  double uncovered_length_meters{};
+  double reachable_length_meters{};
 };
 
 struct EngineResult {
@@ -85,6 +114,7 @@ struct EngineResult {
   std::vector<Point> frontier;
   std::vector<DisplayPolygon> display_polygons;
   std::vector<FacilityTravelTime> facility_travel_times;
+  std::vector<GrayZone> gray_zones;
   std::size_t reachable_node_count{};
   std::size_t reachable_crossing_count{};
   std::vector<std::string> warnings;

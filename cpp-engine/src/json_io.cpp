@@ -1,5 +1,6 @@
 #include "isochrone/json_io.hpp"
 
+#include <algorithm>
 #include <cctype>
 #include <iomanip>
 #include <sstream>
@@ -100,14 +101,7 @@ std::string serialize_engine_result(const EngineResult& result) {
     }
     output << ']';
   };
-  output << "{\"schemaVersion\":2,\"success\":true,\"result\":{"
-         << "\"snappedOriginMeters\":";
-  write_point(result.snapped_origin);
-  output << ",\"snapDistanceMeters\":" << result.snap_distance_meters
-         << ",\"reachableEdges\":[";
-  for (std::size_t i = 0; i < result.reachable_edges.size(); ++i) {
-    if (i) output << ',';
-    const auto& edge = result.reachable_edges[i];
+  auto write_edge = [&write_path, &output](const ReachableEdge& edge) {
     output << "{\"edgeId\":\"" << escape_json(edge.edge_id)
            << "\",\"kind\":\"" << edge_kind_name(edge.kind)
            << "\",\"pathMeters\":";
@@ -116,6 +110,15 @@ std::string serialize_engine_result(const EngineResult& result) {
       output << ",\"widthMeters\":" << edge.width_meters;
     }
     output << '}';
+  };
+  output << "{\"schemaVersion\":2,\"success\":true,\"result\":{"
+         << "\"snappedOriginMeters\":";
+  write_point(result.snapped_origin);
+  output << ",\"snapDistanceMeters\":" << result.snap_distance_meters
+         << ",\"reachableEdges\":[";
+  for (std::size_t i = 0; i < result.reachable_edges.size(); ++i) {
+    if (i) output << ',';
+    write_edge(result.reachable_edges[i]);
   }
   output << "],\"frontierMeters\":";
   write_path(result.frontier);
@@ -133,6 +136,44 @@ std::string serialize_engine_result(const EngineResult& result) {
            << ",\"travelTimeSeconds\":";
     if (facility.travel_time_seconds) output << *facility.travel_time_seconds;
     else output << "null";
+    output << ",\"category\":\"" << escape_json(facility.category)
+           << "\",\"bestEntranceId\":";
+    if (facility.best_entrance_id) {
+      output << '"' << escape_json(*facility.best_entrance_id) << '"';
+    } else {
+      output << "null";
+    }
+    output << '}';
+  }
+  output << "],\"grayZones\":[";
+  for (std::size_t i = 0; i < result.gray_zones.size(); ++i) {
+    if (i) output << ',';
+    const GrayZone& zone = result.gray_zones[i];
+    output << "{\"category\":\"" << escape_json(zone.category)
+           << "\",\"status\":\"" << escape_json(zone.status)
+           << "\",\"uncoveredEdges\":[";
+    for (std::size_t j = 0; j < zone.uncovered_edges.size(); ++j) {
+      if (j) output << ',';
+      write_edge(zone.uncovered_edges[j]);
+    }
+    output << "],\"displayGeometryMeters\":{\"type\":\"MultiPolygon\",\"coordinates\":";
+    write_polygons(zone.display_polygons);
+    output << "},\"reachableLengthMeters\":" << zone.reachable_length_meters
+           << ",\"uncoveredLengthMeters\":";
+    if (zone.status == "candidate") {
+      output << zone.uncovered_length_meters;
+    } else {
+      output << "null";
+    }
+    output << ",\"uncoveredLengthRatio\":";
+    if (zone.status == "candidate" && zone.reachable_length_meters > 0.0) {
+      output << std::clamp(
+          zone.uncovered_length_meters / zone.reachable_length_meters, 0.0, 1.0);
+    } else if (zone.status == "candidate") {
+      output << 0;
+    } else {
+      output << "null";
+    }
     output << '}';
   }
   output << "],\"diagnostics\":{\"reachableNodeCount\":"

@@ -24,9 +24,16 @@
       "type": "FeatureCollection",
       "features": []
     },
+    "blindZoneWalkways": {
+      "type": "FeatureCollection",
+      "features": []
+    },
     "metrics": {
       "reachableNodeCount": 0,
-      "reachableCrossingCount": 0
+      "reachableCrossingCount": 0,
+      "facilityCount": 0,
+      "reachableFacilityCount": 0,
+      "grayZonesByCategory": []
     },
     "recommendations": [],
     "warnings": [],
@@ -34,6 +41,8 @@
       "schemaVersion": 1,
       "engineSchemaVersion": 2,
       "isochroneApproximate": true,
+      "grayZonePolygonsApproximate": true,
+      "grayZoneBasis": "15-minute network travel to online-reviewed entrances",
       "networkSource": "manual",
       "originSnapMeters": 0
     }

@@ -12,8 +12,9 @@
 
 1. 路网节点、边和设施只向 C++ 传 `schemaVersion: 2` 的规范化 JSON；不要传百度原始响应。`originBd09`、`supportedCenterBoundsMeters`、`synthetic` 是 Python 的网络文件元数据，引擎忽略它们。
 2. 普通道路两侧分别用 `sidewalk` 标注；经人工核实可自由穿行的步行街／小巷用一条 `shared_way`，填 `sharedWayType` 和 `widthMeters`。路口连接显式标注；普通道路过街只能用 `crossing`。同一普通道路两侧不要共用节点。
-3. 设施使用 `id`、`accessEdgeId`、`accessPointMeters`。`accessEdgeId` 指向实际可进入的 `sidewalk` 或 `shared_way`。统计 15 分钟覆盖只看 `facilityTravelTimes[*].reachable`／`travelTimeSeconds`：连通但超过 900 秒有数值，不连通才是 `null`。
+3. 新设施数据使用 `id`、`category`、`entrances`；每个入口有独立 ID、`accessEdgeId`、`streetAccessPointMeters`，若入口离街边还要提供经核实的 `accessPathMeters`。旧单入口字段只用于兼容既有样例。过街边可单独传 `waitSeconds`。统计 15 分钟覆盖只看 `facilityTravelTimes[*].reachable`／`travelTimeSeconds`，并使用 `bestEntranceId` 标示最短入口。
 4. 画线使用 `reachableEdges`。画面优先使用 `displayGeometryMeters` 的 `MultiPolygon.coordinates`，逐点从局部米制转换为 BD-09，再构造最终 GeoJSON；外环和洞环都要转换。`displayPolygonMeters` 是同一数组的兼容字段。展示面不得用于设施可达性判断。
+5. 真实路网 JSON 必须给出 `publicWalkableAreasMeters`，使 Python 拒绝封闭地块内部选点；演示区内公共步行空间可任意选点。遇到道路侧不明确，API 请求可提供 `originEdgeId`。`serviceCategories` 逐类声明 `reviewed_online` 或 `incomplete`；后一状态不得声称灰区。C++ 的 `grayZones[*].uncoveredEdges` 是精确街段，`displayGeometryMeters` 仅近似画面。
 5. 请求可能返回 `INVALID_INPUT`、`ORIGIN_NOT_ON_WALKWAY`、`AMBIGUOUS_ORIGIN_SIDE` 或 `ENGINE_ERROR`；文件缺失／超出已标注区域由 Python 返回 `UNSUPPORTED_AREA`。不要在道路侧不明确时自动选择另一侧。
 
 ## 建议的协作顺序

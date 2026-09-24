@@ -134,7 +134,7 @@ Snap snap_origin(const EngineInput& input) {
   const auto in_range = [&](const Snap& candidate) {
     const WalkEdge& edge = input.edges[candidate.edge_index];
     return candidate.surface_distance_meters <=
-        (edge.kind == EdgeKind::shared_way ? 3.0 : 30.0);
+        (edge.kind == EdgeKind::shared_way ? 3.0 : input.max_origin_snap_meters);
   };
   auto nearest = candidates.end();
   for (auto candidate = candidates.begin(); candidate != candidates.end();
@@ -157,10 +157,8 @@ Snap snap_origin(const EngineInput& input) {
       throw std::invalid_argument("originEdgeId must identify a sidewalk or shared_way");
     }
     if (!in_range(*selected) ||
-        (!share_endpoint(input.edges[selected->edge_index],
-                         input.edges[nearest->edge_index]) &&
-         selected->surface_distance_meters >
-             nearest->surface_distance_meters + kOriginSideAmbiguityMeters)) {
+        selected->surface_distance_meters >
+            nearest->surface_distance_meters + kOriginSideAmbiguityMeters) {
       throw OriginNotOnWalkway(
           "originEdgeId is not on the nearest sidewalk side");
     }
@@ -173,7 +171,10 @@ Snap snap_origin(const EngineInput& input) {
         in_range(candidate) && candidate.surface_distance_meters <=
             nearest->surface_distance_meters + kOriginSideAmbiguityMeters) {
       throw AmbiguousOriginSide(
-          "multiple sidewalk sides are equally near; specify originEdgeId");
+          "multiple sidewalk sides are equally near: " +
+          input.edges[nearest->edge_index].id + ", " +
+          input.edges[candidate.edge_index].id +
+          "; specify originEdgeId");
     }
   }
   return *nearest;
@@ -188,7 +189,95 @@ struct InternalEdge {
   double length{};
   double start_offset{};
   double width_meters{};
+  double wait_seconds{};
 };
+
+struct Interval {
+  double from{};
+  double to{};
+};
+
+struct Arc {
+  std::size_t to{};
+  double cost{};
+};
+
+std::vector<double> shortest_times(
+    const std::vector<std::vector<Arc>>& adjacency,
+    const std::vector<std::pair<std::size_t, double>>& sources) {
+  std::vector<double> times(adjacency.size(),
+                            std::numeric_limits<double>::infinity());
+  using Item = std::pair<double, std::size_t>;
+  std::priority_queue<Item, std::vector<Item>, std::greater<Item>> queue;
+  for (const auto& [node, cost] : sources) {
+    if (cost < times[node]) {
+      times[node] = cost;
+      queue.emplace(cost, node);
+    }
+  }
+  while (!queue.empty()) {
+    const auto [time, node] = queue.top();
+    queue.pop();
+    if (time > times[node] + kEpsilon) continue;
+    for (const Arc arc : adjacency[node]) {
+      if (time + arc.cost < times[arc.to]) {
+        times[arc.to] = time + arc.cost;
+        queue.emplace(times[arc.to], arc.to);
+      }
+    }
+  }
+  return times;
+}
+
+std::vector<Interval> reachable_intervals(
+    const InternalEdge& edge, const std::vector<double>& times,
+    double threshold, double speed) {
+  if (edge.kind == EdgeKind::crossing) {
+    const double cost = edge.length / speed + edge.wait_seconds;
+    if (times[edge.from] + cost <= threshold + kEpsilon ||
+        times[edge.to] + cost <= threshold + kEpsilon) {
+      return {{0.0, edge.length}};
+    }
+    return {};
+  }
+  const auto reach = [&](double time) {
+    return std::isfinite(time)
+        ? std::clamp((threshold - time) * speed, 0.0, edge.length)
+        : 0.0;
+  };
+  const double front = reach(times[edge.from]);
+  const double back = reach(times[edge.to]);
+  if (front + back >= edge.length - kEpsilon) {
+    return front > kEpsilon || back > kEpsilon
+        ? std::vector<Interval>{{0.0, edge.length}}
+        : std::vector<Interval>{};
+  }
+  std::vector<Interval> intervals;
+  if (front > kEpsilon) intervals.push_back({0.0, front});
+  if (back > kEpsilon) intervals.push_back({edge.length - back, edge.length});
+  return intervals;
+}
+
+std::vector<Interval> subtract_intervals(
+    const std::vector<Interval>& base,
+    const std::vector<Interval>& covered) {
+  std::vector<Interval> result;
+  for (const Interval piece : base) {
+    double cursor = piece.from;
+    for (const Interval service : covered) {
+      if (service.to <= cursor + kEpsilon || service.from >= piece.to - kEpsilon) {
+        continue;
+      }
+      if (service.from > cursor + kEpsilon) {
+        result.push_back({cursor, std::min(service.from, piece.to)});
+      }
+      cursor = std::max(cursor, service.to);
+      if (cursor >= piece.to - kEpsilon) break;
+    }
+    if (cursor < piece.to - kEpsilon) result.push_back({cursor, piece.to});
+  }
+  return result;
+}
 
 double segment_distance(Point point, Point a, Point b) {
   const double dx = b.x - a.x;
@@ -330,6 +419,8 @@ void validate_graph(const EngineInput& input) {
       input.walking_speed_meters_per_second <= 0.0 ||
       !std::isfinite(input.crossing_wait_seconds) ||
       input.crossing_wait_seconds < 0.0 ||
+      !std::isfinite(input.max_origin_snap_meters) ||
+      input.max_origin_snap_meters <= 0.0 ||
       !std::isfinite(input.display_buffer_meters) ||
       input.display_buffer_meters <= 0.0 ||
       !std::isfinite(input.display_grid_step_meters) ||
@@ -347,6 +438,7 @@ void validate_graph(const EngineInput& input) {
     }
   }
   std::unordered_set<std::string> edge_ids;
+  std::unordered_map<std::string, const WalkEdge*> edge_lookup;
   std::unordered_map<std::string, EdgeKind> block_kinds;
   std::unordered_map<std::string, std::unordered_map<std::string, std::string>>
       block_node_sides;
@@ -359,6 +451,7 @@ void validate_graph(const EngineInput& input) {
         edge.path.size() > 1000) {
       throw std::invalid_argument("invalid walking edge identity or endpoints");
     }
+    edge_lookup.emplace(edge.id, &edge);
     for (Point point : edge.path) {
       if (!finite(point)) throw std::invalid_argument("invalid edge coordinate");
     }
@@ -383,6 +476,11 @@ void validate_graph(const EngineInput& input) {
     if (edge.kind != EdgeKind::shared_way &&
         (!edge.shared_way_type.empty() || edge.width_meters != 0.0)) {
       throw std::invalid_argument("only shared_way may declare sharedWayType or widthMeters");
+    }
+    if (edge.wait_seconds &&
+        (edge.kind != EdgeKind::crossing || !std::isfinite(*edge.wait_seconds) ||
+         *edge.wait_seconds < 0.0)) {
+      throw std::invalid_argument("waitSeconds must be non-negative and only on crossing");
     }
     if (edge.kind == EdgeKind::sidewalk || edge.kind == EdgeKind::shared_way) {
       const auto [found, inserted] = block_kinds.emplace(edge.street_block_id, edge.kind);
@@ -415,23 +513,64 @@ void validate_graph(const EngineInput& input) {
       }
     }
   }
+  std::unordered_set<std::string> category_ids;
+  for (const auto& category : input.service_categories) {
+    if (category.id.empty() || !category_ids.insert(category.id).second ||
+        (category.data_status != "reviewed_online" &&
+         category.data_status != "incomplete")) {
+      throw std::invalid_argument("invalid or duplicate service category");
+    }
+  }
   std::unordered_set<std::string> facility_ids;
   for (const auto& facility : input.facilities) {
     if (facility.id.empty() || !facility_ids.insert(facility.id).second ||
-        !finite(facility.access_point)) {
+        (!facility.category.empty() && !category_ids.count(facility.category))) {
       throw std::invalid_argument("invalid or duplicate facility access");
     }
-    const auto edge = std::find_if(input.edges.begin(), input.edges.end(),
-                                   [&](const WalkEdge& candidate) {
-                                     return candidate.id == facility.access_edge_id;
-                                   });
-    if (edge == input.edges.end() ||
-        (edge->kind != EdgeKind::sidewalk && edge->kind != EdgeKind::shared_way)) {
-      throw std::invalid_argument("facility accessEdgeId must identify a traversable edge");
+    if (!facility.entrances.empty() && !facility.access_edge_id.empty()) {
+      throw std::invalid_argument("facility cannot mix legacy and entrance fields");
     }
-    const Snap access = project_to_edge(facility.access_point, *edge, 0);
-    if (access.surface_distance_meters > kFacilityAccessTolerance) {
-      throw std::invalid_argument("facility access point is outside its walkable edge");
+    if (facility.entrances.empty() &&
+        (facility.access_edge_id.empty() || !finite(facility.access_point))) {
+      throw std::invalid_argument("facility needs an entrance");
+    }
+    std::unordered_set<std::string> entrance_ids;
+    std::vector<FacilityEntrance> legacy;
+    if (facility.entrances.empty()) {
+      legacy.push_back({facility.id, facility.access_edge_id,
+                        facility.access_point, {}});
+    }
+    const auto& entrances = facility.entrances.empty() ? legacy : facility.entrances;
+    for (const auto& entrance : entrances) {
+      if (entrance.id.empty() || !entrance_ids.insert(entrance.id).second ||
+          !finite(entrance.street_access_point)) {
+        throw std::invalid_argument("invalid or duplicate facility entrance");
+      }
+      const auto edge = edge_lookup.find(entrance.access_edge_id);
+      if (edge == edge_lookup.end() ||
+          (edge->second->kind != EdgeKind::sidewalk &&
+           edge->second->kind != EdgeKind::shared_way)) {
+        throw std::invalid_argument("facility accessEdgeId must identify a traversable edge");
+      }
+      const Snap access = project_to_edge(
+          entrance.street_access_point, *edge->second, 0);
+      if (access.surface_distance_meters > kFacilityAccessTolerance) {
+        throw std::invalid_argument("facility street access is outside its walkable edge");
+      }
+      if (!entrance.access_path.empty()) {
+        if (entrance.access_path.size() < 2 ||
+            entrance.access_path.size() > 1000 ||
+            distance(entrance.access_path.front(), entrance.street_access_point) >
+                kEndpointTolerance ||
+            path_length(entrance.access_path) <= kEpsilon) {
+          throw std::invalid_argument("invalid facility accessPathMeters");
+        }
+        for (Point point : entrance.access_path) {
+          if (!finite(point)) {
+            throw std::invalid_argument("invalid facility access path coordinate");
+          }
+        }
+      }
     }
   }
 }
@@ -447,161 +586,198 @@ EngineResult compute_reachability(const EngineInput& input) {
   }
 
   std::unordered_map<std::string, std::size_t> node_indices;
+  std::vector<Point> graph_points;
   for (std::size_t i = 0; i < input.nodes.size(); ++i) {
     node_indices.emplace(input.nodes[i].id, i);
+    graph_points.push_back(input.nodes[i].point);
   }
-  std::vector<InternalEdge> edges;
-  std::size_t origin_index = input.nodes.size();
-  const auto& selected = input.edges[snap.edge_index];
-  const double selected_length = path_length(selected.path);
-  if (snap.offset_meters <= kEpsilon) {
-    origin_index = node_indices.at(selected.from);
-  } else if (selected_length - snap.offset_meters <= kEpsilon) {
-    origin_index = node_indices.at(selected.to);
-  }
+  std::unordered_map<std::string, std::size_t> edge_indices;
+  struct Mark { double offset; std::size_t node; };
+  std::vector<std::vector<Mark>> marks(input.edges.size());
   for (std::size_t i = 0; i < input.edges.size(); ++i) {
-    const auto& edge = input.edges[i];
-    const std::size_t from = node_indices.at(edge.from);
-    const std::size_t to = node_indices.at(edge.to);
-    if (i == snap.edge_index && origin_index == input.nodes.size()) {
-      auto left = slice(edge.path, 0.0, snap.offset_meters);
-      auto right = slice(edge.path, snap.offset_meters, selected_length);
-      edges.push_back({edge.id, edge.kind, from, origin_index,
-                       std::move(left), snap.offset_meters, 0.0,
-                       edge.width_meters});
-      edges.push_back({edge.id, edge.kind, origin_index, to,
-                       std::move(right), selected_length - snap.offset_meters,
-                       snap.offset_meters, edge.width_meters});
+    const WalkEdge& edge = input.edges[i];
+    edge_indices.emplace(edge.id, i);
+    marks[i].push_back({0.0, node_indices.at(edge.from)});
+    marks[i].push_back({path_length(edge.path), node_indices.at(edge.to)});
+  }
+  const auto register_position = [&](std::size_t edge_index, double offset) {
+    for (const Mark mark : marks[edge_index]) {
+      if (std::abs(mark.offset - offset) <= kEpsilon) return mark.node;
+    }
+    const std::size_t node = graph_points.size();
+    graph_points.push_back(point_at(input.edges[edge_index].path, offset));
+    marks[edge_index].push_back({offset, node});
+    return node;
+  };
+  const std::size_t origin_index =
+      register_position(snap.edge_index, snap.offset_meters);
+
+  struct EntranceBinding {
+    std::size_t facility_index;
+    std::string id;
+    std::string access_edge_id;
+    Point street_point;
+    bool has_path;
+    std::size_t node;
+    double extra_seconds;
+  };
+  std::vector<EntranceBinding> bindings;
+  for (std::size_t facility_index = 0;
+       facility_index < input.facilities.size(); ++facility_index) {
+    const FacilityAccess& facility = input.facilities[facility_index];
+    const auto add_entrance = [&](const FacilityEntrance& entrance) {
+      const std::size_t edge_index = edge_indices.at(entrance.access_edge_id);
+      const Snap access = project_to_edge(
+          entrance.street_access_point, input.edges[edge_index], edge_index);
+      const std::size_t node = register_position(edge_index, access.offset_meters);
+      const double connector_length = access.distance_meters +
+          path_length(entrance.access_path);
+      bindings.push_back({facility_index, entrance.id, entrance.access_edge_id,
+          entrance.street_access_point, !entrance.access_path.empty(), node,
+          connector_length / input.walking_speed_meters_per_second});
+    };
+    if (facility.entrances.empty()) {
+      add_entrance({facility.id, facility.access_edge_id,
+                    facility.access_point, {}});
     } else {
-      edges.push_back({edge.id, edge.kind, from, to, edge.path,
-                       path_length(edge.path), 0.0, edge.width_meters});
+      for (const FacilityEntrance& entrance : facility.entrances) {
+        add_entrance(entrance);
+      }
     }
   }
 
-  struct Arc { std::size_t to; double cost; };
-  std::vector<std::vector<Arc>> adjacency(input.nodes.size() + 1);
+  std::vector<InternalEdge> edges;
+  for (std::size_t i = 0; i < input.edges.size(); ++i) {
+    const WalkEdge& source = input.edges[i];
+    auto& points = marks[i];
+    std::sort(points.begin(), points.end(), [](Mark a, Mark b) {
+      return a.offset < b.offset;
+    });
+    for (std::size_t j = 1; j < points.size(); ++j) {
+      const Mark from = points[j - 1];
+      const Mark to = points[j];
+      if (to.offset - from.offset <= kEpsilon) continue;
+      edges.push_back({source.id, source.kind, from.node, to.node,
+          slice(source.path, from.offset, to.offset), to.offset - from.offset,
+          from.offset, source.width_meters,
+          source.kind == EdgeKind::crossing
+              ? source.wait_seconds.value_or(input.crossing_wait_seconds)
+              : 0.0});
+    }
+  }
+
+  std::vector<std::vector<Arc>> adjacency(graph_points.size());
   bool blocked_crossing = false;
   for (const auto& edge : edges) {
     const double cost = edge.length / input.walking_speed_meters_per_second +
-                        (edge.kind == EdgeKind::crossing
-                             ? input.crossing_wait_seconds
-                             : 0.0);
+                        edge.wait_seconds;
     adjacency[edge.from].push_back({edge.to, cost});
     adjacency[edge.to].push_back({edge.from, cost});
   }
-  std::vector<double> arrival(adjacency.size(),
-                              std::numeric_limits<double>::infinity());
-  using QueueItem = std::pair<double, std::size_t>;
-  std::priority_queue<QueueItem, std::vector<QueueItem>,
-                      std::greater<QueueItem>> queue;
-  arrival[origin_index] = snap.distance_meters /
-                          input.walking_speed_meters_per_second;
-  queue.emplace(arrival[origin_index], origin_index);
-  while (!queue.empty()) {
-    const auto [current_time, node] = queue.top();
-    queue.pop();
-    if (current_time > arrival[node] + kEpsilon) continue;
-    for (const Arc arc : adjacency[node]) {
-      if (current_time + arc.cost < arrival[arc.to]) {
-        arrival[arc.to] = current_time + arc.cost;
-        queue.emplace(arrival[arc.to], arc.to);
-      }
-    }
-  }
+  const std::vector<double> arrival = shortest_times(adjacency, {{
+      origin_index, snap.distance_meters /
+          input.walking_speed_meters_per_second}});
   for (std::size_t i = 0; i < input.nodes.size(); ++i) {
     if (arrival[i] <= input.threshold_seconds) ++result.reachable_node_count;
+  }
+  for (std::size_t i = 0; i < graph_points.size(); ++i) {
     if (std::abs(arrival[i] - input.threshold_seconds) <= kEpsilon) {
-      result.frontier.push_back(input.nodes[i].point);
+      result.frontier.push_back(graph_points[i]);
     }
   }
-  if (origin_index == input.nodes.size() &&
-      std::abs(arrival[origin_index] - input.threshold_seconds) <= kEpsilon) {
-    result.frontier.push_back(snap.point);
-  }
 
-  for (const auto& facility : input.facilities) {
-    const auto source = std::find_if(input.edges.begin(), input.edges.end(),
-        [&](const WalkEdge& edge) { return edge.id == facility.access_edge_id; });
-    const Snap access = project_to_edge(facility.access_point, *source, 0);
+  for (std::size_t i = 0; i < input.facilities.size(); ++i) {
+    const FacilityAccess& facility = input.facilities[i];
     double best_time = std::numeric_limits<double>::infinity();
-    for (const auto& edge : edges) {
-      if (edge.source_id != facility.access_edge_id ||
-          access.offset_meters < edge.start_offset - kEpsilon ||
-          access.offset_meters > edge.start_offset + edge.length + kEpsilon) {
-        continue;
+    std::string best_edge;
+    std::optional<std::string> best_entrance;
+    for (const EntranceBinding& binding : bindings) {
+      if (binding.facility_index != i) continue;
+      if (best_edge.empty()) best_edge = binding.access_edge_id;
+      double candidate = arrival[binding.node] + binding.extra_seconds;
+      if (!binding.has_path && binding.access_edge_id ==
+              input.edges[snap.edge_index].id &&
+          distance(binding.street_point, input.origin) <= kEpsilon) {
+        candidate = 0.0;
       }
-      const double offset = std::clamp(access.offset_meters - edge.start_offset,
-                                       0.0, edge.length);
-      best_time = std::min(best_time,
-          arrival[edge.from] + offset / input.walking_speed_meters_per_second);
-      best_time = std::min(best_time,
-          arrival[edge.to] + (edge.length - offset) /
-                              input.walking_speed_meters_per_second);
-    }
-    if (std::isfinite(best_time)) {
-      best_time += access.distance_meters /
-                   input.walking_speed_meters_per_second;
-      if (facility.access_edge_id == selected.id &&
-          distance(facility.access_point, input.origin) <= kEpsilon) {
-        best_time = 0.0;
+      if (candidate < best_time) {
+        best_time = candidate;
+        best_edge = binding.access_edge_id;
+        best_entrance = binding.id;
       }
     }
-    result.facility_travel_times.push_back({facility.id, facility.access_edge_id,
+    result.facility_travel_times.push_back({facility.id, best_edge,
         std::isfinite(best_time) ? std::optional<double>{best_time} : std::nullopt,
-        best_time <= input.threshold_seconds + kEpsilon});
+        best_time <= input.threshold_seconds + kEpsilon,
+        facility.category, best_entrance});
   }
 
+  double reachable_street_length = 0.0;
   for (const auto& edge : edges) {
-    const double from_time = arrival[edge.from];
-    const double to_time = arrival[edge.to];
+    const auto intervals = reachable_intervals(
+        edge, arrival, input.threshold_seconds,
+        input.walking_speed_meters_per_second);
     if (edge.kind == EdgeKind::crossing) {
-      const double cost = edge.length / input.walking_speed_meters_per_second +
-                          input.crossing_wait_seconds;
-      if (from_time + cost <= input.threshold_seconds + kEpsilon ||
-          to_time + cost <= input.threshold_seconds + kEpsilon) {
-        result.reachable_edges.push_back(
-            {edge.source_id, edge.kind, edge.path, edge.width_meters});
-        ++result.reachable_crossing_count;
-      } else if (from_time <= input.threshold_seconds + kEpsilon ||
-                 to_time <= input.threshold_seconds + kEpsilon) {
+      if (!intervals.empty()) ++result.reachable_crossing_count;
+      else if (arrival[edge.from] <= input.threshold_seconds + kEpsilon ||
+               arrival[edge.to] <= input.threshold_seconds + kEpsilon) {
         blocked_crossing = true;
       }
-      continue;
     }
-    const double from_reach = std::isfinite(from_time)
-        ? std::clamp((input.threshold_seconds - from_time) *
-                         input.walking_speed_meters_per_second,
-                     0.0, edge.length)
-        : 0.0;
-    const double to_reach = std::isfinite(to_time)
-        ? std::clamp((input.threshold_seconds - to_time) *
-                         input.walking_speed_meters_per_second,
-                     0.0, edge.length)
-        : 0.0;
-    if (from_reach + to_reach >= edge.length - kEpsilon) {
-      if (from_reach > kEpsilon || to_reach > kEpsilon) {
-        result.reachable_edges.push_back(
-            {edge.source_id, edge.kind, edge.path, edge.width_meters});
+    for (const Interval part : intervals) {
+      result.reachable_edges.push_back({edge.source_id, edge.kind,
+          slice(edge.path, part.from, part.to), edge.width_meters});
+      if (part.from > kEpsilon) {
+        result.frontier.push_back(point_at(edge.path, part.from));
       }
-    } else {
-      if (from_reach > kEpsilon) {
-        result.reachable_edges.push_back(
-            {edge.source_id, edge.kind, slice(edge.path, 0.0, from_reach),
-             edge.width_meters});
-        result.frontier.push_back(point_at(edge.path, from_reach));
+      if (part.to < edge.length - kEpsilon) {
+        result.frontier.push_back(point_at(edge.path, part.to));
       }
-      if (to_reach > kEpsilon) {
-        result.reachable_edges.push_back(
-            {edge.source_id, edge.kind,
-             slice(edge.path, edge.length - to_reach, edge.length),
-             edge.width_meters});
-        result.frontier.push_back(point_at(edge.path, edge.length - to_reach));
+      if (edge.kind == EdgeKind::sidewalk || edge.kind == EdgeKind::shared_way) {
+        reachable_street_length += part.to - part.from;
       }
     }
   }
   result.display_polygons = display_polygons(
       result.reachable_edges, input.display_buffer_meters,
       input.display_grid_step_meters);
+
+  for (const ServiceCategory& category : input.service_categories) {
+    GrayZone zone;
+    zone.category = category.id;
+    zone.status = category.data_status == "reviewed_online"
+        ? "candidate" : "data_insufficient";
+    zone.reachable_length_meters = reachable_street_length;
+    if (category.data_status == "reviewed_online") {
+      std::vector<std::pair<std::size_t, double>> sources;
+      for (const EntranceBinding& binding : bindings) {
+        if (input.facilities[binding.facility_index].category == category.id) {
+          sources.emplace_back(binding.node, binding.extra_seconds);
+        }
+      }
+      const std::vector<double> service_times = shortest_times(adjacency, sources);
+      for (const InternalEdge& edge : edges) {
+        if (edge.kind != EdgeKind::sidewalk &&
+            edge.kind != EdgeKind::shared_way) continue;
+        const auto from_origin = reachable_intervals(
+            edge, arrival, input.threshold_seconds,
+            input.walking_speed_meters_per_second);
+        const auto from_facilities = reachable_intervals(
+            edge, service_times, input.threshold_seconds,
+            input.walking_speed_meters_per_second);
+        for (const Interval part : subtract_intervals(
+                 from_origin, from_facilities)) {
+          zone.uncovered_edges.push_back({edge.source_id, edge.kind,
+              slice(edge.path, part.from, part.to), edge.width_meters});
+          zone.uncovered_length_meters += part.to - part.from;
+        }
+      }
+      zone.display_polygons = display_polygons(
+          zone.uncovered_edges, input.display_buffer_meters,
+          input.display_grid_step_meters);
+    }
+    result.gray_zones.push_back(std::move(zone));
+  }
   if (result.frontier.empty()) {
     result.warnings.push_back(blocked_crossing
         ? "CROSSING_NOT_COMPLETED_WITHIN_THRESHOLD"

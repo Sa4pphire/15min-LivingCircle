@@ -33,11 +33,22 @@
     { "id": "southeast_sidewalk", "from": "far0", "to": "far1", "kind": "sidewalk", "streetBlockId": "south", "side": "right", "pathMeters": [[820, -10], [820, -410]] },
     { "id": "right_turn", "from": "sw1", "to": "turn0", "kind": "turn", "pathMeters": [[800, 0], [800, -10]] },
     { "id": "west_crossing", "from": "sw0", "to": "nw0", "kind": "crossing", "pathMeters": [[0, 0], [0, 20]] },
-    { "id": "middle_crossing", "from": "sw1", "to": "nw1", "kind": "crossing", "pathMeters": [[800, 0], [800, 20]] },
+    { "id": "middle_crossing", "from": "sw1", "to": "nw1", "kind": "crossing", "waitSeconds": 35, "pathMeters": [[800, 0], [800, 20]] },
     { "id": "shared_entry", "from": "sw0", "to": "shared0", "kind": "turn", "pathMeters": [[0, 0], [0, -10]] },
     { "id": "pedestrian_lane", "from": "shared0", "to": "shared1", "kind": "shared_way", "streetBlockId": "pedestrian-demo", "sharedWayType": "pedestrian_street", "widthMeters": 8, "pathMeters": [[0, -10], [200, -10]] }
   ],
+  "serviceCategories": [
+    { "id": "shopping", "dataStatus": "reviewed_online" },
+    { "id": "healthcare", "dataStatus": "incomplete" }
+  ],
   "facilities": [
-    { "id": "synthetic_shop", "accessEdgeId": "pedestrian_lane", "accessPointMeters": [100, -14] }
+    {
+      "id": "synthetic_shop",
+      "category": "shopping",
+      "entrances": [
+        { "id": "south_gate", "accessEdgeId": "pedestrian_lane", "streetAccessPointMeters": [100, -14], "accessPathMeters": [[100, -14], [100, -20]] },
+        { "id": "north_gate", "accessEdgeId": "pedestrian_lane", "streetAccessPointMeters": [180, -6] }
+      ]
+    }
   ]
 }

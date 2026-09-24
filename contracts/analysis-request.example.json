@@ -5,5 +5,6 @@
     "coordType": "bd09ll"
   },
   "minutes": 15,
+  "originEdgeId": null,
   "forceRefresh": false
 }

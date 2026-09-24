@@ -1,6 +1,6 @@
 # 15 分钟生活圈智能体检与规划助手
 
-面向比赛演示的 Web Demo：依据人工标注的双侧人行道路网，对指定中心点计算 15 分钟内可达街段，并生成近似展示范围。设施覆盖和服务盲区仍是后续功能。
+面向比赛演示的 Web Demo：依据新江湾城样例区的步行路网 JSON，对公共步行空间内的中心点计算 15 分钟可达街段与近似等时圈，并按设施入口路网耗时统计覆盖、标注疑似服务灰区。真实路网与设施数据仍待采集核实。
 
 ## 技术架构
 
@@ -13,9 +13,9 @@
 ```text
 Browser
   -> FastAPI REST API
-      -> manually annotated walking network
-      -> C++ isochrone engine
-      -> reachable walkways + approximate display polygon
+      -> Python-normalized walking-network JSON
+      -> C++ isochrone + facility-service engine
+      -> reachable walkways + approximate display polygons + candidate gray zones
 ```
 
 ## 当前状态
@@ -23,8 +23,8 @@ Browser
 当前已建立：
 
 - FastAPI 健康检查和分析任务接口
-- C++ 双侧人行道最短路引擎、过街等待和展示面生成
-- Vite 路网结果双图层示意界面
+- C++ 双侧人行道最短路引擎、多入口设施耗时、逐类灰区及近似展示面生成
+- Vite 路网、等时圈和疑似灰区示意界面
 - Python/C++ 测试骨架
 - Docker 多阶段构建
 - GitHub Actions CI

@@ -70,7 +70,8 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
 async def create_analysis(request: AnalysisRequest,
                           background_tasks: BackgroundTasks) -> AnalysisAccepted:
     try:
-        engine_input, network_meta = load_engine_request(request.center)
+        engine_input, network_meta = load_engine_request(
+            request.center, request.originEdgeId)
     except UnsupportedAreaError as exc:
         raise HTTPException(
             status_code=422,

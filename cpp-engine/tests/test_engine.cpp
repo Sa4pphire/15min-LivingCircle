@@ -163,6 +163,13 @@ void threshold_and_origin_side() {
   try { (void)compute_reachability(input); }
   catch (const OriginNotOnWalkway&) { wrong_side = true; }
   TEST_CHECK(wrong_side);
+  input.origin = {0, 8};
+  input.origin_edge_id = "long";
+  input.max_origin_snap_meters = 5.0;
+  bool too_far = false;
+  try { (void)compute_reachability(input); }
+  catch (const OriginNotOnWalkway&) { too_far = true; }
+  TEST_CHECK(too_far);
 }
 
 void crossing_endpoint_and_polygon_hole() {
@@ -220,6 +227,81 @@ void json_contract() {
   TEST_CHECK(output.find("\"widthMeters\":8") != std::string::npos);
 }
 
+void crossing_wait_override() {
+  EngineInput input;
+  input.origin = {0, 0};
+  input.origin_edge_id = "south";
+  input.walking_speed_meters_per_second = 1.0;
+  input.threshold_seconds = 25;
+  input.nodes = {{"a", {0, 0}}, {"b", {-1, 0}},
+                 {"c", {0, 10}}, {"d", {1, 10}}};
+  input.edges = {sidewalk("south", "a", "b", {0, 0}, {-1, 0},
+                          "south-block", "left"),
+                 connector("cross", "a", "c", {0, 0}, {0, 10},
+                           EdgeKind::crossing),
+                 sidewalk("north", "c", "d", {0, 10}, {1, 10},
+                          "north-block", "right")};
+  input.facilities = {{"far", "north", {0, 10}}};
+  TEST_CHECK(compute_reachability(input).reachable_crossing_count == 0);
+  input.edges[1].wait_seconds = 5.0;
+  const auto result = compute_reachability(input);
+  TEST_CHECK(result.reachable_crossing_count == 1);
+  TEST_CHECK(near(*result.facility_travel_times[0].travel_time_seconds, 15.0));
+  input.edges[1].wait_seconds = -1.0;
+  bool rejected = false;
+  try { validate_graph(input); }
+  catch (const std::invalid_argument&) { rejected = true; }
+  TEST_CHECK(rejected);
+}
+
+void multi_entrance_and_gray_zone() {
+  EngineInput input;
+  input.origin = {0, 0};
+  input.origin_edge_id = "walk";
+  input.walking_speed_meters_per_second = 1.0;
+  input.threshold_seconds = 25.0;
+  input.nodes = {{"a", {0, 0}}, {"b", {100, 0}}};
+  input.edges = {sidewalk("walk", "a", "b", {0, 0}, {100, 0},
+                          "block", "left")};
+  FacilityAccess shop;
+  shop.id = "shop";
+  shop.category = "shopping";
+  shop.entrances = {{"near", "walk", {30, 0}, {{30, 0}, {30, 10}}},
+                    {"far", "walk", {80, 0}, {}}};
+  input.facilities = {shop};
+  input.service_categories = {{"shopping", "reviewed_online"},
+                              {"healthcare", "incomplete"}};
+  const EngineResult result = compute_reachability(input);
+  TEST_CHECK(result.facility_travel_times.size() == 1);
+  TEST_CHECK(result.facility_travel_times[0].best_entrance_id == "near");
+  TEST_CHECK(near(*result.facility_travel_times[0].travel_time_seconds, 40.0));
+  TEST_CHECK(!result.facility_travel_times[0].reachable);
+  TEST_CHECK(result.gray_zones.size() == 2);
+  TEST_CHECK(result.gray_zones[0].status == "candidate");
+  TEST_CHECK(near(result.gray_zones[0].reachable_length_meters, 25.0));
+  TEST_CHECK(near(result.gray_zones[0].uncovered_length_meters, 15.0));
+  TEST_CHECK(result.gray_zones[0].uncovered_edges.size() == 1);
+  TEST_CHECK(near(result.gray_zones[0].uncovered_edges[0].path.back().x, 15.0));
+  TEST_CHECK(result.gray_zones[1].status == "data_insufficient");
+  TEST_CHECK(result.gray_zones[1].uncovered_edges.empty());
+
+  input.facilities[0].entrances[0].access_path = {{31, 0}, {30, 10}};
+  bool invalid_path = false;
+  try { validate_graph(input); }
+  catch (const std::invalid_argument&) { invalid_path = true; }
+  TEST_CHECK(invalid_path);
+}
+
+void json_extended_contract() {
+  const std::string request = R"({"schemaVersion":2,"originMeters":{"xMeters":0,"yMeters":0},"originEdgeId":"walk","thresholdSeconds":25,"walkingSpeedMetersPerSecond":1,"crossingWaitSeconds":20,"nodes":[{"id":"a","xMeters":0,"yMeters":0},{"id":"b","xMeters":100,"yMeters":0}],"edges":[{"id":"walk","from":"a","to":"b","kind":"sidewalk","streetBlockId":"block","side":"left","pathMeters":[[0,0],[100,0]]}],"serviceCategories":[{"id":"shopping","dataStatus":"reviewed_online"}],"facilities":[{"id":"shop","category":"shopping","entrances":[{"id":"gate","accessEdgeId":"walk","streetAccessPointMeters":[30,0],"accessPathMeters":[[30,0],[30,10]]}]}]})";
+  const EngineInput input = parse_engine_input(request);
+  const EngineResult result = compute_reachability(input);
+  const std::string output = serialize_engine_result(result);
+  TEST_CHECK(output.find("\"bestEntranceId\":\"gate\"") != std::string::npos);
+  TEST_CHECK(output.find("\"grayZones\":[{\"category\":\"shopping\"") != std::string::npos);
+  TEST_CHECK(output.find("\"uncoveredLengthMeters\":15") != std::string::npos);
+}
+
 }  // namespace
 
 int main() {
@@ -229,4 +311,7 @@ int main() {
   threshold_and_origin_side();
   crossing_endpoint_and_polygon_hole();
   json_contract();
+  crossing_wait_override();
+  multi_entrance_and_gray_zone();
+  json_extended_contract();
 }

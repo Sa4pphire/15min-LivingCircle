@@ -11,6 +11,7 @@ class CenterPoint(BaseModel):
 
 class AnalysisRequest(BaseModel):
     center: CenterPoint
+    originEdgeId: str | None = None
     minutes: Literal[15] = 15
     forceRefresh: bool = False
 

@@ -86,6 +86,11 @@ def test_python_cpp_synthetic_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None
     assert report["metrics"]["facilityCount"] == 1
     assert report["metrics"]["reachableFacilityCount"] == 1
     assert report["facilities"]["features"][0]["properties"]["travelTimeSeconds"] > 0
+    assert report["facilities"]["features"][0]["properties"]["bestEntranceId"] in (
+        "south_gate", "north_gate")
+    assert report["metrics"]["grayZonesByCategory"][0]["status"] == "candidate"
+    assert report["metrics"]["grayZonesByCategory"][1]["status"] == "data_insufficient"
+    assert "FACILITY_DATA_INCOMPLETE:healthcare" in report["warnings"]
     assert any(feature["properties"]["kind"] == "shared_way"
                for feature in report["reachableWalkways"]["features"])
     ambiguous = dict(payload)
@@ -106,3 +111,26 @@ def test_python_cpp_synthetic_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None
     assert minimal_result["facilityTravelTimes"][0]["travelTimeSeconds"] == pytest.approx(
         expected_output["result"]["facilityTravelTimes"][0]["travelTimeSeconds"]
     )
+
+
+def test_real_network_rejects_unverified_center(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fixture = json.loads((REPO_ROOT / "contracts" /
+                          "engine-input.example.json").read_text(encoding="utf-8"))
+    fixture["synthetic"] = False
+    path = tmp_path / "real-network.json"
+    path.write_text(json.dumps(fixture), encoding="utf-8")
+    monkeypatch.setattr(network, "settings", replace(
+        network.settings, walking_network_path=path))
+    with pytest.raises(network.UnsupportedAreaError, match="publicWalkableAreasMeters"):
+        network.load_engine_request(CenterPoint(lng=121.5, lat=31.3))
+
+    fixture["publicWalkableAreasMeters"] = [[
+        [-2, -2], [2, -2], [2, 2], [-2, 2], [-2, -2]]]
+    path.write_text(json.dumps(fixture), encoding="utf-8")
+    payload, _ = network.load_engine_request(CenterPoint(lng=121.5, lat=31.3),
+                                             "west_south_sidewalk")
+    assert payload["maxOriginSnapMeters"] == 5
+    assert payload["originEdgeId"] == "west_south_sidewalk"
+    with pytest.raises(network.UnsupportedAreaError, match="公共步行空间"):
+        network.load_engine_request(CenterPoint(lng=121.50008, lat=31.3))
