@@ -7,8 +7,10 @@ RUN npm run build
 
 FROM debian:bookworm-slim AS cpp-builder
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends cmake g++ \
+    && apt-get install -y --no-install-recommends build-essential cmake \
     && rm -rf /var/lib/apt/lists/*
+
+RUN g++ --version && cmake --version
 WORKDIR /src/cpp-engine
 COPY cpp-engine/ ./
 RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
