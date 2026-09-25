@@ -9,6 +9,10 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.9",
     "vite": "^7.1.7"
+  },
+  "dependencies": {
+    "vue": "^3.5.43"
   }
 }
