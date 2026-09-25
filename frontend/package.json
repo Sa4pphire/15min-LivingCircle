@@ -6,9 +6,15 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
+    "test": "node --test tests/*.test.mjs",
     "preview": "vite preview --host 0.0.0.0"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.9",
     "vite": "^7.1.7"
+  },
+  "dependencies": {
+    "@baidumap/jsapi-loader": "^1.0.0",
+    "vue": "^3.5.43"
   }
 }

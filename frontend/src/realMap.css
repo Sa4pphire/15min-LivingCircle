@@ -1,0 +1,61 @@
+.real-map-stage { position: relative; width: 100%; height: 100%; overflow: hidden; background: #eaf0ec; cursor: crosshair; isolation: isolate; }
+.real-map-stage.can-pan { cursor: grab; touch-action: none; }
+.real-map-stage.is-panning { cursor: grabbing; }
+.real-map-stage.is-outside { cursor: not-allowed; }
+.real-map-stage.can-pan.is-outside { cursor: grab; }
+.real-map-stage.is-panning.is-outside { cursor: grabbing; }
+.real-baidu-map, .real-fallback-svg, .real-live-overlay { position: absolute; inset: 0; width: 100%; height: 100%; }
+.real-baidu-map { z-index: 1; opacity: 0; pointer-events: none; transition: opacity .35s ease; }
+.real-baidu-map.visible { opacity: 1; pointer-events: auto; }
+.real-fallback-svg { z-index: 2; pointer-events: none; }
+.real-context, .real-fallback-svg .real-candidate-mark { transform-box: view-box; transform-origin: 0 0; }
+.real-map-stage.can-animate .real-context, .real-map-stage.can-animate .real-fallback-svg .real-candidate-mark { transition: transform .42s cubic-bezier(.2, .75, .2, 1); }
+.real-map-stage.is-panning .real-context, .real-map-stage.is-panning .real-fallback-svg .real-candidate-mark { transition: none; }
+.real-live-overlay { z-index: 2; overflow: visible; pointer-events: none; }
+.real-context path { vector-effect: non-scaling-stroke; }
+.real-water-area { fill: #d1e6e4; stroke: #afd2cf; stroke-width: 1; }
+.real-water-line { fill: none; stroke: #aad2ce; stroke-width: 2.5; }
+.real-park-area { fill: #cee4cf; stroke: #bed8c1; stroke-width: .8; }
+.real-building { fill: #fbfdfb; stroke: #cfddd4; stroke-width: .8; }
+.real-road-major-base, .real-road-local-base, .real-road-major, .real-road-local, .real-road-path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.real-road-major-base { stroke: #c9dcd4; stroke-width: 12; }
+.real-road-local-base { stroke: #d6e3dc; stroke-width: 6; }
+.real-road-major { stroke: #fffefb; stroke-width: 9; }
+.real-road-local { stroke: #fffefb; stroke-width: 4.2; }
+.real-road-path { stroke: #f7fcf7; stroke-width: 2; stroke-dasharray: 3 3; }
+.real-boundary-fill, .real-live-boundary-fill { fill: rgba(66, 177, 137, .065); stroke: none; }
+.real-boundary-outline, .real-live-boundary-outline { fill: none; stroke: #147d72; stroke-width: 2.3; stroke-dasharray: 9 5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; filter: drop-shadow(0 1px 1px rgba(255,255,255,.9)); }
+.real-live-boundary-outline { stroke-width: 2.5; }
+.real-analysis-area { fill: rgba(20, 125, 114, .12); stroke: #147d72; stroke-width: 1.5; }
+.real-analysis-walkway { fill: none; stroke: #147d72; stroke-width: 5; stroke-linecap: round; }
+.real-analysis-gap { fill: none; stroke: #d1764e; stroke-width: 6; stroke-linecap: round; }
+.real-candidate-halo { fill: #fff; stroke: rgba(20, 125, 114, .27); stroke-width: 2; }
+.real-candidate-dot { fill: #147d72; stroke: #fff; stroke-width: 1.5; }
+.real-map-note { position: absolute; z-index: 4; top: 99px; left: 19px; display: flex; align-items: center; gap: 8px; max-width: min(430px, calc(100% - 38px)); padding: 9px 12px; background: rgba(251, 253, 252, .92); color: #476f62; font-size: 11px; line-height: 1.4; box-shadow: 0 3px 15px rgba(27, 69, 57, .06); }
+.real-note-signal { flex: none; width: 6px; height: 6px; border-radius: 50%; background: #6eb28c; }
+.real-map-actions { position: absolute; z-index: 4; right: 22px; bottom: 22px; display: grid; gap: 9px; justify-items: start; max-width: min(245px, 60vw); padding: 15px 17px; background: rgba(251, 253, 252, .94); color: #31574c; box-shadow: 0 5px 24px rgba(33, 66, 53, .11); }
+.real-map-actions p { margin: 0; font-size: 11px; line-height: 1.6; }
+.real-map-actions strong { font-size: 12px; font-weight: 650; }
+.real-map-actions button { padding: 7px 11px; border: 0; border-radius: 4px; background: #dcefe4; color: #176b5e; font-size: 11px; font-weight: 650; cursor: pointer; transition: background .16s ease, transform .16s ease; }
+.real-map-actions button:hover { background: #c8e9d5; transform: translateY(-2px); }
+.real-map-actions button:active { transform: scale(.97); }
+.real-map-probe { position: absolute; z-index: 6; left: 0; top: 0; display: flex; align-items: center; gap: 14px; opacity: 0; pointer-events: none; transform: translate3d(-100px,-100px,0); transition: opacity .12s ease; }
+.real-map-probe.visible { opacity: 1; }
+.real-map-probe > span { width: 28px; height: 28px; margin: -14px; border: 1px solid #148375; border-radius: 50%; background: rgba(20, 125, 114, .12); box-shadow: 0 0 0 5px rgba(20, 125, 114, .06); }
+.real-map-probe.outside > span { border-color: #c77956; background: rgba(209, 118, 78, .13); box-shadow: none; }
+.real-map-probe small { padding: 6px 8px; background: rgba(251, 253, 252, .94); color: #23685c; font-size: 10px; white-space: nowrap; }
+.real-map-probe.outside small { color: #aa6549; }
+.real-map-toast { position: absolute; z-index: 7; left: 50%; bottom: 18px; max-width: calc(100% - 35px); margin: 0; padding: 9px 13px; transform: translateX(-50%); background: #173c3a; color: #f1fbf4; font-size: 11px; text-align: center; box-shadow: 0 4px 18px rgba(18, 60, 54, .18); }
+@media (max-width: 600px) {
+  .real-map-note { top: 89px; left: 10px; max-width: calc(100% - 20px); padding: 7px 9px; font-size: 10px; }
+  .real-map-actions { right: 9px; bottom: 10px; padding: 10px 12px; max-width: 210px; }
+  .real-map-actions p { font-size: 10px; }
+  .real-map-probe { display: none; }
+}
+@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .real-map-probe { display: none; }
+  .real-baidu-map, .real-map-actions button { transition: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .real-context, .real-fallback-svg .real-candidate-mark { transition: none; }
+}
