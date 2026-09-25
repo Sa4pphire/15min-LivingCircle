@@ -1,5 +1,7 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import RealMapStage from "./RealMapStage.vue";
+import { clampMapPan, mapZoomTiers, syntheticViewBox } from "./mapZoom";
 import {
   buildingPois,
   categories,
@@ -20,6 +22,11 @@ const wordmarkSvg = ref(null);
 const wordmarkText = ref(null);
 const cometLayer = ref(null);
 const activePage = ref(0);
+const mapMode = ref("real");
+const mapZoomTier = ref("medium");
+const demoPan = ref({ x: 0, y: 0 });
+const demoDragging = ref(false);
+const realCandidate = ref(null);
 const candidate = ref({ ...presets[0] });
 const analysisOrigin = ref({ ...presets[0] });
 const selectedCategory = ref("shopping");
@@ -50,10 +57,34 @@ const livingLetters = Array.from("LIVING CIRCLE");
 let pageWheelDistance = 0;
 let pageTurnTimer;
 let pageTurning = false;
+let demoZoomFrame;
+let demoDrag;
+let suppressDemoClick = false;
 
 const pending = computed(() =>
   Math.hypot(candidate.value.x - analysisOrigin.value.x, candidate.value.y - analysisOrigin.value.y) > 2,
 );
+const targetDemoViewBox = computed(() => syntheticViewBox(mapZoomTier.value, candidate.value, demoPan.value));
+const demoViewBox = ref(targetDemoViewBox.value);
+watch(targetDemoViewBox, (target) => {
+  if (demoDragging.value || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (demoZoomFrame) cancelAnimationFrame(demoZoomFrame);
+    demoZoomFrame = 0;
+    demoViewBox.value = target;
+    return;
+  }
+  if (demoZoomFrame) cancelAnimationFrame(demoZoomFrame);
+  const from = demoViewBox.value.split(" ").map(Number);
+  const to = target.split(" ").map(Number);
+  const start = performance.now();
+  const animate = (now) => {
+    const t = Math.min(1, (now - start) / 420);
+    const eased = 1 - Math.pow(1 - t, 3);
+    demoViewBox.value = from.map((value, index) => value + (to[index] - value) * eased).join(" ");
+    demoZoomFrame = t < 1 ? requestAnimationFrame(animate) : 0;
+  };
+  demoZoomFrame = requestAnimationFrame(animate);
+});
 const activeCategory = computed(() => categories.find((item) => item.id === selectedCategory.value));
 const activeFacility = computed(() => facilities.find((item) => item.id === selectedFacilityId.value));
 const activeBuilding = computed(() => buildingPois.find((item) => item.id === selectedBuildingId.value));
@@ -105,8 +136,73 @@ function choosePreset(point) {
   candidatePulse.value += 1;
 }
 
+function chooseRealPoint(point) {
+  realCandidate.value = point;
+}
+
+function switchMapMode(mode) {
+  mapMode.value = mode;
+  endDemoDrag();
+  leaveMap();
+  previewCategory.value = null;
+}
+
+function setMapZoomTier(tier) {
+  if (mapZoomTier.value === tier) return;
+  demoPan.value = { x: 0, y: 0 };
+  mapZoomTier.value = tier;
+}
+
+function beginDemoDrag(event) {
+  if (mapZoomTier.value === "small" || isRunning.value ||
+    (event.pointerType === "mouse" && event.button !== 0) ||
+    event.target.closest?.(".facility-marker, .building-poi")) return;
+  if (demoZoomFrame) cancelAnimationFrame(demoZoomFrame);
+  demoZoomFrame = 0;
+  demoViewBox.value = targetDemoViewBox.value;
+  const matrix = mapSvg.value?.getScreenCTM();
+  if (!matrix) return;
+  demoDrag = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    inverse: matrix.inverse(),
+    pan: { ...demoPan.value },
+  };
+}
+
+function moveDemoDrag(event) {
+  if (!demoDrag || demoDrag.pointerId !== event.pointerId) return;
+  const distance = Math.hypot(event.clientX - demoDrag.startX, event.clientY - demoDrag.startY);
+  if (!demoDragging.value && distance < 6) return;
+  if (!demoDragging.value) {
+    demoDragging.value = true;
+    suppressDemoClick = true;
+    mapSvg.value?.setPointerCapture(event.pointerId);
+    leaveMap();
+  }
+  const from = new DOMPoint(demoDrag.startX, demoDrag.startY).matrixTransform(demoDrag.inverse);
+  const to = new DOMPoint(event.clientX, event.clientY).matrixTransform(demoDrag.inverse);
+  const [, , width, height] = syntheticViewBox(mapZoomTier.value, candidate.value).split(" ").map(Number);
+  const limit = mapZoomTier.value === "large" ? 1.3 : 0.36;
+  demoPan.value = {
+    x: clampMapPan(demoDrag.pan.x - (to.x - from.x), width * limit),
+    y: clampMapPan(demoDrag.pan.y - (to.y - from.y), height * limit),
+  };
+}
+
+function endDemoDrag(event) {
+  if (event && demoDrag?.pointerId !== event.pointerId) return;
+  if (event && mapSvg.value?.hasPointerCapture?.(event.pointerId)) {
+    mapSvg.value.releasePointerCapture(event.pointerId);
+  }
+  if (demoDragging.value) setTimeout(() => { suppressDemoClick = false; }, 0);
+  demoDrag = null;
+  demoDragging.value = false;
+}
+
 function chooseMapPoint(event) {
-  if (isRunning.value || !mapSvg.value) return;
+  if (suppressDemoClick || isRunning.value || !mapSvg.value) return;
   const matrix = mapSvg.value.getScreenCTM();
   if (!matrix) return;
   const point = mapSvg.value.createSVGPoint();
@@ -227,7 +323,7 @@ function moveWordmark(event) {
 }
 
 function moveProbe(event) {
-  if (!motionEnabled(event) || !mapSvg.value) return;
+  if (demoDragging.value || !motionEnabled(event) || !mapSvg.value) return;
   const bounds = mapSvg.value.getBoundingClientRect();
   pointerPosition = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
   if (pointerFrame) return;
@@ -410,6 +506,7 @@ onUnmounted(() => {
   clearTimeout(analysisTimer);
   clearTimeout(successTimer);
   if (pointerFrame) cancelAnimationFrame(pointerFrame);
+  if (demoZoomFrame) cancelAnimationFrame(demoZoomFrame);
   if (wordmarkFrame) cancelAnimationFrame(wordmarkFrame);
   clearTimeout(pageTurnTimer);
 });
@@ -446,8 +543,18 @@ onUnmounted(() => {
       <section class="map-column" aria-label="生活圈地图">
         <div class="map-frame">
           <div class="map-topline">
-            <span class="map-title"><span class="map-title-mark"></span>新江湾城 · 样例区步行地图 <small>合成数据示意</small></span>
+            <div class="map-head-left">
+              <span class="map-title"><span class="map-title-mark"></span>新江湾城 · 四路围合演示区 <small>{{ mapMode === "real" ? "真实范围预览" : "合成数据示意" }}</small></span>
+              <div class="map-mode-switch" role="group" aria-label="地图展示模式">
+                <button type="button" :aria-pressed="mapMode === 'real'" :class="{ active: mapMode === 'real' }" @click="switchMapMode('real')">真实区域</button>
+                <button type="button" :aria-pressed="mapMode === 'synthetic'" :class="{ active: mapMode === 'synthetic' }" @click="switchMapMode('synthetic')">合成算法</button>
+              </div>
+            </div>
+            <button v-if="mapMode === 'real'" type="button" class="analyze-button map-analyze-button real-mode-action" @click="switchMapMode('synthetic')">
+              <span class="button-label">体验合成分析</span><span class="button-arrow" aria-hidden="true">↗</span>
+            </button>
             <button
+              v-else
               type="button"
               class="analyze-button map-analyze-button"
               :class="{ 'is-running': isRunning, 'is-complete': showSuccess }"
@@ -463,17 +570,23 @@ onUnmounted(() => {
           </div>
 
           <div class="map-canvas">
+            <RealMapStage v-if="mapMode === 'real'" :candidate="realCandidate" :zoom-tier="mapZoomTier" @select="chooseRealPoint" />
             <svg
+              v-else
               ref="mapSvg"
               class="demo-map"
-              :class="{ 'is-running': isRunning }"
-              viewBox="-90 0 1080 620"
+              :class="{ 'is-running': isRunning, 'can-pan': mapZoomTier !== 'small', 'is-panning': demoDragging }"
+              :viewBox="demoViewBox"
               preserveAspectRatio="xMidYMid slice"
               role="group"
               aria-label="合成街区路网示意地图，可点击选择起点"
               @click="chooseMapPoint"
+              @pointerdown="beginDemoDrag"
               @pointerenter="enterMap"
-              @pointermove="moveProbe"
+              @pointermove="moveDemoDrag($event); moveProbe($event)"
+              @pointerup="endDemoDrag"
+              @pointercancel="endDemoDrag"
+              @lostpointercapture="endDemoDrag"
               @pointerleave="leaveMap"
               @keydown.esc.stop="closePoi"
             >
@@ -609,21 +722,35 @@ onUnmounted(() => {
               </g>
             </svg>
 
-            <div ref="probeEl" class="map-probe" :class="[{ visible: probeVisible }, `mode-${probeKind}`]" aria-hidden="true">
+            <div v-if="mapMode === 'synthetic'" ref="probeEl" class="map-probe" :class="[{ visible: probeVisible }, `mode-${probeKind}`]" aria-hidden="true">
               <span class="probe-ring"></span><span class="probe-caption">{{ probeLabel }}</span>
             </div>
             <div class="map-compass" aria-hidden="true"><span>北</span><i></i></div>
-            <div v-if="hoveredStreet" class="street-hover-card" aria-live="polite">
+            <div class="map-zoom-control" role="group" aria-label="地图比例尺">
+              <span class="map-zoom-heading" aria-hidden="true">比例尺</span>
+              <button
+                v-for="tier in mapZoomTiers"
+                :key="tier.id"
+                type="button"
+                :title="tier.description"
+                :aria-label="tier.description"
+                :aria-pressed="mapZoomTier === tier.id"
+                :class="{ active: mapZoomTier === tier.id }"
+                @click="setMapZoomTier(tier.id)"
+              ><strong>{{ tier.label }}</strong><small>{{ tier.hint }}</small></button>
+              <span class="map-zoom-hint" aria-hidden="true">{{ mapZoomTier === 'small' ? '固定' : '可拖动' }}</span>
+            </div>
+            <div v-if="mapMode === 'synthetic' && hoveredStreet" class="street-hover-card" aria-live="polite">
               <small>合成街段 · {{ hoveredStreet.kind === 'gap' ? `${displayCategoryData.label}疑似灰段` : '示意可达街段' }}</small>
               <strong>{{ hoveredStreet.name }}</strong>
             </div>
-            <div class="map-legend" aria-label="地图图例">
+            <div v-if="mapMode === 'synthetic'" class="map-legend" aria-label="地图图例">
               <span><i class="legend-swatch area"></i>近似可达面</span>
               <span><i class="legend-swatch route"></i>可达街段</span>
               <span><i class="legend-swatch gap"></i>{{ displayCategoryData.label }}疑似灰段 <em v-if="previewCategory && previewCategory !== selectedCategory">预览</em></span>
             </div>
 
-            <div v-if="displayPoi" class="facility-popover">
+            <div v-if="mapMode === 'synthetic' && displayPoi" class="facility-popover">
               <button v-if="displayPoi.pinned" type="button" class="popover-close" aria-label="关闭 POI 信息" @click="closePoi">×</button>
               <span class="popover-type">{{ displayPoi.pinned ? '已固定 · ' : '悬停预览 · ' }}{{ displayPoi.type === 'facility' ? categories.find((item) => item.id === displayPoi.category)?.label : '合成建筑' }}</span>
               <strong>{{ displayPoi.name }}</strong>
@@ -632,16 +759,17 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="map-bottomline">
-            <span><span class="line-signal"></span>{{ pending ? "新起点待分析 · 点击右上角生成" : "已显示当前起点的示意结果" }}</span>
-            <span>合成数据 · 向下滚动查看详情</span>
+          <div class="map-bottomline" :class="{ 'real-mode': mapMode === 'real' }">
+            <span><span class="line-signal"></span>{{ mapMode === 'real' ? (realCandidate ? '已选候选点 · 真实路网待接入' : '四路围合范围 · 点击地图选点') : (pending ? '新起点待分析 · 点击右上角生成' : '已显示当前起点的示意结果') }}</span>
+            <span v-if="mapMode === 'real'"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">边界与 SVG 数据 © OpenStreetMap contributors · ODbL</a></span>
+            <span v-else>合成数据 · 向下滚动查看详情</span>
           </div>
         </div>
       </section>
     </main>
     <footer class="living-footer" aria-label="LIVING CIRCLE">
       <div class="living-meta" aria-hidden="true">
-        <span>15 MIN WALKABILITY / XINJIANGWANCHENG</span>
+        <span>{{ mapMode === 'real' ? 'REAL AREA PREVIEW / XINJIANGWANCHENG' : '15 MIN WALKABILITY / SYNTHETIC DEMO' }}</span>
         <span>向下滚动 · 查看生活圈报告 ↓</span>
       </div>
       <div class="living-wordmark" aria-hidden="true">
@@ -663,14 +791,38 @@ onUnmounted(() => {
       <div class="detail-page-inner">
         <div class="detail-page-heading">
           <div>
-            <p class="section-kicker">15 分钟生活圈 · 示意体检</p>
-            <h2>从地图走进街区细节</h2>
+            <p class="section-kicker">{{ mapMode === 'real' ? '新江湾城 · 演示范围' : '15 分钟生活圈 · 示意体检' }}</p>
+            <h2>{{ mapMode === 'real' ? '真实范围与选点状态' : '从地图走进街区细节' }}</h2>
           </div>
           <button type="button" class="return-map-button" @click="goToPage(0)">返回地图 <span aria-hidden="true">↑</span></button>
         </div>
-        <div class="detail-scroll">
+      <div class="detail-scroll">
 
-      <aside class="insight-panel" aria-label="选点与覆盖分析">
+      <aside v-if="mapMode === 'real'" class="real-insight-panel" aria-label="真实区域预览信息">
+        <div class="demo-warning real-data-warning">
+          <span class="warning-icon">!</span>
+          <span><strong>范围预览，不是分析报告</strong> · 四路边界已绘制；真实步行路网与设施入口仍待核查。当前选点不会生成 15 分钟等时圈。</span>
+        </div>
+        <section class="panel-section">
+          <div class="section-head"><span class="section-index">01</span><h2>演示区域</h2></div>
+          <p class="section-explain">这是项目自定义的道路围合区域，不是新江湾城街道行政边界。</p>
+          <div class="real-road-list"><span>北 · 国帆路</span><span>东 · 江湾城路</span><span>南 · 殷高东路</span><span>西 · 国权北路</span></div>
+        </section>
+        <section class="panel-section">
+          <div class="section-head"><span class="section-index">02</span><h2>候选起点</h2></div>
+          <p v-if="!realCandidate" class="section-explain">返回地图，在围合区域内点击一个位置，或选用区域中心。</p>
+          <div v-else class="real-selected-point"><span class="origin-pin"></span><div><strong>已记录候选位置</strong><small>{{ realCandidate.coordType === 'bd09ll' ? 'BD-09 坐标' : 'WGS-84 示意坐标 · 百度底图待配置' }}</small><code>{{ realCandidate.lng.toFixed(6) }}, {{ realCandidate.lat.toFixed(6) }}</code></div></div>
+          <p class="origin-action-hint">公共步行空间和接入道路需由真实路网校验；区内选点不等于一定可步行接入。</p>
+        </section>
+        <section class="panel-section">
+          <div class="section-head"><span class="section-index">03</span><h2>计算状态</h2></div>
+          <p class="section-explain">范围图只用于展示与候选选点。真实路网需覆盖区内起点及其 15 分钟可达的外围，不能沿这条边界截断。</p>
+          <button type="button" class="return-map-button real-demo-switch" @click="switchMapMode('synthetic'); goToPage(0)">体验合成算法演示 <span aria-hidden="true">↗</span></button>
+        </section>
+        <div class="panel-footer">边界与 SVG 示意数据 © OpenStreetMap contributors（ODbL）；百度底图启用后保留其原生版权标识。</div>
+      </aside>
+
+      <aside v-else class="insight-panel" aria-label="选点与覆盖分析">
         <div class="demo-warning">
           <span class="warning-icon">!</span>
           <span><strong>前端演示模式</strong> · 当前结果仅用于界面与交互评估，不是真实路网分析。</span>
