@@ -125,6 +125,8 @@ struct EngineResult {
   std::vector<GrayZone> gray_zones;
   std::size_t reachable_node_count{};
   std::size_t reachable_crossing_count{};
+  std::size_t closed_road_face_count{};
+  std::size_t road_closure_filled_cell_count{};
   std::vector<std::string> warnings;
 };
 

@@ -332,14 +332,15 @@ void small_enclosed_hole_area_filter() {
   input.display_grid_step_meters = 2;
   input.display_min_hole_area_square_meters = 0;
   input.nodes = {{"a", {0, 0}}, {"b", {50, 0}},
-                 {"c", {50, 50}}, {"d", {0, 50}}};
+                 {"c", {50, 50}}, {"d", {0, 50}},
+                 {"e", {0, 0}}};
   input.edges = {sidewalk("bottom", "a", "b", {0, 0}, {50, 0},
                           "bottom", "left"),
                  sidewalk("right", "b", "c", {50, 0}, {50, 50},
                           "right", "left"),
                  sidewalk("top", "c", "d", {50, 50}, {0, 50},
                           "top", "left"),
-                 sidewalk("left", "d", "a", {0, 50}, {0, 0},
+                 sidewalk("left", "d", "e", {0, 50}, {0, 0},
                           "left", "left")};
   const auto unfiltered = compute_reachability(input);
   TEST_CHECK(!unfiltered.display_polygons.empty());
@@ -358,6 +359,44 @@ void small_enclosed_hole_area_filter() {
   try { validate_graph(input); }
   catch (const std::invalid_argument&) { rejected = true; }
   TEST_CHECK(rejected);
+}
+
+void connected_road_closure_fills_only_reachable_blocks() {
+  EngineInput input;
+  input.origin = {0, 0};
+  input.origin_edge_id = "bottom";
+  input.display_area_radius_meters = 4;
+  input.display_grid_step_meters = 5;
+  input.display_min_hole_area_square_meters = 0;
+  input.nodes = {{"a", {0, 0}}, {"b", {200, 0}},
+                 {"c", {200, 200}}, {"d", {0, 200}}};
+  input.edges = {sidewalk("bottom", "a", "b", {0, 0}, {200, 0},
+                          "bottom", "left"),
+                 sidewalk("right", "b", "c", {200, 0}, {200, 200},
+                          "right", "left"),
+                 sidewalk("top", "c", "d", {200, 200}, {0, 200},
+                          "top", "left"),
+                 sidewalk("left", "d", "a", {0, 200}, {0, 0},
+                          "left", "left")};
+  const auto closed = compute_reachability(input);
+  TEST_CHECK(in_display_area(closed.display_polygons, {100, 100}));
+  TEST_CHECK(closed.closed_road_face_count == 1);
+  TEST_CHECK(closed.road_closure_filled_cell_count > 0);
+
+  // Same coordinates without the same node ID are not a road closure.
+  input.nodes.push_back({"e", {0, 0}});
+  input.edges.back().to = "e";
+  const auto disconnected = compute_reachability(input);
+  TEST_CHECK(!in_display_area(disconnected.display_polygons, {100, 100}));
+  TEST_CHECK(disconnected.closed_road_face_count == 0);
+
+  input.edges.back().to = "a";
+  input.nodes.pop_back();
+  input.walking_speed_meters_per_second = 1;
+  input.threshold_seconds = 250;
+  const auto incomplete = compute_reachability(input);
+  TEST_CHECK(!in_display_area(incomplete.display_polygons, {100, 100}));
+  TEST_CHECK(incomplete.closed_road_face_count == 0);
 }
 
 void isochrone_area_tapers_at_time_frontier() {
@@ -491,6 +530,7 @@ int main() {
   crossing_endpoint_and_polygon_fill();
   unmarked_space_between_reachable_streets();
   small_enclosed_hole_area_filter();
+  connected_road_closure_fills_only_reachable_blocks();
   isochrone_area_tapers_at_time_frontier();
   json_contract();
   crossing_wait_override();

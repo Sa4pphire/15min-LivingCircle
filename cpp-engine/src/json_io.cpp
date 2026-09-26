@@ -180,7 +180,11 @@ std::string serialize_engine_result(const EngineResult& result) {
   output << "],\"diagnostics\":{\"reachableNodeCount\":"
          << result.reachable_node_count
          << ",\"reachableCrossingCount\":"
-         << result.reachable_crossing_count << ",\"warnings\":[";
+         << result.reachable_crossing_count
+         << ",\"closedRoadFaceCount\":"
+         << result.closed_road_face_count
+         << ",\"roadClosureFilledCellCount\":"
+         << result.road_closure_filled_cell_count << ",\"warnings\":[";
   for (std::size_t i = 0; i < result.warnings.size(); ++i) {
     if (i) output << ',';
     output << '"' << escape_json(result.warnings[i]) << '"';

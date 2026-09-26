@@ -13,6 +13,7 @@
 
 #include "isochrone/grid.hpp"
 #include "isochrone/marching_squares.hpp"
+#include "isochrone/road_enclosure.hpp"
 #include "isochrone/ring_builder.hpp"
 
 namespace isochrone {
@@ -439,6 +440,107 @@ bool has_opposing_approaches(std::uint8_t directions) {
   return false;
 }
 
+double time_from_street_to_point(const InternalEdge& edge,
+                                 const std::vector<double>& arrival,
+                                 Point point, double speed) {
+  double best = std::numeric_limits<double>::infinity();
+  double walked = 0.0;
+  for (std::size_t i = 1; i < edge.path.size(); ++i) {
+    const Point a = edge.path[i - 1];
+    const Point b = edge.path[i];
+    const double dx = b.x - a.x;
+    const double dy = b.y - a.y;
+    const double squared_length = dx * dx + dy * dy;
+    const double length = std::sqrt(squared_length);
+    const double fraction = squared_length > 0.0
+        ? std::clamp(((point.x - a.x) * dx + (point.y - a.y) * dy) /
+                         squared_length, 0.0, 1.0)
+        : 0.0;
+    const double offset = walked + fraction * length;
+    const double along = std::min(
+        arrival[edge.from] + offset / speed,
+        arrival[edge.to] + (edge.length - offset) / speed);
+    best = std::min(best,
+        along + distance(point, interpolate(a, b, fraction)) / speed);
+    walked += length;
+  }
+  return best;
+}
+
+struct RoadClosureFillStats {
+  std::size_t face_count{};
+  std::size_t filled_cell_count{};
+};
+
+RoadClosureFillStats fill_closed_road_faces(
+    Grid& grid, const std::vector<TimedDisplayEdge>& timed_edges,
+    const std::vector<double>& arrival, double threshold, double speed,
+    double max_span, const std::vector<double>& bridge_times) {
+  std::vector<RoadLink> links;
+  std::vector<const InternalEdge*> perimeter_edges;
+  for (const TimedDisplayEdge& timed : timed_edges) {
+    const InternalEdge& edge = *timed.edge;
+    if (timed.interval.from > kEpsilon ||
+        timed.interval.to < edge.length - kEpsilon) continue;
+    links.push_back({edge.from, edge.to, edge.path});
+    perimeter_edges.push_back(&edge);
+  }
+  RoadClosureFillStats stats;
+  const auto faces = closed_road_faces(links, arrival.size());
+  stats.face_count = faces.size();
+  for (const RoadFace& face : faces) {
+    Bounds bounds{std::numeric_limits<double>::infinity(),
+                  -std::numeric_limits<double>::infinity(),
+                  std::numeric_limits<double>::infinity(),
+                  -std::numeric_limits<double>::infinity()};
+    for (const Point point : face.ring) {
+      bounds.min_x = std::min(bounds.min_x, point.x);
+      bounds.max_x = std::max(bounds.max_x, point.x);
+      bounds.min_y = std::min(bounds.min_y, point.y);
+      bounds.max_y = std::max(bounds.max_y, point.y);
+    }
+    // A road cycle confirms topology, not unrestricted access to an entire
+    // large parcel. Keep the same modest block-scale visual limit.
+    if (bounds.max_x - bounds.min_x > max_span ||
+        bounds.max_y - bounds.min_y > max_span) continue;
+    const std::size_t min_col = static_cast<std::size_t>(std::max(0.0,
+        std::ceil((bounds.min_x - grid.bounds.min_x) / grid.step_meters)));
+    const std::size_t max_col = static_cast<std::size_t>(std::min(
+        static_cast<double>(grid.columns - 1),
+        std::floor((bounds.max_x - grid.bounds.min_x) / grid.step_meters)));
+    const std::size_t min_row = static_cast<std::size_t>(std::max(0.0,
+        std::ceil((bounds.min_y - grid.bounds.min_y) / grid.step_meters)));
+    const std::size_t max_row = static_cast<std::size_t>(std::min(
+        static_cast<double>(grid.rows - 1),
+        std::floor((bounds.max_y - grid.bounds.min_y) / grid.step_meters)));
+    if (min_col > max_col || min_row > max_row) continue;
+    for (std::size_t row = min_row; row <= max_row; ++row) {
+      for (std::size_t col = min_col; col <= max_col; ++col) {
+        const std::size_t index = row * grid.columns + col;
+        if (grid.values[index] <= threshold) continue;
+        const Point point = grid.point_at(row, col);
+        if (!contains_point(face.ring, point)) continue;
+        double time = bridge_times[index];
+        if (time > threshold) {
+          for (const std::size_t link_index : face.link_indices) {
+            const InternalEdge& edge = *perimeter_edges[link_index];
+            if (edge.kind != EdgeKind::sidewalk &&
+                edge.kind != EdgeKind::shared_way) continue;
+            time = std::min(time, time_from_street_to_point(
+                edge, arrival, point, speed));
+            if (time <= threshold) break;
+          }
+        }
+        if (time <= threshold) {
+          grid.values[index] = time;
+          ++stats.filled_cell_count;
+        }
+      }
+    }
+  }
+  return stats;
+}
+
 std::vector<DisplayPolygon> fill_enclosed_blocks(
     std::vector<DisplayPolygon> polygons, double max_span,
     const Grid& grid, const std::vector<double>& approach_times,
@@ -502,7 +604,7 @@ std::vector<DisplayPolygon> isochrone_polygons(
     const std::vector<TimedDisplayEdge>& timed_edges,
     const std::vector<double>& arrival, double threshold, double speed,
     double area_radius, double connector_radius, double grid_step,
-    double min_hole_area) {
+    double min_hole_area, RoadClosureFillStats& closure_stats) {
   if (reachable.empty()) return {};
   // The regular margin stays small. A wider search is only used where
   // reachable streets bracket an unmarked interior from opposing directions.
@@ -592,6 +694,9 @@ std::vector<DisplayPolygon> isochrone_polygons(
       grid.values[index] = bridge_times[index];
     }
   }
+  closure_stats = fill_closed_road_faces(
+      grid, timed_edges, arrival, threshold, speed,
+      std::max(480.0, bridge_radius * 2.0), bridge_times);
   return fill_enclosed_blocks(
       polygons_from_grid(grid, threshold, grid_step), bridge_radius * 2.0,
       grid, bridge_times, threshold, min_hole_area);
@@ -951,12 +1056,15 @@ EngineResult compute_reachability(const EngineInput& input) {
       }
     }
   }
+  RoadClosureFillStats closure_stats;
   result.display_polygons = isochrone_polygons(
       result.reachable_edges, timed_edges, arrival, input.threshold_seconds,
       input.walking_speed_meters_per_second,
       input.display_area_radius_meters, input.display_buffer_meters,
       input.display_grid_step_meters,
-      input.display_min_hole_area_square_meters);
+      input.display_min_hole_area_square_meters, closure_stats);
+  result.closed_road_face_count = closure_stats.face_count;
+  result.road_closure_filled_cell_count = closure_stats.filled_cell_count;
 
   for (const ServiceCategory& category : input.service_categories) {
     GrayZone zone;
