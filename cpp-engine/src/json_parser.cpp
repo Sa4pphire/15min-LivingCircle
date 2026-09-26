@@ -265,6 +265,13 @@ std::string string(const JsonValue& value) {
   return value.string;
 }
 
+bool boolean(const JsonValue& value) {
+  if (value.type != JsonValue::Type::boolean) {
+    throw std::invalid_argument("expected JSON boolean");
+  }
+  return value.boolean;
+}
+
 const std::vector<JsonValue>& array(const JsonValue& value) {
   if (value.type != JsonValue::Type::array) {
     throw std::invalid_argument("expected JSON array");
@@ -317,15 +324,26 @@ EngineInput parse_engine_input(std::string_view input) {
   if (const auto* value = optional_field(root, "maxOriginSnapMeters")) {
     result.max_origin_snap_meters = number(*value);
   }
+  if (const auto* value = optional_field(root, "allowOffNetworkOrigin")) {
+    result.allow_off_network_origin = boolean(*value);
+  }
   if (const auto* value = optional_field(root, "displayBufferMeters")) {
     result.display_buffer_meters = number(*value);
+  }
+  if (const auto* value = optional_field(root, "displayAreaRadiusMeters")) {
+    result.display_area_radius_meters = number(*value);
+  }
+  if (const auto* value = optional_field(root, "displayMinHoleAreaSquareMeters")) {
+    result.display_min_hole_area_square_meters = number(*value);
   }
   if (const auto* value = optional_field(root, "displayGridStepMeters")) {
     result.display_grid_step_meters = number(*value);
   }
   const auto& nodes = array(field(root, "nodes"));
   const auto& edges = array(field(root, "edges"));
-  if (nodes.size() > 10'000 || edges.size() > 20'000) {
+  // The synthetic full-map fixture duplicates major-road centreline vertices
+  // into separated sidewalk sides. Keep a bounded input, but allow that graph.
+  if (nodes.size() > 30'000 || edges.size() > 50'000) {
     throw std::invalid_argument("walking graph exceeds engine limits");
   }
   for (const auto& value : nodes) {

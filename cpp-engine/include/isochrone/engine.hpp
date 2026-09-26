@@ -69,7 +69,14 @@ struct EngineInput {
   double walking_speed_meters_per_second{1.3};
   double crossing_wait_seconds{20.0};
   double max_origin_snap_meters{30.0};
+  // Synthetic preview only: permit a straight-line, unverified connection
+  // from an off-network origin to the nearest walkable edge.
+  bool allow_off_network_origin{false};
   double display_buffer_meters{15.0};
+  // Maximum visual extension from a reachable street into its surrounding block.
+  double display_area_radius_meters{80.0};
+  // Remove only small enclosed holes from the approximate isochrone surface.
+  double display_min_hole_area_square_meters{2500.0};
   double display_grid_step_meters{10.0};
   std::vector<WalkNode> nodes;
   std::vector<WalkEdge> edges;
@@ -110,6 +117,7 @@ struct GrayZone {
 struct EngineResult {
   Point snapped_origin;
   double snap_distance_meters{};
+  double origin_access_seconds{};
   std::vector<ReachableEdge> reachable_edges;
   std::vector<Point> frontier;
   std::vector<DisplayPolygon> display_polygons;

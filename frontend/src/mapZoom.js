@@ -1,11 +1,15 @@
 export const mapZoomTiers = [
-  { id: "large", label: "大", hint: "近景", description: "大比例尺，放大查看并拖动地图", factor: 3.1 },
-  { id: "medium", label: "中", hint: "街区", description: "中比例尺，查看街区并拖动地图", factor: 1.5 },
-  { id: "small", label: "小", hint: "全览", description: "小比例尺，查看完整范围", factor: 1 },
+  { id: "large", label: "大", hint: "5×", description: "大比例尺，5 倍放大并可拖动地图", factor: 5 },
+  { id: "medium", label: "中", hint: "3×", description: "中比例尺，3 倍放大并可拖动地图", factor: 3 },
+  { id: "small", label: "小", hint: "1.5×", description: "小比例尺，1.5 倍放大", factor: 1.5 },
 ];
 
 export function zoomFactor(tier) {
   return mapZoomTiers.find((item) => item.id === tier)?.factor ?? 1;
+}
+
+export function markerScaleForTier(tier) {
+  return zoomFactor(tier) / zoomFactor("medium");
 }
 
 export function zoomedFit(fit, width, height, tier, focus = null) {

@@ -23,6 +23,7 @@ app = FastAPI(
 )
 
 _analyses: dict[str, AnalysisState] = {}
+_synthetic_network_path = Path(__file__).resolve().parents[2] / "data/networks/synthetic-preview.json"
 
 
 @app.get("/api/v1/health", response_model=HealthResponse)
@@ -66,12 +67,11 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
         analysis.progress = Progress(stage="failed", percent=100)
 
 
-@app.post("/api/v1/analyses", status_code=202, response_model=AnalysisAccepted)
-async def create_analysis(request: AnalysisRequest,
-                          background_tasks: BackgroundTasks) -> AnalysisAccepted:
+def _queue_analysis(request: AnalysisRequest, background_tasks: BackgroundTasks,
+                    network_path: Path | None = None) -> AnalysisAccepted:
     try:
         engine_input, network_meta = load_engine_request(
-            request.center, request.originEdgeId)
+            request.center, request.originEdgeId, network_path=network_path)
     except UnsupportedAreaError as exc:
         raise HTTPException(
             status_code=422,
@@ -85,6 +85,20 @@ async def create_analysis(request: AnalysisRequest,
     )
     background_tasks.add_task(_run_analysis, analysis_id, engine_input, network_meta)
     return AnalysisAccepted(analysisId=analysis_id, status="queued")
+
+
+@app.post("/api/v1/analyses", status_code=202, response_model=AnalysisAccepted)
+async def create_analysis(request: AnalysisRequest,
+                          background_tasks: BackgroundTasks) -> AnalysisAccepted:
+    return _queue_analysis(request, background_tasks)
+
+
+@app.post("/api/v1/synthetic-analyses", status_code=202,
+          response_model=AnalysisAccepted)
+async def create_synthetic_analysis(request: AnalysisRequest,
+                                    background_tasks: BackgroundTasks) -> AnalysisAccepted:
+    """Run the clearly labelled synthetic fixture, independent of the real network setting."""
+    return _queue_analysis(request, background_tasks, _synthetic_network_path)
 
 
 @app.get("/api/v1/analyses/{analysis_id}", response_model=AnalysisState)

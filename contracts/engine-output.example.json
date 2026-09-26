@@ -4,6 +4,7 @@
   "result": {
     "snappedOriginMeters": [0, 0],
     "snapDistanceMeters": 0,
+    "originAccessSeconds": 0,
     "reachableEdges": [
       {
         "edgeId": "lane",

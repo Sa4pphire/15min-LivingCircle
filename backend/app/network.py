@@ -51,23 +51,34 @@ def _local_point(center: CenterPoint, origin: dict[str, float]) -> tuple[float, 
     )
 
 
-def _to_bd09(point: list[float], origin: dict[str, float]) -> list[float]:
+def _to_map_coordinate(point: list[float], origin: dict[str, float]) -> list[float]:
     latitude = float(origin["lat"])
     scale_x = METERS_PER_DEGREE * math.cos(math.radians(latitude))
     return [float(origin["lng"]) + point[0] / scale_x,
             latitude + point[1] / METERS_PER_DEGREE]
 
 
-def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None
+def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None,
+                        network_path: Path | None = None
                         ) -> tuple[dict[str, Any], dict[str, Any]]:
-    path: Path = settings.walking_network_path
+    path: Path = network_path if network_path is not None else settings.walking_network_path
     if not path.is_file():
         raise UnsupportedAreaError("演示区域尚未提供经核实的步行路网")
     try:
         network = json.loads(path.read_text(encoding="utf-8"))
         if network["schemaVersion"] != 2:
             raise ValueError("schemaVersion must be 2")
-        origin = network["originBd09"]
+        synthetic = network.get("synthetic") is True
+        coord_type = "wgs84ll" if synthetic and "originWgs84" in network else "bd09ll"
+        if center.coordType != coord_type:
+            raise UnsupportedAreaError(f"路网需要 {coord_type} 坐标，收到 {center.coordType}")
+        origin_key = "originWgs84" if coord_type == "wgs84ll" else "originBd09"
+        origin = network[origin_key]
+        if (not isinstance(origin, dict) or
+                any(isinstance(origin.get(key), bool) or
+                    not isinstance(origin.get(key), (int, float)) or
+                    not math.isfinite(origin[key]) for key in ("lng", "lat"))):
+            raise ValueError(f"invalid {origin_key}")
         bounds = network["supportedCenterBoundsMeters"]
         x_meters, y_meters = _local_point(center, origin)
         for key in ("minX", "maxX", "minY", "maxY"):
@@ -78,7 +89,6 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None
         for key in ("nodes", "edges"):
             if not isinstance(network[key], list) or not network[key]:
                 raise ValueError(f"{key} must be a non-empty list")
-        synthetic = network.get("synthetic") is True
         if not synthetic:
             areas = network.get("publicWalkableAreasMeters")
             if not isinstance(areas, list) or not areas:
@@ -90,6 +100,13 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None
                     raise ValueError("invalid public walkable area ring")
             if not any(_contains_point(ring, x_meters, y_meters) for ring in areas):
                 raise UnsupportedAreaError("中心点不在已核实的公共步行空间内")
+        elif "supportedCenterPolygonMeters" in network:
+            ring = network["supportedCenterPolygonMeters"]
+            if (not isinstance(ring, list) or len(ring) < 4 or
+                    ring[0] != ring[-1] or any(not _valid_xy(point) for point in ring)):
+                raise ValueError("invalid synthetic center selection polygon")
+            if not _contains_point(ring, x_meters, y_meters):
+                raise UnsupportedAreaError("中心点不在合成演示选区内")
         categories = network.get("serviceCategories", [])
         if (not isinstance(categories, list) or len(categories) > 10 or
                 (not synthetic and not categories)):
@@ -154,8 +171,13 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None
         "thresholdSeconds": 900,
         "walkingSpeedMetersPerSecond": 1.3,
         "crossingWaitSeconds": 20,
-        "maxOriginSnapMeters": 30 if synthetic else 5,
+        # Only the synthetic preview may estimate an unverified straight-line
+        # connector from an arbitrary point to the nearest walkable edge.
+        "maxOriginSnapMeters": 900 * 1.3 if synthetic else 5,
+        "allowOffNetworkOrigin": synthetic,
         "displayBufferMeters": 15,
+        "displayAreaRadiusMeters": 80,
+        "displayMinHoleAreaSquareMeters": 2500,
         "displayGridStepMeters": 10,
         "nodes": network["nodes"],
         "edges": network["edges"],
@@ -169,7 +191,8 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None
     elif math.hypot(x_meters, y_meters) < 1 and network.get("originEdgeId"):
         payload["originEdgeId"] = network["originEdgeId"]
     metadata = {
-        "originBd09": origin,
+        origin_key: origin,
+        "coordType": coord_type,
         "networkSource": "synthetic" if network.get("synthetic") else "manual",
         "facilities": facilities,
         "serviceCategories": categories,
@@ -179,7 +202,8 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None
 
 def build_analysis_result(engine_result: dict[str, Any],
                           network_meta: dict[str, Any]) -> dict[str, Any]:
-    origin = network_meta["originBd09"]
+    coord_type = network_meta.get("coordType", "bd09ll")
+    origin = network_meta["originWgs84" if coord_type == "wgs84ll" else "originBd09"]
     display_geometry = engine_result.get("displayGeometryMeters")
     if display_geometry is not None:
         if (not isinstance(display_geometry, dict) or
@@ -192,7 +216,7 @@ def build_analysis_result(engine_result: dict[str, Any],
     else:
         polygon_meters = engine_result["displayPolygonMeters"]
     polygons = [
-        [[_to_bd09(point, origin) for point in ring] for ring in polygon]
+        [[_to_map_coordinate(point, origin) for point in ring] for ring in polygon]
         for polygon in polygon_meters
     ]
     walkways = []
@@ -201,7 +225,7 @@ def build_analysis_result(engine_result: dict[str, Any],
             "type": "Feature",
             "geometry": {
                 "type": "LineString",
-                "coordinates": [_to_bd09(point, origin) for point in edge["pathMeters"]],
+                "coordinates": [_to_map_coordinate(point, origin) for point in edge["pathMeters"]],
             },
             "properties": {"edgeId": edge["edgeId"], "kind": edge["kind"],
                            "widthMeters": edge.get("widthMeters")},
@@ -256,7 +280,7 @@ def build_analysis_result(engine_result: dict[str, Any],
             "type": "Feature",
             "geometry": {
                 "type": "Point",
-                "coordinates": _to_bd09(point, origin),
+                "coordinates": _to_map_coordinate(point, origin),
             },
             "properties": {
                 "id": facility_id,
@@ -305,7 +329,7 @@ def build_analysis_result(engine_result: dict[str, Any],
             blind_zone_features.append({
                 "type": "Feature",
                 "geometry": {"type": "Polygon", "coordinates": [
-                    [_to_bd09(point, origin) for point in ring] for ring in polygon]},
+                    [_to_map_coordinate(point, origin) for point in ring] for ring in polygon]},
                 "properties": {"category": category, "status": status,
                                "approximate": True},
             })
@@ -313,7 +337,7 @@ def build_analysis_result(engine_result: dict[str, Any],
             blind_walkway_features.append({
                 "type": "Feature",
                 "geometry": {"type": "LineString", "coordinates": [
-                    _to_bd09(point, origin) for point in edge["pathMeters"]]},
+                    _to_map_coordinate(point, origin) for point in edge["pathMeters"]]},
                 "properties": {"category": category, "edgeId": edge["edgeId"],
                                "kind": edge["kind"], "status": status},
             })
@@ -329,12 +353,12 @@ def build_analysis_result(engine_result: dict[str, Any],
         "isochrone": {
             "type": "Feature",
             "geometry": {"type": "MultiPolygon", "coordinates": polygons},
-            "properties": {"approximate": True, "coordType": "bd09ll"},
+            "properties": {"approximate": True, "coordType": coord_type},
         },
         "reachableWalkways": {"type": "FeatureCollection", "features": walkways},
         "durationSamples": [
             {"lng": position[0], "lat": position[1], "durationSeconds": 900}
-            for position in (_to_bd09(point, origin)
+            for position in (_to_map_coordinate(point, origin)
                              for point in engine_result["frontierMeters"])
         ],
         "facilities": {"type": "FeatureCollection", "features": facilities},
@@ -356,9 +380,15 @@ def build_analysis_result(engine_result: dict[str, Any],
             "schemaVersion": 1,
             "engineSchemaVersion": 2,
             "networkSource": network_meta["networkSource"],
+            "coordType": coord_type,
             "isochroneApproximate": True,
             "grayZonePolygonsApproximate": True,
-            "grayZoneBasis": "15-minute network travel to online-reviewed entrances",
+            "grayZoneBasis": ("synthetic preview; no verified facility coverage"
+                              if network_meta["networkSource"] == "synthetic"
+                              else "15-minute network travel to online-reviewed entrances"),
             "originSnapMeters": engine_result["snapDistanceMeters"],
+            "originAccessSeconds": engine_result["originAccessSeconds"],
+            "snappedOrigin": _to_map_coordinate(
+                engine_result["snappedOriginMeters"], origin),
         },
     }

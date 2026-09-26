@@ -1,20 +1,10 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import RealMapStage from "./RealMapStage.vue";
-import { clampMapPan, mapZoomTiers, syntheticViewBox } from "./mapZoom";
-import {
-  buildingPois,
-  categories,
-  facilities,
-  gapStreets,
-  interactiveStreets,
-  mockWalkingMinutes,
-  presets,
-  streets,
-} from "./demoData";
+import { requestMapAnalysis } from "./analysisClient.js";
+import { requestCppMapAnalysis } from "./cppAnalysisClient.js";
+import { mapZoomTiers } from "./mapZoom";
 
-const mapSvg = ref(null);
-const probeEl = ref(null);
 const pageViewport = ref(null);
 const detailPage = ref(null);
 const wordmarkEl = ref(null);
@@ -24,29 +14,18 @@ const cometLayer = ref(null);
 const activePage = ref(0);
 const mapMode = ref("real");
 const mapZoomTier = ref("medium");
-const demoPan = ref({ x: 0, y: 0 });
-const demoDragging = ref(false);
 const realCandidate = ref(null);
-const candidate = ref({ ...presets[0] });
-const analysisOrigin = ref({ ...presets[0] });
-const selectedCategory = ref("shopping");
-const selectedFacilityId = ref(null);
-const hoveredFacilityId = ref(null);
-const selectedBuildingId = ref(null);
-const hoveredBuildingId = ref(null);
-const hoveredStreet = ref(null);
-const previewCategory = ref(null);
-const probeVisible = ref(false);
-const candidatePulse = ref(0);
-const resultVersion = ref(0);
-const showSuccess = ref(false);
-const buttonRipple = ref(null);
-const isRunning = ref(false);
-const layers = ref({ area: true, streets: true, gaps: true, facilities: true });
-let analysisTimer;
-let successTimer;
-let pointerFrame;
-let pointerPosition;
+const realAnalysisResult = ref(null);
+const realAnalysisState = ref("idle");
+const realAnalysisError = ref("");
+let realAnalysisAbort;
+let realAnimationTimer;
+const cppCandidate = ref(null);
+const cppAnalysisResult = ref(null);
+const cppAnalysisState = ref("idle");
+const cppAnalysisError = ref("");
+let cppAnalysisAbort;
+let cppAnimationTimer;
 let wordmarkFrame;
 let cometPoints = [];
 let cometParticles = [];
@@ -57,169 +36,83 @@ const livingLetters = Array.from("LIVING CIRCLE");
 let pageWheelDistance = 0;
 let pageTurnTimer;
 let pageTurning = false;
-let demoZoomFrame;
-let demoDrag;
-let suppressDemoClick = false;
-
-const pending = computed(() =>
-  Math.hypot(candidate.value.x - analysisOrigin.value.x, candidate.value.y - analysisOrigin.value.y) > 2,
-);
-const targetDemoViewBox = computed(() => syntheticViewBox(mapZoomTier.value, candidate.value, demoPan.value));
-const demoViewBox = ref(targetDemoViewBox.value);
-watch(targetDemoViewBox, (target) => {
-  if (demoDragging.value || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    if (demoZoomFrame) cancelAnimationFrame(demoZoomFrame);
-    demoZoomFrame = 0;
-    demoViewBox.value = target;
-    return;
-  }
-  if (demoZoomFrame) cancelAnimationFrame(demoZoomFrame);
-  const from = demoViewBox.value.split(" ").map(Number);
-  const to = target.split(" ").map(Number);
-  const start = performance.now();
-  const animate = (now) => {
-    const t = Math.min(1, (now - start) / 420);
-    const eased = 1 - Math.pow(1 - t, 3);
-    demoViewBox.value = from.map((value, index) => value + (to[index] - value) * eased).join(" ");
-    demoZoomFrame = t < 1 ? requestAnimationFrame(animate) : 0;
-  };
-  demoZoomFrame = requestAnimationFrame(animate);
-});
-const activeCategory = computed(() => categories.find((item) => item.id === selectedCategory.value));
-const activeFacility = computed(() => facilities.find((item) => item.id === selectedFacilityId.value));
-const activeBuilding = computed(() => buildingPois.find((item) => item.id === selectedBuildingId.value));
-const displayCategory = computed(() => previewCategory.value ?? selectedCategory.value);
-const displayCategoryData = computed(() => categories.find((item) => item.id === displayCategory.value));
-const displayPoi = computed(() => {
-  if (activeFacility.value) return { ...activeFacility.value, type: "facility", pinned: true };
-  if (activeBuilding.value) return { ...activeBuilding.value, type: "building", pinned: true };
-  const facility = facilities.find((item) => item.id === hoveredFacilityId.value);
-  if (facility) return { ...facility, type: "facility", pinned: false };
-  const building = buildingPois.find((item) => item.id === hoveredBuildingId.value);
-  return building ? { ...building, type: "building", pinned: false } : null;
-});
-const probeKind = computed(() => isRunning.value ? "busy"
-  : hoveredFacilityId.value ? "facility"
-    : hoveredBuildingId.value ? "building"
-      : hoveredStreet.value?.kind === "gap" ? "gap"
-        : hoveredStreet.value ? "street" : "empty");
-const probeLabel = computed(() => ({
-  busy: "绘制中", facility: "查看设施", building: "查看建筑", gap: "沿街选点", street: "沿街选点", empty: "选起点",
-})[probeKind.value]);
-const visibleFacilities = computed(() =>
-  facilities.filter((item) => mockWalkingMinutes(analysisOrigin.value, item) <= 15),
-);
-const categorySummary = computed(() =>
-  categories.map((item) => {
-    const count = visibleFacilities.value.filter((point) => point.category === item.id).length;
-    const gap = Math.min(72, Math.max(8, item.baseGap + (2 - count) * 6));
-    return { ...item, count, gap };
-  }),
-);
-const selectedSummary = computed(() => categorySummary.value.find((item) => item.id === selectedCategory.value));
-const areaPath = computed(() => {
-  const { x, y } = analysisOrigin.value;
-  return `M ${x - 194} ${y - 25}
-    C ${x - 205} ${y - 108}, ${x - 140} ${y - 165}, ${x - 65} ${y - 167}
-    C ${x + 27} ${y - 193}, ${x + 116} ${y - 155}, ${x + 153} ${y - 100}
-    C ${x + 209} ${y - 48}, ${x + 200} ${y + 22}, ${x + 170} ${y + 86}
-    C ${x + 135} ${y + 159}, ${x + 53} ${y + 178}, ${x - 35} ${y + 163}
-    C ${x - 135} ${y + 172}, ${x - 205} ${y + 101}, ${x - 194} ${y - 25} Z`;
-});
-
-function choosePreset(point) {
-  if (isRunning.value) return;
-  candidate.value = { ...point };
-  selectedFacilityId.value = null;
-  selectedBuildingId.value = null;
-  showSuccess.value = false;
-  candidatePulse.value += 1;
-}
 
 function chooseRealPoint(point) {
+  realAnalysisAbort?.abort();
+  clearTimeout(realAnimationTimer);
   realCandidate.value = point;
+  realAnalysisResult.value = null;
+  realAnalysisState.value = "idle";
+  realAnalysisError.value = "";
+}
+
+async function runRealAnalysis() {
+  if (!realCandidate.value?.local || realAnalysisState.value === "running") return;
+  realAnalysisAbort?.abort();
+  const controller = new AbortController();
+  realAnalysisAbort = controller;
+  realAnalysisResult.value = null;
+  realAnalysisError.value = "";
+  realAnalysisState.value = "running";
+  try {
+    const result = await requestMapAnalysis({ origin: realCandidate.value.local }, { signal: controller.signal });
+    if (controller.signal.aborted) return;
+    realAnalysisResult.value = result;
+    realAnimationTimer = setTimeout(() => {
+      if (!controller.signal.aborted) realAnalysisState.value = "complete";
+    }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 3200);
+  } catch (error) {
+    if (controller.signal.aborted) return;
+    realAnalysisState.value = "error";
+    realAnalysisError.value = "示意路线暂时无法生成，请重新选点后重试。";
+    console.warn("真实区域合成分析失败。", error);
+  }
+}
+
+function chooseCppPoint(point) {
+  if (cppAnalysisState.value === "running") return;
+  cppAnalysisAbort?.abort();
+  clearTimeout(cppAnimationTimer);
+  cppCandidate.value = point;
+  cppAnalysisResult.value = null;
+  cppAnalysisState.value = "idle";
+  cppAnalysisError.value = "";
+}
+
+async function runCppAnalysis() {
+  if (!cppCandidate.value?.local || cppAnalysisState.value === "running") return;
+  cppAnalysisAbort?.abort();
+  clearTimeout(cppAnimationTimer);
+  const controller = new AbortController();
+  cppAnalysisAbort = controller;
+  cppAnalysisResult.value = null;
+  cppAnalysisError.value = "";
+  cppAnalysisState.value = "running";
+  try {
+    const result = await requestCppMapAnalysis({ origin: cppCandidate.value.local },
+      { signal: controller.signal });
+    if (controller.signal.aborted) return;
+    cppAnalysisResult.value = result;
+    cppAnimationTimer = setTimeout(() => {
+      if (!controller.signal.aborted) cppAnalysisState.value = "complete";
+    }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 3200);
+  } catch (error) {
+    if (controller.signal.aborted) return;
+    cppAnalysisState.value = "error";
+    cppAnalysisError.value = String(error?.message).includes("ORIGIN_NOT_ON_WALKWAY")
+      ? "到最近合成路段已耗尽步行预算，请在道路附近重新选点。"
+      : "C++ 分析未完成，请确认 Python 后端和 C++ 引擎已启动。";
+    console.warn("合成路网 C++ 分析失败。", error);
+  }
 }
 
 function switchMapMode(mode) {
   mapMode.value = mode;
-  endDemoDrag();
-  leaveMap();
-  previewCategory.value = null;
 }
 
 function setMapZoomTier(tier) {
   if (mapZoomTier.value === tier) return;
-  demoPan.value = { x: 0, y: 0 };
   mapZoomTier.value = tier;
-}
-
-function beginDemoDrag(event) {
-  if (mapZoomTier.value === "small" || isRunning.value ||
-    (event.pointerType === "mouse" && event.button !== 0) ||
-    event.target.closest?.(".facility-marker, .building-poi")) return;
-  if (demoZoomFrame) cancelAnimationFrame(demoZoomFrame);
-  demoZoomFrame = 0;
-  demoViewBox.value = targetDemoViewBox.value;
-  const matrix = mapSvg.value?.getScreenCTM();
-  if (!matrix) return;
-  demoDrag = {
-    pointerId: event.pointerId,
-    startX: event.clientX,
-    startY: event.clientY,
-    inverse: matrix.inverse(),
-    pan: { ...demoPan.value },
-  };
-}
-
-function moveDemoDrag(event) {
-  if (!demoDrag || demoDrag.pointerId !== event.pointerId) return;
-  const distance = Math.hypot(event.clientX - demoDrag.startX, event.clientY - demoDrag.startY);
-  if (!demoDragging.value && distance < 6) return;
-  if (!demoDragging.value) {
-    demoDragging.value = true;
-    suppressDemoClick = true;
-    mapSvg.value?.setPointerCapture(event.pointerId);
-    leaveMap();
-  }
-  const from = new DOMPoint(demoDrag.startX, demoDrag.startY).matrixTransform(demoDrag.inverse);
-  const to = new DOMPoint(event.clientX, event.clientY).matrixTransform(demoDrag.inverse);
-  const [, , width, height] = syntheticViewBox(mapZoomTier.value, candidate.value).split(" ").map(Number);
-  const limit = mapZoomTier.value === "large" ? 1.3 : 0.36;
-  demoPan.value = {
-    x: clampMapPan(demoDrag.pan.x - (to.x - from.x), width * limit),
-    y: clampMapPan(demoDrag.pan.y - (to.y - from.y), height * limit),
-  };
-}
-
-function endDemoDrag(event) {
-  if (event && demoDrag?.pointerId !== event.pointerId) return;
-  if (event && mapSvg.value?.hasPointerCapture?.(event.pointerId)) {
-    mapSvg.value.releasePointerCapture(event.pointerId);
-  }
-  if (demoDragging.value) setTimeout(() => { suppressDemoClick = false; }, 0);
-  demoDrag = null;
-  demoDragging.value = false;
-}
-
-function chooseMapPoint(event) {
-  if (suppressDemoClick || isRunning.value || !mapSvg.value) return;
-  const matrix = mapSvg.value.getScreenCTM();
-  if (!matrix) return;
-  const point = mapSvg.value.createSVGPoint();
-  point.x = event.clientX;
-  point.y = event.clientY;
-  const local = point.matrixTransform(matrix.inverse());
-  candidate.value = {
-    id: "custom",
-    label: "自选起点",
-    hint: "地图选点",
-    x: Math.round(Math.min(710, Math.max(190, local.x))),
-    y: Math.round(Math.min(455, Math.max(160, local.y))),
-  };
-  selectedFacilityId.value = null;
-  selectedBuildingId.value = null;
-  showSuccess.value = false;
-  candidatePulse.value += 1;
 }
 
 function motionEnabled(event) {
@@ -322,131 +215,6 @@ function moveWordmark(event) {
   if (!wordmarkFrame) wordmarkFrame = requestAnimationFrame(paintComet);
 }
 
-function moveProbe(event) {
-  if (demoDragging.value || !motionEnabled(event) || !mapSvg.value) return;
-  const bounds = mapSvg.value.getBoundingClientRect();
-  pointerPosition = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
-  if (pointerFrame) return;
-  pointerFrame = requestAnimationFrame(() => {
-    pointerFrame = 0;
-    if (probeEl.value && pointerPosition) {
-      probeEl.value.style.transform = `translate3d(${pointerPosition.x}px, ${pointerPosition.y}px, 0)`;
-    }
-  });
-}
-
-function enterMap(event) {
-  probeVisible.value = motionEnabled(event);
-  moveProbe(event);
-}
-
-function leaveMap() {
-  probeVisible.value = false;
-  hoveredFacilityId.value = null;
-  hoveredBuildingId.value = null;
-  hoveredStreet.value = null;
-  if (pointerFrame) cancelAnimationFrame(pointerFrame);
-  pointerFrame = 0;
-}
-
-function hoverStreet(segment, kind) {
-  hoveredStreet.value = { ...segment, kind };
-  hoveredFacilityId.value = null;
-  hoveredBuildingId.value = null;
-}
-
-function leaveStreet(id) {
-  if (hoveredStreet.value?.id === id) hoveredStreet.value = null;
-}
-
-function hoverFacility(point) {
-  hoveredFacilityId.value = point.id;
-  hoveredBuildingId.value = null;
-  hoveredStreet.value = null;
-}
-
-function hoverBuilding(building) {
-  hoveredBuildingId.value = building.id;
-  hoveredFacilityId.value = null;
-  hoveredStreet.value = null;
-}
-
-function chooseBuilding(building) {
-  selectedBuildingId.value = building.id;
-  selectedFacilityId.value = null;
-}
-
-function moveMainButton(event) {
-  if (!motionEnabled(event)) return;
-  const rect = event.currentTarget.getBoundingClientRect();
-  const x = (event.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-  const y = (event.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-  event.currentTarget.style.setProperty("--magnet-x", `${(x * 4).toFixed(1)}px`);
-  event.currentTarget.style.setProperty("--magnet-y", `${(y * 4).toFixed(1)}px`);
-}
-
-function resetMainButton(event) {
-  event.currentTarget.style.setProperty("--magnet-x", "0px");
-  event.currentTarget.style.setProperty("--magnet-y", "0px");
-}
-
-function runDemo(event) {
-  if (isRunning.value) return;
-  const rect = event.currentTarget.getBoundingClientRect();
-  const keyboardClick = event.detail === 0;
-  buttonRipple.value = {
-    id: Date.now(),
-    x: keyboardClick ? rect.width / 2 : event.clientX - rect.left,
-    y: keyboardClick ? rect.height / 2 : event.clientY - rect.top,
-  };
-  event.currentTarget.style.setProperty("--magnet-x", "0px");
-  event.currentTarget.style.setProperty("--magnet-y", "0px");
-  const nextOrigin = { ...candidate.value };
-  isRunning.value = true;
-  showSuccess.value = false;
-  selectedFacilityId.value = null;
-  selectedBuildingId.value = null;
-  clearTimeout(analysisTimer);
-  clearTimeout(successTimer);
-  analysisTimer = setTimeout(() => {
-    analysisOrigin.value = nextOrigin;
-    resultVersion.value += 1;
-    hoveredStreet.value = null;
-    isRunning.value = false;
-    showSuccess.value = true;
-    successTimer = setTimeout(() => { showSuccess.value = false; }, 850);
-  }, 700);
-}
-
-function chooseCategory(id) {
-  selectedCategory.value = id;
-  selectedFacilityId.value = null;
-  selectedBuildingId.value = null;
-  layers.value.gaps = true;
-  layers.value.facilities = true;
-}
-
-function chooseFacility(point) {
-  selectedFacilityId.value = point.id;
-  selectedBuildingId.value = null;
-  selectedCategory.value = point.category;
-  previewCategory.value = null;
-}
-
-function closePoi() {
-  selectedFacilityId.value = null;
-  selectedBuildingId.value = null;
-}
-
-function toggleLayer(name) {
-  layers.value[name] = !layers.value[name];
-  if (name === "facilities" && !layers.value[name]) {
-    hoveredFacilityId.value = null;
-    selectedFacilityId.value = null;
-  }
-  if ((name === "streets" || name === "gaps") && !layers.value[name]) hoveredStreet.value = null;
-}
-
 function goToPage(index) {
   const targetPage = Math.min(1, Math.max(0, index));
   if (!pageViewport.value) return;
@@ -503,10 +271,10 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  clearTimeout(analysisTimer);
-  clearTimeout(successTimer);
-  if (pointerFrame) cancelAnimationFrame(pointerFrame);
-  if (demoZoomFrame) cancelAnimationFrame(demoZoomFrame);
+  realAnalysisAbort?.abort();
+  clearTimeout(realAnimationTimer);
+  cppAnalysisAbort?.abort();
+  clearTimeout(cppAnimationTimer);
   if (wordmarkFrame) cancelAnimationFrame(wordmarkFrame);
   clearTimeout(pageTurnTimer);
 });
@@ -544,187 +312,26 @@ onUnmounted(() => {
         <div class="map-frame">
           <div class="map-topline">
             <div class="map-head-left">
-              <span class="map-title"><span class="map-title-mark"></span>新江湾城 · 四路围合演示区 <small>{{ mapMode === "real" ? "真实范围预览" : "合成数据示意" }}</small></span>
+              <span class="map-title"><span class="map-title-mark"></span>新江湾城 · 四路围合演示区 <small>{{ mapMode === "real" ? "真实区域 · 合成路线" : "C++ 合成路网 · 等时圈" }}</small></span>
               <div class="map-mode-switch" role="group" aria-label="地图展示模式">
                 <button type="button" :aria-pressed="mapMode === 'real'" :class="{ active: mapMode === 'real' }" @click="switchMapMode('real')">真实区域</button>
                 <button type="button" :aria-pressed="mapMode === 'synthetic'" :class="{ active: mapMode === 'synthetic' }" @click="switchMapMode('synthetic')">合成算法</button>
               </div>
             </div>
-            <button v-if="mapMode === 'real'" type="button" class="analyze-button map-analyze-button real-mode-action" @click="switchMapMode('synthetic')">
-              <span class="button-label">体验合成分析</span><span class="button-arrow" aria-hidden="true">↗</span>
+            <button v-if="mapMode === 'real'" type="button" class="analyze-button map-analyze-button real-mode-action" :class="{ 'is-running': realAnalysisState === 'running', 'is-complete': realAnalysisState === 'complete' }" :disabled="!realCandidate || realAnalysisState === 'running'" @click="runRealAnalysis">
+              <span class="button-label">{{ !realCandidate ? '先在地图选点' : realAnalysisState === 'running' ? '正在绘制路线…' : realAnalysisState === 'complete' ? '重新生成示意' : '生成示意分析' }}</span><span class="button-arrow" aria-hidden="true">{{ realAnalysisState === 'complete' ? '✓' : realAnalysisState === 'running' ? '◌' : '↗' }}</span>
             </button>
-            <button
-              v-else
-              type="button"
-              class="analyze-button map-analyze-button"
-              :class="{ 'is-running': isRunning, 'is-complete': showSuccess }"
-              :disabled="isRunning"
-              @pointermove="moveMainButton"
-              @pointerleave="resetMainButton"
-              @click="runDemo"
-            >
-              <span v-if="buttonRipple" :key="buttonRipple.id" class="button-ripple" :style="{ left: `${buttonRipple.x}px`, top: `${buttonRipple.y}px` }" aria-hidden="true"></span>
-              <span class="button-label">{{ isRunning ? "绘制示意中…" : showSuccess ? "已绘制示意结果" : pending ? "生成示意分析" : "重新生成示意分析" }}</span>
-              <span class="button-arrow" aria-hidden="true">{{ showSuccess ? "✓" : isRunning ? "◌" : "↗" }}</span>
+            <button v-else type="button" class="analyze-button map-analyze-button real-mode-action"
+              :class="{ 'is-running': cppAnalysisState === 'running', 'is-complete': cppAnalysisState === 'complete' }"
+              :disabled="!cppCandidate || cppAnalysisState === 'running'" @click="runCppAnalysis">
+              <span class="button-label">{{ !cppCandidate ? '先在地图选点' : cppAnalysisState === 'running' ? 'C++ 计算中…' : cppAnalysisState === 'complete' ? '重新计算等时圈' : '计算 15 分钟等时圈' }}</span>
+              <span class="button-arrow" aria-hidden="true">{{ cppAnalysisState === 'complete' ? '✓' : cppAnalysisState === 'running' ? '◌' : '↗' }}</span>
             </button>
           </div>
 
           <div class="map-canvas">
-            <RealMapStage v-if="mapMode === 'real'" :candidate="realCandidate" :zoom-tier="mapZoomTier" @select="chooseRealPoint" />
-            <svg
-              v-else
-              ref="mapSvg"
-              class="demo-map"
-              :class="{ 'is-running': isRunning, 'can-pan': mapZoomTier !== 'small', 'is-panning': demoDragging }"
-              :viewBox="demoViewBox"
-              preserveAspectRatio="xMidYMid slice"
-              role="group"
-              aria-label="合成街区路网示意地图，可点击选择起点"
-              @click="chooseMapPoint"
-              @pointerdown="beginDemoDrag"
-              @pointerenter="enterMap"
-              @pointermove="moveDemoDrag($event); moveProbe($event)"
-              @pointerup="endDemoDrag"
-              @pointercancel="endDemoDrag"
-              @lostpointercapture="endDemoDrag"
-              @pointerleave="leaveMap"
-              @keydown.esc.stop="closePoi"
-            >
-              <defs>
-                <pattern id="small-grid" width="28" height="28" patternUnits="userSpaceOnUse">
-                  <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#DCE7E2" stroke-width="0.7" />
-                </pattern>
-                <clipPath id="reachable-clip"><path :d="areaPath" /></clipPath>
-              </defs>
-
-              <rect x="-90" width="1080" height="620" fill="#EAF0EC" />
-              <rect x="-90" width="1080" height="620" fill="url(#small-grid)" opacity=".44" />
-
-              <path class="waterway" d="M 0 62 C 79 83 80 163 59 250 S 38 417 0 480 V 62 Z" />
-              <path class="water-edge" d="M 0 62 C 79 83 80 163 59 250 S 38 417 0 480" />
-              <path class="park-area" d="M 226 66 H 366 V 126 H 226 Z M 468 327 H 604 V 432 H 468 Z M 688 75 H 788 V 125 H 688 Z" />
-              <path class="park-path" d="M 239 98 C 287 81 322 111 353 93 M 486 384 Q 540 342 587 391 M 703 102 Q 742 81 777 108" />
-
-              <g class="blocks">
-                <path d="M 222 180 H 388 V 270 H 222 Z M 458 180 H 619 V 269 H 458 Z M 686 181 H 778 V 270 H 686 Z" />
-                <path d="M 221 331 H 389 V 423 H 221 Z M 455 331 H 618 V 423 H 455 Z M 687 330 H 780 V 423 H 687 Z" />
-                <path d="M 224 483 H 383 V 548 H 224 Z M 453 483 H 616 V 548 H 453 Z M 687 483 H 778 V 548 H 687 Z" />
-              </g>
-              <g class="building-lines">
-                <path
-                  v-for="building in buildingPois"
-                  :key="building.id"
-                  :d="building.d"
-                  class="building-poi"
-                  :class="{ hovered: hoveredBuildingId === building.id, selected: selectedBuildingId === building.id }"
-                  role="button"
-                  tabindex="0"
-                  :aria-label="`${building.name}，点击查看示意信息`"
-                  @pointerenter="hoverBuilding(building)"
-                  @pointerleave="hoveredBuildingId = null"
-                  @focus="hoverBuilding(building)"
-                  @blur="hoveredBuildingId = null"
-                  @click.stop="chooseBuilding(building)"
-                  @keydown.enter.stop="chooseBuilding(building)"
-                  @keydown.space.prevent.stop="chooseBuilding(building)"
-                />
-              </g>
-
-              <g class="base-streets" aria-hidden="true">
-                <path v-for="road in streets" :key="`${road.id}-base`" :d="road.d" class="road-edge" />
-                <path v-for="road in streets" :key="`${road.id}-core`" :d="road.d" class="road-core" />
-              </g>
-
-              <g :key="resultVersion" class="result-visual" aria-hidden="true">
-                <g v-if="layers.area" class="area-overlay">
-                  <path :d="areaPath" class="reach-area" />
-                  <path :d="areaPath" class="reach-outline" />
-                </g>
-
-                <g v-if="layers.streets" class="reach-overlay" clip-path="url(#reachable-clip)">
-                  <path v-for="road in streets" :key="`${road.id}-reach`" :d="road.d" class="reach-street-halo" />
-                  <path v-for="road in streets" :key="`${road.id}-reach-line`" :d="road.d" pathLength="1" class="reach-street" />
-                </g>
-
-                <g v-if="layers.gaps" :key="displayCategory" class="gap-overlay" clip-path="url(#reachable-clip)">
-                  <path v-for="segment in gapStreets[displayCategory]" :key="`${segment.id}-halo`" :d="segment.d" class="gap-street-halo" />
-                  <path v-for="segment in gapStreets[displayCategory]" :key="segment.id" :d="segment.d" class="gap-street" />
-                </g>
-              </g>
-
-              <g class="map-labels" aria-hidden="true">
-                <text x="256" y="106">社区绿地</text>
-                <text x="507" y="377">公共开放空间</text>
-                <text x="69" y="187" transform="rotate(-80 69 187)">滨水步道</text>
-                <text x="695" y="531">街区 · 东</text>
-              </g>
-
-              <g v-if="hoveredStreet" clip-path="url(#reachable-clip)" aria-hidden="true" pointer-events="none">
-                <path :d="hoveredStreet.d" class="street-hover-halo" :class="{ gap: hoveredStreet.kind === 'gap' }" />
-                <path :d="hoveredStreet.d" class="street-hover-line" :class="{ gap: hoveredStreet.kind === 'gap' }" />
-              </g>
-
-              <g v-if="layers.streets" clip-path="url(#reachable-clip)" class="street-hit-areas" aria-hidden="true">
-                <path
-                  v-for="segment in interactiveStreets"
-                  :key="segment.id"
-                  :d="segment.d"
-                  class="street-hit-area"
-                  @pointerenter="hoverStreet(segment, 'reachable')"
-                  @pointerleave="leaveStreet(segment.id)"
-                />
-              </g>
-              <g v-if="layers.gaps" clip-path="url(#reachable-clip)" class="street-hit-areas gap-hit-areas" aria-hidden="true">
-                <path
-                  v-for="segment in gapStreets[displayCategory]"
-                  :key="segment.id"
-                  :d="segment.d"
-                  class="street-hit-area gap-hit-area"
-                  @pointerenter="hoverStreet(segment, 'gap')"
-                  @pointerleave="leaveStreet(segment.id)"
-                />
-              </g>
-
-              <g v-if="layers.facilities" class="facility-points">
-                <g
-                  v-for="point in facilities"
-                  :key="point.id"
-                  class="facility-marker"
-                  :class="{ dimmed: displayCategory !== point.category, selected: selectedFacilityId === point.id, hovered: hoveredFacilityId === point.id }"
-                  :transform="`translate(${point.x} ${point.y})`"
-                  role="button"
-                  tabindex="0"
-                  :aria-label="`${point.name}，点击查看详情`"
-                  @click.stop="chooseFacility(point)"
-                  @pointerenter="hoverFacility(point)"
-                  @pointerleave="hoveredFacilityId = null"
-                  @focus="hoverFacility(point)"
-                  @blur="hoveredFacilityId = null"
-                  @keydown.enter.stop="chooseFacility(point)"
-                  @keydown.space.prevent.stop="chooseFacility(point)"
-                >
-                  <circle r="15" class="facility-hit" />
-                  <circle r="11" class="facility-circle" :stroke="categories.find((item) => item.id === point.category)?.color" />
-                  <text y="1" class="facility-glyph">{{ categories.find((item) => item.id === point.category)?.short }}</text>
-                </g>
-              </g>
-
-              <g class="origin-marker" :transform="`translate(${analysisOrigin.x} ${analysisOrigin.y})`" aria-hidden="true">
-                <circle r="10" class="origin-halo" />
-                <circle r="6" class="origin-dot" />
-              </g>
-              <g v-if="pending" class="candidate-marker" :transform="`translate(${candidate.x} ${candidate.y})`" aria-hidden="true">
-                <circle r="10" class="candidate-halo" />
-                <circle r="6" class="candidate-dot" />
-              </g>
-              <g v-if="candidatePulse" :key="candidatePulse" class="candidate-pulse" :transform="`translate(${candidate.x} ${candidate.y})`" aria-hidden="true">
-                <circle r="10" />
-              </g>
-            </svg>
-
-            <div v-if="mapMode === 'synthetic'" ref="probeEl" class="map-probe" :class="[{ visible: probeVisible }, `mode-${probeKind}`]" aria-hidden="true">
-              <span class="probe-ring"></span><span class="probe-caption">{{ probeLabel }}</span>
-            </div>
+            <RealMapStage v-if="mapMode === 'real'" key="real-preview" :candidate="realCandidate" :analysis-result="realAnalysisResult" :zoom-tier="mapZoomTier" @select="chooseRealPoint" />
+            <RealMapStage v-else key="cpp-preview" analysis-mode="cpp" :candidate="cppCandidate" :analysis-result="cppAnalysisResult" :zoom-tier="mapZoomTier" :selection-disabled="cppAnalysisState === 'running'" @select="chooseCppPoint" />
             <div class="map-compass" aria-hidden="true"><span>北</span><i></i></div>
             <div class="map-zoom-control" role="group" aria-label="地图比例尺">
               <span class="map-zoom-heading" aria-hidden="true">比例尺</span>
@@ -740,36 +347,19 @@ onUnmounted(() => {
               ><strong>{{ tier.label }}</strong><small>{{ tier.hint }}</small></button>
               <span class="map-zoom-hint" aria-hidden="true">{{ mapZoomTier === 'small' ? '固定' : '可拖动' }}</span>
             </div>
-            <div v-if="mapMode === 'synthetic' && hoveredStreet" class="street-hover-card" aria-live="polite">
-              <small>合成街段 · {{ hoveredStreet.kind === 'gap' ? `${displayCategoryData.label}疑似灰段` : '示意可达街段' }}</small>
-              <strong>{{ hoveredStreet.name }}</strong>
-            </div>
-            <div v-if="mapMode === 'synthetic'" class="map-legend" aria-label="地图图例">
-              <span><i class="legend-swatch area"></i>近似可达面</span>
-              <span><i class="legend-swatch route"></i>可达街段</span>
-              <span><i class="legend-swatch gap"></i>{{ displayCategoryData.label }}疑似灰段 <em v-if="previewCategory && previewCategory !== selectedCategory">预览</em></span>
-            </div>
-
-            <div v-if="mapMode === 'synthetic' && displayPoi" class="facility-popover">
-              <button v-if="displayPoi.pinned" type="button" class="popover-close" aria-label="关闭 POI 信息" @click="closePoi">×</button>
-              <span class="popover-type">{{ displayPoi.pinned ? '已固定 · ' : '悬停预览 · ' }}{{ displayPoi.type === 'facility' ? categories.find((item) => item.id === displayPoi.category)?.label : '合成建筑' }}</span>
-              <strong>{{ displayPoi.name }}</strong>
-              <span v-if="displayPoi.type === 'facility'">起点至此约 {{ mockWalkingMinutes(analysisOrigin, displayPoi) }} 分钟 <em>（合成示意）</em></span>
-              <span v-else>仅展示建筑轮廓，不参与设施覆盖计算。</span>
-            </div>
           </div>
 
-          <div class="map-bottomline" :class="{ 'real-mode': mapMode === 'real' }">
-            <span><span class="line-signal"></span>{{ mapMode === 'real' ? (realCandidate ? '已选候选点 · 真实路网待接入' : '四路围合范围 · 点击地图选点') : (pending ? '新起点待分析 · 点击右上角生成' : '已显示当前起点的示意结果') }}</span>
-            <span v-if="mapMode === 'real'"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">边界与 SVG 数据 © OpenStreetMap contributors · ODbL</a></span>
-            <span v-else>合成数据 · 向下滚动查看详情</span>
+          <div class="map-bottomline real-mode">
+            <span v-if="mapMode === 'real'"><span class="line-signal"></span>{{ realAnalysisState === 'error' ? realAnalysisError : realAnalysisState === 'running' ? '正在生成合成路线，请稍候' : realAnalysisResult ? '固定圆与临时路线已显示 · 非真实等时圈' : realCandidate ? '已选起点 · 点击右上角生成示意' : '四路围合范围 · 点击地图选点' }}</span>
+            <span v-else><span class="line-signal"></span>{{ cppAnalysisState === 'error' ? cppAnalysisError : cppAnalysisState === 'running' ? 'Python → C++ 正在计算 15 分钟路网等时圈' : cppAnalysisResult ? 'C++ 等时圈与可达街段已显示 · 路网仍为合成数据' : cppCandidate ? '已选起点 · 点击右上角计算等时圈' : '合成路网演示 · 点击地图选点' }}</span>
+            <span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">边界与 SVG 数据 © OpenStreetMap contributors · ODbL</a></span>
           </div>
         </div>
       </section>
     </main>
     <footer class="living-footer" aria-label="LIVING CIRCLE">
       <div class="living-meta" aria-hidden="true">
-        <span>{{ mapMode === 'real' ? 'REAL AREA PREVIEW / XINJIANGWANCHENG' : '15 MIN WALKABILITY / SYNTHETIC DEMO' }}</span>
+        <span>{{ mapMode === 'real' ? 'REAL AREA PREVIEW / XINJIANGWANCHENG' : 'C++ ISOCHRONE / SYNTHETIC ROAD GRAPH' }}</span>
         <span>向下滚动 · 查看生活圈报告 ↓</span>
       </div>
       <div class="living-wordmark" aria-hidden="true">
@@ -791,8 +381,8 @@ onUnmounted(() => {
       <div class="detail-page-inner">
         <div class="detail-page-heading">
           <div>
-            <p class="section-kicker">{{ mapMode === 'real' ? '新江湾城 · 演示范围' : '15 分钟生活圈 · 示意体检' }}</p>
-            <h2>{{ mapMode === 'real' ? '真实范围与选点状态' : '从地图走进街区细节' }}</h2>
+            <p class="section-kicker">{{ mapMode === 'real' ? '新江湾城 · 演示范围' : '15 分钟生活圈 · C++ 算法演示' }}</p>
+            <h2>{{ mapMode === 'real' ? '真实范围与选点状态' : '从地图走进路网计算' }}</h2>
           </div>
           <button type="button" class="return-map-button" @click="goToPage(0)">返回地图 <span aria-hidden="true">↑</span></button>
         </div>
@@ -801,7 +391,7 @@ onUnmounted(() => {
       <aside v-if="mapMode === 'real'" class="real-insight-panel" aria-label="真实区域预览信息">
         <div class="demo-warning real-data-warning">
           <span class="warning-icon">!</span>
-          <span><strong>范围预览，不是分析报告</strong> · 四路边界已绘制；真实步行路网与设施入口仍待核查。当前选点不会生成 15 分钟等时圈。</span>
+          <span><strong>真实区域上的合成示意，不是分析报告</strong> · 点击分析后展示固定半径圆与临时路线。道路类型、过街和设施入口均未经核查。</span>
         </div>
         <section class="panel-section">
           <div class="section-head"><span class="section-index">01</span><h2>演示区域</h2></div>
@@ -812,90 +402,49 @@ onUnmounted(() => {
           <div class="section-head"><span class="section-index">02</span><h2>候选起点</h2></div>
           <p v-if="!realCandidate" class="section-explain">返回地图，在围合区域内点击一个位置，或选用区域中心。</p>
           <div v-else class="real-selected-point"><span class="origin-pin"></span><div><strong>已记录候选位置</strong><small>{{ realCandidate.coordType === 'bd09ll' ? 'BD-09 坐标' : 'WGS-84 示意坐标 · 百度底图待配置' }}</small><code>{{ realCandidate.lng.toFixed(6) }}, {{ realCandidate.lat.toFixed(6) }}</code></div></div>
-          <p class="origin-action-hint">公共步行空间和接入道路需由真实路网校验；区内选点不等于一定可步行接入。</p>
+          <p class="origin-action-hint">选点到最近道路的虚线仅为未核实的演示接入，不代表可实际步行穿行。</p>
         </section>
         <section class="panel-section">
-          <div class="section-head"><span class="section-index">03</span><h2>计算状态</h2></div>
-          <p class="section-explain">范围图只用于展示与候选选点。真实路网需覆盖区内起点及其 15 分钟可达的外围，不能沿这条边界截断。</p>
+          <div class="section-head"><span class="section-index">03</span><h2>路线示意状态</h2></div>
+          <p v-if="realAnalysisResult" class="section-explain">固定圆半径约 1,170 米；临时路网绘制 {{ realAnalysisResult.summary.routeSegmentCount }} 条可连通线段。圆不是 15 分钟等时圈，路线不用于设施覆盖判定。</p>
+          <p v-else class="section-explain">在地图上选点并点击“生成示意分析”，即可预览固定圆和路线动画。未来真实结果会沿用同一显示接口。</p>
+          <p class="section-explain">真实路网仍需覆盖选区外可达的外围，不能沿四路边界截断。</p>
           <button type="button" class="return-map-button real-demo-switch" @click="switchMapMode('synthetic'); goToPage(0)">体验合成算法演示 <span aria-hidden="true">↗</span></button>
         </section>
         <div class="panel-footer">边界与 SVG 示意数据 © OpenStreetMap contributors（ODbL）；百度底图启用后保留其原生版权标识。</div>
       </aside>
 
-      <aside v-else class="insight-panel" aria-label="选点与覆盖分析">
-        <div class="demo-warning">
+      <aside v-else class="real-insight-panel" aria-label="C++ 合成路网分析信息">
+        <div class="demo-warning real-data-warning">
           <span class="warning-icon">!</span>
-          <span><strong>前端演示模式</strong> · 当前结果仅用于界面与交互评估，不是真实路网分析。</span>
+          <span><strong>C++ 算法结果，合成路网数据</strong> · 绿色面来自引擎返回的 MultiPolygon，不是固定半径圆；道路两侧、过街与连接性尚未经现场核实，不能作为真实出行结论。</span>
         </div>
-
-        <section class="panel-section origin-section">
-          <div class="section-head"><span class="section-index">01</span><h2>选择起点</h2></div>
-          <p class="section-explain">点击示意地图选择起点，或选择一个预设位置。</p>
-          <div class="preset-list">
-            <button
-              v-for="point in presets"
-              :key="point.id"
-              type="button"
-              class="preset-button"
-              :class="{ active: candidate.id === point.id }"
-              :aria-pressed="candidate.id === point.id"
-              :disabled="isRunning"
-              @click="choosePreset(point)"
-            >
-              <span>{{ point.label }}</span><small>{{ point.hint }}</small>
-            </button>
-          </div>
-          <div class="selected-origin">
-            <span class="origin-pin" aria-hidden="true"></span>
-            <div><small>当前选择</small><strong>{{ candidate.label }} <span>{{ candidate.hint }}</span></strong></div>
-            <code>{{ candidate.x }}, {{ candidate.y }}</code>
-          </div>
-          <p class="origin-action-hint">选好预设点后，返回地图点击右上角按钮生成结果。</p>
+        <section class="panel-section">
+          <div class="section-head"><span class="section-index">01</span><h2>分析起点</h2></div>
+          <p v-if="!cppCandidate" class="section-explain">返回地图，在四路围合区域内选择起点。选区外的路网仍参与 15 分钟计算。</p>
+          <div v-else class="real-selected-point"><span class="origin-pin"></span><div><strong>已选择合成路网起点</strong><small>同一份 SVG 底图 · 选点仅限四路围合区</small><code>{{ cppCandidate.lng.toFixed(6) }}, {{ cppCandidate.lat.toFixed(6) }}</code></div></div>
+          <p class="origin-action-hint">路外起点会先扣除到最近合成路段的估算步行时间；若 15 分钟内无法到达路段，引擎会拒绝分析。</p>
         </section>
-
-        <section class="panel-section summary-section">
-          <div class="section-head"><span class="section-index">02</span><h2>当前生活圈</h2></div>
-          <div class="summary-band">
-            <div class="summary-primary"><strong>15<span>分钟</span></strong><small>示意步行范围</small></div>
-            <div class="summary-secondary"><strong :key="resultVersion" class="summary-number">{{ visibleFacilities.length }}<span> / {{ facilities.length }}</span></strong><small>圈内合成设施点</small></div>
-          </div>
-          <div class="layer-controls" aria-label="地图图层">
-            <button type="button" :aria-pressed="layers.area" :class="{ on: layers.area }" @click="toggleLayer('area')"><i class="layer-dot area"></i>近似面</button>
-            <button type="button" :aria-pressed="layers.streets" :class="{ on: layers.streets }" @click="toggleLayer('streets')"><i class="layer-dot route"></i>街段</button>
-            <button type="button" :aria-pressed="layers.gaps" :class="{ on: layers.gaps }" @click="toggleLayer('gaps')"><i class="layer-dot gap"></i>灰段</button>
-            <button type="button" :aria-pressed="layers.facilities" :class="{ on: layers.facilities }" @click="toggleLayer('facilities')"><i class="layer-dot point"></i>设施</button>
-          </div>
+        <section class="panel-section">
+          <div class="section-head"><span class="section-index">02</span><h2>15 分钟路网等时圈</h2></div>
+          <p v-if="cppAnalysisState === 'error'" class="section-explain" role="alert">{{ cppAnalysisError }}</p>
+          <p v-else-if="cppAnalysisState === 'running'" class="section-explain" role="status">Python 正在把起点交给 C++ 引擎，结果返回后将绘制等时圈和可达街段。</p>
+          <template v-else-if="cppAnalysisResult">
+            <div class="summary-band">
+              <div class="summary-primary"><strong>15<span>分钟</span></strong><small>路网步行阈值</small></div>
+              <div class="summary-secondary"><strong class="summary-number">{{ cppAnalysisResult.summary.routeSegmentCount }}</strong><small>可达线段</small></div>
+            </div>
+            <p class="section-explain">距最近路段约 {{ Number(cppAnalysisResult.summary.originSnapMeters ?? 0).toFixed(1) }} 米，估算接入耗时 {{ Math.round(cppAnalysisResult.summary.originAccessSeconds ?? 0) }} 秒；剩余时间沿路网计算。虚线接入未核实，等时圈按 C++ 返回的多边形绘制。设施覆盖和灰区本轮尚未验算。</p>
+          </template>
+          <p v-else class="section-explain">点击右上角“计算 15 分钟等时圈”后，展示 C++ Dijkstra 计算的可达街段及近似 MultiPolygon 面。</p>
         </section>
-
-        <section class="panel-section service-section">
-          <div class="section-head"><span class="section-index">03</span><h2>按服务查看</h2><span class="section-side-note">点击切换地图重点</span></div>
-          <div class="service-list">
-            <button
-              v-for="item in categorySummary"
-              :key="item.id"
-              type="button"
-              class="service-row"
-              :class="{ active: selectedCategory === item.id, preview: previewCategory === item.id && selectedCategory !== item.id }"
-              :aria-pressed="selectedCategory === item.id"
-              @pointerenter="previewCategory = item.id"
-              @pointerleave="previewCategory = null"
-              @focus="previewCategory = item.id"
-              @blur="previewCategory = null"
-              @click="chooseCategory(item.id)"
-            >
-              <span class="service-icon" :style="{ '--category-color': item.color }">{{ item.short }}</span>
-              <span class="service-main"><strong>{{ item.label }}</strong><small>{{ item.description }}</small></span>
-              <span class="service-values"><strong>{{ item.count }} <small>处</small></strong><small>示意灰段 {{ item.gap }}%</small></span>
-              <span class="row-chevron" aria-hidden="true">›</span>
-            </button>
-          </div>
-          <div class="service-insight">
-            <span class="insight-accent"></span>
-            <p><strong>{{ activeCategory.label }}</strong>：圈内示意设施 {{ selectedSummary.count }} 处；当前高亮的橙色街段表示该类服务的<strong>疑似覆盖缺口</strong>。</p>
-          </div>
+        <section class="panel-section">
+          <div class="section-head"><span class="section-index">03</span><h2>数据与精度说明</h2></div>
+          <p class="section-explain">路外选点会按到最近路段的直线距离扣除步行时间；这只是合成演示接入，不保证穿越建筑或地块可行。主干道用双侧人行道建模，其余道路暂按共享通道处理；部分过街连接为合成推断。图形不是经核实的真实 15 分钟等时圈。</p>
+          <p class="section-explain">四路围合线仅限制起点，不裁切外围可达路段。当前不展示设施覆盖与灰区，待真实数据校验后接入。</p>
+          <button type="button" class="return-map-button real-demo-switch" @click="goToPage(0)">返回地图重新选点 <span aria-hidden="true">↗</span></button>
         </section>
-
-        <div class="panel-footer">真实版将接入 Python API、C++ 路网结果与核查后的设施数据。</div>
+        <div class="panel-footer">SVG 底图与边界数据 © OpenStreetMap contributors（ODbL）；合成路网仅用于算法联调。</div>
       </aside>
         </div>
       </div>

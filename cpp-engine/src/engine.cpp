@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <queue>
@@ -133,15 +134,22 @@ Snap snap_origin(const EngineInput& input) {
   }
   const auto in_range = [&](const Snap& candidate) {
     const WalkEdge& edge = input.edges[candidate.edge_index];
+    if (input.allow_off_network_origin) {
+      return candidate.distance_meters <= input.max_origin_snap_meters;
+    }
     return candidate.surface_distance_meters <=
         (edge.kind == EdgeKind::shared_way ? 3.0 : input.max_origin_snap_meters);
+  };
+  const auto access_distance = [&](const Snap& candidate) {
+    return input.allow_off_network_origin ? candidate.distance_meters
+                                          : candidate.surface_distance_meters;
   };
   auto nearest = candidates.end();
   for (auto candidate = candidates.begin(); candidate != candidates.end();
        ++candidate) {
     if (in_range(*candidate) &&
-        (nearest == candidates.end() || candidate->surface_distance_meters <
-                                           nearest->surface_distance_meters)) {
+        (nearest == candidates.end() || access_distance(*candidate) <
+                                           access_distance(*nearest))) {
       nearest = candidate;
     }
   }
@@ -157,8 +165,8 @@ Snap snap_origin(const EngineInput& input) {
       throw std::invalid_argument("originEdgeId must identify a sidewalk or shared_way");
     }
     if (!in_range(*selected) ||
-        selected->surface_distance_meters >
-            nearest->surface_distance_meters + kOriginSideAmbiguityMeters) {
+        access_distance(*selected) >
+            access_distance(*nearest) + kOriginSideAmbiguityMeters) {
       throw OriginNotOnWalkway(
           "originEdgeId is not on the nearest sidewalk side");
     }
@@ -168,8 +176,8 @@ Snap snap_origin(const EngineInput& input) {
     if (candidate.edge_index != nearest->edge_index &&
         !share_endpoint(input.edges[candidate.edge_index],
                         input.edges[nearest->edge_index]) &&
-        in_range(candidate) && candidate.surface_distance_meters <=
-            nearest->surface_distance_meters + kOriginSideAmbiguityMeters) {
+        in_range(candidate) && access_distance(candidate) <=
+            access_distance(*nearest) + kOriginSideAmbiguityMeters) {
       throw AmbiguousOriginSide(
           "multiple sidewalk sides are equally near: " +
           input.edges[nearest->edge_index].id + ", " +
@@ -292,17 +300,13 @@ double segment_distance(Point point, Point a, Point b) {
   return distance(point, interpolate(a, b, fraction));
 }
 
-std::vector<DisplayPolygon> display_polygons(
-    const std::vector<ReachableEdge>& reachable, double buffer,
-    double grid_step) {
-  if (reachable.empty()) return {};
+Bounds display_bounds(const std::vector<ReachableEdge>& reachable,
+                      double padding) {
   Bounds bounds{std::numeric_limits<double>::infinity(),
                 -std::numeric_limits<double>::infinity(),
                 std::numeric_limits<double>::infinity(),
                 -std::numeric_limits<double>::infinity()};
-  double max_buffer = buffer;
   for (const auto& edge : reachable) {
-    max_buffer = std::max(max_buffer, edge.width_meters / 2.0);
     for (const Point point : edge.path) {
       bounds.min_x = std::min(bounds.min_x, point.x);
       bounds.max_x = std::max(bounds.max_x, point.x);
@@ -310,53 +314,32 @@ std::vector<DisplayPolygon> display_polygons(
       bounds.max_y = std::max(bounds.max_y, point.y);
     }
   }
-  const double padding = max_buffer + grid_step * 3.0;
   bounds.min_x -= padding;
   bounds.max_x += padding;
   bounds.min_y -= padding;
   bounds.max_y += padding;
+  return bounds;
+}
+
+Grid display_grid(const std::vector<ReachableEdge>& reachable,
+                  double padding, double grid_step) {
+  const Bounds bounds = display_bounds(reachable, padding);
   if ((bounds.max_x - bounds.min_x) / grid_step > 1000.0 ||
       (bounds.max_y - bounds.min_y) / grid_step > 1000.0) {
     throw std::invalid_argument("display grid exceeds 1000 by 1000 cells");
   }
-  Grid grid = create_grid(bounds, grid_step);
-  std::fill(grid.values.begin(), grid.values.end(), max_buffer + grid_step);
-  for (const auto& edge : reachable) {
-    const double radius = std::max(buffer, edge.width_meters / 2.0);
-    for (std::size_t i = 1; i < edge.path.size(); ++i) {
-      const Point a = edge.path[i - 1];
-      const Point b = edge.path[i];
-      const double reach = radius + grid_step;
-      const auto min_col = static_cast<std::size_t>(std::max(
-          0.0, std::floor((std::min(a.x, b.x) - reach - bounds.min_x) /
-                          grid_step)));
-      const auto max_col = static_cast<std::size_t>(std::min(
-          static_cast<double>(grid.columns - 1),
-          std::ceil((std::max(a.x, b.x) + reach - bounds.min_x) / grid_step)));
-      const auto min_row = static_cast<std::size_t>(std::max(
-          0.0, std::floor((std::min(a.y, b.y) - reach - bounds.min_y) /
-                          grid_step)));
-      const auto max_row = static_cast<std::size_t>(std::min(
-          static_cast<double>(grid.rows - 1),
-          std::ceil((std::max(a.y, b.y) + reach - bounds.min_y) / grid_step)));
-      for (std::size_t row = min_row; row <= max_row; ++row) {
-        for (std::size_t col = min_col; col <= max_col; ++col) {
-          const double candidate = segment_distance(grid.point_at(row, col), a, b)
-                                   - (radius - buffer);
-          grid.at(row, col) = std::min(grid.at(row, col), candidate);
-        }
-      }
-    }
-  }
-  std::vector<Ring> rings =
-      build_rings(extract_contour_segments(grid, buffer), grid_step * 0.01);
+  return create_grid(bounds, grid_step);
+}
+
+std::vector<DisplayPolygon> polygons_from_grid(const Grid& grid,
+                                               double threshold,
+                                               double grid_step) {
+  std::vector<Ring> rings = build_rings(
+      extract_contour_segments(grid, threshold), grid_step * 0.01);
   rings.erase(std::remove_if(rings.begin(), rings.end(), [](const Ring& ring) {
                 return std::abs(signed_area(ring)) < 1.0;
-              }),
-              rings.end());
-  // Marching Squares returns independent closed rings. Assign each ring to
-  // the smallest enclosing ring, then use even/odd nesting depth to preserve
-  // holes and islands instead of filling every ring as an exterior polygon.
+              }), rings.end());
+  // Nested rings alternate between exterior, hole and island.
   std::vector<int> parents(rings.size(), -1);
   std::vector<double> areas;
   areas.reserve(rings.size());
@@ -399,6 +382,221 @@ std::vector<DisplayPolygon> display_polygons(
   return polygons;
 }
 
+std::vector<DisplayPolygon> display_polygons(
+    const std::vector<ReachableEdge>& reachable, double buffer,
+    double grid_step) {
+  if (reachable.empty()) return {};
+  double max_buffer = buffer;
+  for (const auto& edge : reachable) {
+    max_buffer = std::max(max_buffer, edge.width_meters / 2.0);
+  }
+  Grid grid = display_grid(reachable, max_buffer + grid_step * 3.0,
+                           grid_step);
+  const Bounds bounds = grid.bounds;
+  std::fill(grid.values.begin(), grid.values.end(), max_buffer + grid_step);
+  for (const auto& edge : reachable) {
+    const double radius = std::max(buffer, edge.width_meters / 2.0);
+    for (std::size_t i = 1; i < edge.path.size(); ++i) {
+      const Point a = edge.path[i - 1];
+      const Point b = edge.path[i];
+      const double reach = radius + grid_step;
+      const auto min_col = static_cast<std::size_t>(std::max(
+          0.0, std::floor((std::min(a.x, b.x) - reach - bounds.min_x) /
+                          grid_step)));
+      const auto max_col = static_cast<std::size_t>(std::min(
+          static_cast<double>(grid.columns - 1),
+          std::ceil((std::max(a.x, b.x) + reach - bounds.min_x) / grid_step)));
+      const auto min_row = static_cast<std::size_t>(std::max(
+          0.0, std::floor((std::min(a.y, b.y) - reach - bounds.min_y) /
+                          grid_step)));
+      const auto max_row = static_cast<std::size_t>(std::min(
+          static_cast<double>(grid.rows - 1),
+          std::ceil((std::max(a.y, b.y) + reach - bounds.min_y) / grid_step)));
+      for (std::size_t row = min_row; row <= max_row; ++row) {
+        for (std::size_t col = min_col; col <= max_col; ++col) {
+          const double candidate = segment_distance(grid.point_at(row, col), a, b)
+                                   - (radius - buffer);
+          grid.at(row, col) = std::min(grid.at(row, col), candidate);
+        }
+      }
+    }
+  }
+  return polygons_from_grid(grid, buffer, grid_step);
+}
+
+struct TimedDisplayEdge {
+  const InternalEdge* edge;
+  Interval interval;
+};
+
+bool has_opposing_approaches(std::uint8_t directions) {
+  for (int sector = 0; sector < 8; ++sector) {
+    if ((directions & (1U << sector)) == 0) continue;
+    for (int separation = 3; separation <= 5; ++separation) {
+      if (directions & (1U << ((sector + separation) % 8))) return true;
+    }
+  }
+  return false;
+}
+
+std::vector<DisplayPolygon> fill_enclosed_blocks(
+    std::vector<DisplayPolygon> polygons, double max_span,
+    const Grid& grid, const std::vector<double>& approach_times,
+    double threshold, double min_hole_area) {
+  for (auto& polygon : polygons) {
+    polygon.holes.erase(std::remove_if(polygon.holes.begin(),
+        polygon.holes.end(), [&](const Ring& hole) {
+          // Tiny contour artefacts are not meaningful at display resolution.
+          if (std::abs(signed_area(hole)) < min_hole_area) return true;
+          Bounds bounds{std::numeric_limits<double>::infinity(),
+                        -std::numeric_limits<double>::infinity(),
+                        std::numeric_limits<double>::infinity(),
+                        -std::numeric_limits<double>::infinity()};
+          for (const Point point : hole) {
+            bounds.min_x = std::min(bounds.min_x, point.x);
+            bounds.max_x = std::max(bounds.max_x, point.x);
+            bounds.min_y = std::min(bounds.min_y, point.y);
+            bounds.max_y = std::max(bounds.max_y, point.y);
+          }
+          if (bounds.max_x - bounds.min_x > max_span ||
+              bounds.max_y - bounds.min_y > max_span) return false;
+          for (std::size_t row = 0; row < grid.rows; ++row) {
+            const double y = grid.bounds.min_y + row * grid.step_meters;
+            if (y < bounds.min_y || y > bounds.max_y) continue;
+            for (std::size_t col = 0; col < grid.columns; ++col) {
+              const double x = grid.bounds.min_x + col * grid.step_meters;
+              if (x >= bounds.min_x && x <= bounds.max_x &&
+                  contains_point(hole, {x, y}) &&
+                  approach_times[row * grid.columns + col] > threshold) {
+                return false;
+              }
+            }
+          }
+          return true;
+        }), polygon.holes.end());
+  }
+  // An island inside a filled hole is now part of its enclosing exterior.
+  std::vector<DisplayPolygon> result;
+  for (std::size_t i = 0; i < polygons.size(); ++i) {
+    bool redundant = false;
+    for (std::size_t j = 0; j < polygons.size(); ++j) {
+      if (i == j || std::abs(signed_area(polygons[j].outer)) <=
+                        std::abs(signed_area(polygons[i].outer)) ||
+          !contains_point(polygons[j].outer, polygons[i].outer.front())) {
+        continue;
+      }
+      bool in_retained_hole = false;
+      for (const Ring& hole : polygons[j].holes) {
+        in_retained_hole = in_retained_hole ||
+            contains_point(hole, polygons[i].outer.front());
+      }
+      if (!in_retained_hole) redundant = true;
+    }
+    if (!redundant) result.push_back(std::move(polygons[i]));
+  }
+  return result;
+}
+
+std::vector<DisplayPolygon> isochrone_polygons(
+    const std::vector<ReachableEdge>& reachable,
+    const std::vector<TimedDisplayEdge>& timed_edges,
+    const std::vector<double>& arrival, double threshold, double speed,
+    double area_radius, double connector_radius, double grid_step,
+    double min_hole_area) {
+  if (reachable.empty()) return {};
+  // The regular margin stays small. A wider search is only used where
+  // reachable streets bracket an unmarked interior from opposing directions.
+  const double bridge_radius = area_radius * 3.0;
+  double max_radius = std::max(bridge_radius, connector_radius);
+  for (const auto& edge : reachable) {
+    max_radius = std::max(max_radius, edge.width_meters / 2.0);
+  }
+  Grid grid = display_grid(reachable, max_radius + grid_step * 3.0,
+                           grid_step);
+  const Bounds bounds = grid.bounds;
+  std::fill(grid.values.begin(), grid.values.end(),
+            threshold + max_radius / speed + grid_step / speed);
+  std::vector<std::uint8_t> approaches(grid.values.size(), 0);
+  std::vector<double> bridge_times(grid.values.size(),
+                                   std::numeric_limits<double>::infinity());
+
+  for (const TimedDisplayEdge& timed : timed_edges) {
+    const InternalEdge& edge = *timed.edge;
+    const bool street = edge.kind == EdgeKind::sidewalk ||
+                        edge.kind == EdgeKind::shared_way;
+    const double radius = std::max(
+        street ? area_radius : connector_radius,
+        edge.width_meters / 2.0);
+    const double search_radius = street ? std::max(radius, bridge_radius)
+                                        : radius;
+    const std::vector<Point> path = slice(
+        edge.path, timed.interval.from, timed.interval.to);
+    double walked = timed.interval.from;
+    for (std::size_t i = 1; i < path.size(); ++i) {
+      const Point a = path[i - 1];
+      const Point b = path[i];
+      const double dx = b.x - a.x;
+      const double dy = b.y - a.y;
+      const double length_squared = dx * dx + dy * dy;
+      const double length = std::sqrt(length_squared);
+      const double reach = search_radius + grid_step;
+      const auto min_col = static_cast<std::size_t>(std::max(
+          0.0, std::floor((std::min(a.x, b.x) - reach - bounds.min_x) /
+                          grid_step)));
+      const auto max_col = static_cast<std::size_t>(std::min(
+          static_cast<double>(grid.columns - 1),
+          std::ceil((std::max(a.x, b.x) + reach - bounds.min_x) / grid_step)));
+      const auto min_row = static_cast<std::size_t>(std::max(
+          0.0, std::floor((std::min(a.y, b.y) - reach - bounds.min_y) /
+                          grid_step)));
+      const auto max_row = static_cast<std::size_t>(std::min(
+          static_cast<double>(grid.rows - 1),
+          std::ceil((std::max(a.y, b.y) + reach - bounds.min_y) / grid_step)));
+      for (std::size_t row = min_row; row <= max_row; ++row) {
+        for (std::size_t col = min_col; col <= max_col; ++col) {
+          const Point cell = grid.point_at(row, col);
+          const double fraction = length_squared > 0.0
+              ? std::clamp(((cell.x - a.x) * dx + (cell.y - a.y) * dy) /
+                               length_squared, 0.0, 1.0)
+              : 0.0;
+          const Point projected = interpolate(a, b, fraction);
+          const double lateral = distance(cell, projected);
+          if (lateral > search_radius) continue;
+          const double offset = walked + fraction * length;
+          const double along = std::min(
+              arrival[edge.from] + offset / speed,
+              arrival[edge.to] + (edge.length - offset) / speed);
+          const double wait = edge.kind == EdgeKind::crossing
+              ? edge.wait_seconds : 0.0;
+          const double candidate_time = along + wait + lateral / speed;
+          if (lateral <= radius) {
+            grid.at(row, col) = std::min(grid.at(row, col), candidate_time);
+          } else if (street && candidate_time <= threshold) {
+            constexpr double kPi = 3.14159265358979323846;
+            const double angle = std::atan2(projected.y - cell.y,
+                                            projected.x - cell.x);
+            const int sector = (static_cast<int>(std::floor(
+                (angle + kPi / 8.0) / (kPi / 4.0))) + 8) % 8;
+            const std::size_t index = row * grid.columns + col;
+            approaches[index] |= static_cast<std::uint8_t>(1U << sector);
+            bridge_times[index] = std::min(bridge_times[index], candidate_time);
+          }
+        }
+      }
+      walked += length;
+    }
+  }
+  for (std::size_t index = 0; index < grid.values.size(); ++index) {
+    if (grid.values[index] > threshold &&
+        has_opposing_approaches(approaches[index])) {
+      grid.values[index] = bridge_times[index];
+    }
+  }
+  return fill_enclosed_blocks(
+      polygons_from_grid(grid, threshold, grid_step), bridge_radius * 2.0,
+      grid, bridge_times, threshold, min_hole_area);
+}
+
 }  // namespace
 
 const char* edge_kind_name(EdgeKind kind) {
@@ -423,6 +621,10 @@ void validate_graph(const EngineInput& input) {
       input.max_origin_snap_meters <= 0.0 ||
       !std::isfinite(input.display_buffer_meters) ||
       input.display_buffer_meters <= 0.0 ||
+      !std::isfinite(input.display_area_radius_meters) ||
+      input.display_area_radius_meters <= 0.0 ||
+      !std::isfinite(input.display_min_hole_area_square_meters) ||
+      input.display_min_hole_area_square_meters < 0.0 ||
       !std::isfinite(input.display_grid_step_meters) ||
       input.display_grid_step_meters <= 0.0) {
     throw std::invalid_argument("invalid engine parameters");
@@ -578,9 +780,19 @@ void validate_graph(const EngineInput& input) {
 EngineResult compute_reachability(const EngineInput& input) {
   validate_graph(input);
   const Snap snap = snap_origin(input);
+  const double access_seconds = snap.distance_meters /
+      input.walking_speed_meters_per_second;
+  if (access_seconds >= input.threshold_seconds - kEpsilon) {
+    throw OriginNotOnWalkway(
+        "reaching the nearest walkway uses the entire time budget");
+  }
   EngineResult result;
   result.snapped_origin = snap.point;
   result.snap_distance_meters = snap.distance_meters;
+  result.origin_access_seconds = access_seconds;
+  if (input.allow_off_network_origin && snap.distance_meters > kEpsilon) {
+    result.warnings.push_back("UNVERIFIED_STRAIGHT_LINE_ORIGIN_ACCESS");
+  }
   if (snap.distance_meters > 10.0) {
     result.warnings.push_back("ORIGIN_SNAP_OVER_10_METERS");
   }
@@ -675,8 +887,7 @@ EngineResult compute_reachability(const EngineInput& input) {
     adjacency[edge.to].push_back({edge.from, cost});
   }
   const std::vector<double> arrival = shortest_times(adjacency, {{
-      origin_index, snap.distance_meters /
-          input.walking_speed_meters_per_second}});
+      origin_index, access_seconds}});
   for (std::size_t i = 0; i < input.nodes.size(); ++i) {
     if (arrival[i] <= input.threshold_seconds) ++result.reachable_node_count;
   }
@@ -713,6 +924,7 @@ EngineResult compute_reachability(const EngineInput& input) {
   }
 
   double reachable_street_length = 0.0;
+  std::vector<TimedDisplayEdge> timed_edges;
   for (const auto& edge : edges) {
     const auto intervals = reachable_intervals(
         edge, arrival, input.threshold_seconds,
@@ -725,6 +937,7 @@ EngineResult compute_reachability(const EngineInput& input) {
       }
     }
     for (const Interval part : intervals) {
+      timed_edges.push_back({&edge, part});
       result.reachable_edges.push_back({edge.source_id, edge.kind,
           slice(edge.path, part.from, part.to), edge.width_meters});
       if (part.from > kEpsilon) {
@@ -738,9 +951,12 @@ EngineResult compute_reachability(const EngineInput& input) {
       }
     }
   }
-  result.display_polygons = display_polygons(
-      result.reachable_edges, input.display_buffer_meters,
-      input.display_grid_step_meters);
+  result.display_polygons = isochrone_polygons(
+      result.reachable_edges, timed_edges, arrival, input.threshold_seconds,
+      input.walking_speed_meters_per_second,
+      input.display_area_radius_meters, input.display_buffer_meters,
+      input.display_grid_step_meters,
+      input.display_min_hole_area_square_meters);
 
   for (const ServiceCategory& category : input.service_categories) {
     GrayZone zone;

@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 class CenterPoint(BaseModel):
     lng: float = Field(ge=-180, le=180)
     lat: float = Field(ge=-90, le=90)
-    coordType: Literal["bd09ll"] = "bd09ll"
+    coordType: Literal["bd09ll", "wgs84ll"] = "bd09ll"
 
 
 class AnalysisRequest(BaseModel):

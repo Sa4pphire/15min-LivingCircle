@@ -10,6 +10,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(MSVC)
+  add_compile_options(/utf-8 /EHsc)
+endif()
+
 add_library(
   isochrone_core
   src/grid.cpp
@@ -18,6 +22,7 @@ add_library(
   src/json_io.cpp
   src/json_parser.cpp
   src/marching_squares.cpp
+  src/road_enclosure.cpp
   src/ring_builder.cpp
   src/simplify.cpp
 )

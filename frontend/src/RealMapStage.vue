@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } fr
 import BMapLoader from "@baidumap/jsapi-loader";
 import boundaryWgs from "./data/demoBoundary.wgs84.json";
 import { baiduMapStyle } from "./baiduMapStyle";
-import { baiduZoomForTier, clampMapPan, zoomedFit } from "./mapZoom";
+import { baiduZoomForTier, clampMapPan, markerScaleForTier, zoomedFit } from "./mapZoom";
 import {
   expandedLocalBounds,
   fitLocalPoints,
@@ -18,6 +18,8 @@ const props = defineProps({
   candidate: { type: Object, default: null },
   analysisResult: { type: Object, default: null },
   zoomTier: { type: String, default: "medium" },
+  analysisMode: { type: String, default: "preview" },
+  selectionDisabled: { type: Boolean, default: false },
 });
 const emit = defineEmits(["select"]);
 
@@ -62,6 +64,7 @@ let lastNativeDragAt = 0;
 let destroyed = false;
 
 const fallbackActive = computed(() => mapState.value !== "ready");
+const candidateMarkerScale = computed(() => markerScaleForTier(props.zoomTier));
 const fallbackFit = computed(() => fitLocalPoints(
   displayCornersLocal, viewport.value.width, viewport.value.height, 0.04,
 ));
@@ -105,9 +108,88 @@ const liveCandidate = computed(() => {
   const pixel = map.pointToPixel(new BMap.Point(props.candidate.lng, props.candidate.lat));
   return { x: pixel.x, y: pixel.y };
 });
+function localToBd09(point) {
+  const corners = displayCornersBd09.value;
+  if (!corners) return null;
+  const u = (point[0] - displayCornersLocal[0][0]) /
+    (displayCornersLocal[1][0] - displayCornersLocal[0][0]);
+  const v = (point[1] - displayCornersLocal[0][1]) /
+    (displayCornersLocal[3][1] - displayCornersLocal[0][1]);
+  return [corners[0][0] + u * (corners[1][0] - corners[0][0]) +
+    v * (corners[3][0] - corners[0][0]),
+  corners[0][1] + u * (corners[1][1] - corners[0][1]) +
+    v * (corners[3][1] - corners[0][1])];
+}
+
+function bd09ToLocal(point) {
+  const corners = displayCornersBd09.value;
+  if (!corners) return null;
+  const x = point[0] - corners[0][0];
+  const y = point[1] - corners[0][1];
+  const dx = [corners[1][0] - corners[0][0], corners[1][1] - corners[0][1]];
+  const dy = [corners[3][0] - corners[0][0], corners[3][1] - corners[0][1]];
+  const determinant = dx[0] * dy[1] - dx[1] * dy[0];
+  if (Math.abs(determinant) < 1e-12) return null;
+  const u = (x * dy[1] - y * dy[0]) / determinant;
+  const v = (dx[0] * y - dx[1] * x) / determinant;
+  return [displayCornersLocal[0][0] + u * (displayCornersLocal[1][0] - displayCornersLocal[0][0]),
+    displayCornersLocal[0][1] + v * (displayCornersLocal[3][1] - displayCornersLocal[0][1])];
+}
+
+function linePath(points) {
+  return `M ${points[0][0]} ${points[0][1]} L ${points[1][0]} ${points[1][1]}`;
+}
+
+function circlePath(center, radius, project) {
+  const points = Array.from({ length: 65 }, (_, index) => {
+    const angle = index * Math.PI * 2 / 64;
+    return project([center.x + radius * Math.cos(angle), center.y + radius * Math.sin(angle)]);
+  });
+  return `M ${points.map((point) => point.join(" ")).join(" L ")} Z`;
+}
+
+function routeDelay(segment, result) {
+  const progress = segment.startProgress ?? (segment.startDistance ?? 0) /
+    (result.animationMaxDistance ?? result.displayArea?.radius ?? 900);
+  return `${0.45 + Math.max(0, Math.min(1, progress)) * 2.05}s`;
+}
+
+function localAreaPath(result) {
+  return geometryToSvgPath(result.displayArea.geometry, (point) => point);
+}
+
+const fallbackDemoResult = computed(() => props.analysisResult?.coordinateSystem === "preview-local-v1"
+  ? props.analysisResult : null);
+const cppSyntheticResult = computed(() => props.analysisResult?.source === "synthetic-cpp-engine");
+const liveDemoResult = computed(() => {
+  projectionVersion.value;
+  const result = props.analysisResult;
+  if (props.analysisMode === "cpp" && result?.displayArea?.type !== "polygon") return null;
+  if (mapState.value !== "ready" ||
+    !["preview-local-v1", "bd09ll"].includes(result?.coordinateSystem) ||
+    !map || !BMap || !displayCornersBd09.value) return null;
+  // The temporary road model and BD-09 map share an affine preview alignment.
+  // A verified backend result must provide its own coordinate transform.
+  const project = (point) => {
+    const converted = result.coordinateSystem === "preview-local-v1" ? localToBd09(point) : point;
+    const pixel = map.pointToPixel(new BMap.Point(...converted));
+    return [pixel.x, pixel.y];
+  };
+  return {
+    area: result.displayArea.type === "circle"
+      ? circlePath(result.displayArea.center, result.displayArea.radius, project)
+      : geometryToSvgPath(result.displayArea.geometry, project),
+    routes: (result.routeSegments ?? []).map((segment) => ({
+      id: segment.id,
+      d: linePath(segment.points.map(project)),
+      delay: routeDelay(segment, result),
+    })),
+    access: result.accessLink ? linePath(result.accessLink.points.map(project)) : "",
+  };
+});
 const projectedResult = computed(() => {
   projectionVersion.value;
-  if (mapState.value !== "ready" || !props.analysisResult || !map || !BMap) return null;
+  if (mapState.value !== "ready" || !props.analysisResult?.isochrone || !map || !BMap) return null;
   const project = ([lng, lat]) => {
     const pixel = map.pointToPixel(new BMap.Point(lng, lat));
     return [pixel.x, pixel.y];
@@ -121,11 +203,16 @@ const projectedResult = computed(() => {
       geometryToSvgPath(feature.geometry, project)),
   };
 });
-const stateMessage = computed(() => ({
+const stateMessage = computed(() => props.analysisMode === "cpp" ? ({
+  loading: "正在载入底图并校准合成路网范围…",
+  "no-key": "共享 SVG 底图 · C++ 合成路网演示",
+  error: `百度底图暂不可用 · ${mapError.value || "请检查网络或 AK"}`,
+  ready: "真实底图预览 · 叠加 C++ 合成路网等时圈",
+})[mapState.value] : ({
   loading: "正在载入百度底图并校准范围…",
   "no-key": "百度底图待配置 · 当前展示真实道路 SVG 示意",
   error: `百度底图暂不可用 · ${mapError.value || "请检查网络或 AK"}`,
-  ready: "真实底图预览 · 步行路网尚未接入",
+  ready: "真实底图 · 临时路线仅作交互示意",
 })[mapState.value]);
 
 function showNotice(message) {
@@ -231,14 +318,26 @@ async function convertBoundary(namespace) {
   return converted;
 }
 
-function selectPoint(lng, lat, coordType) {
+function selectPoint(lng, lat, coordType, localPoint = null) {
+  if (props.selectionDisabled) {
+    showNotice("当前分析尚未完成，请稍候再选点。");
+    return;
+  }
   const ring = coordType === "bd09ll" ? boundaryBd09.value : boundaryWgsRing;
   if (!ring || !pointInPolygon([lng, lat], [ring])) {
     showNotice("请在国帆路、江湾城路、殷高东路、国权北路围合区内选点。");
     return;
   }
-  emit("select", { lng, lat, coordType });
-  showNotice("候选起点已记录；真实路网接入后才能计算步行结果。");
+  const local = localPoint ?? (coordType === "bd09ll"
+    ? bd09ToLocal([lng, lat]) : wgsToLocal([lng, lat], fallbackOrigin));
+  if (!local) {
+    showNotice("坐标尚未准备好，请稍后再选点。");
+    return;
+  }
+  emit("select", { lng, lat, coordType, local: { x: local[0], y: local[1] } });
+  showNotice(props.analysisMode === "cpp"
+    ? "起点已选；点击右上角运行 C++ 路网计算。"
+    : "起点已选；点击右上角生成固定圆与临时路线。");
 }
 
 function handleMapClick(event) {
@@ -252,7 +351,7 @@ function handleFallbackClick(event) {
   const local = fallbackPointFromClient(event.clientX, event.clientY);
   if (!local) return;
   const [lng, lat] = localToWgs(local, fallbackOrigin);
-  selectPoint(lng, lat, "wgs84ll");
+  selectPoint(lng, lat, "wgs84ll", local);
 }
 
 function fallbackPointFromClient(clientX, clientY) {
@@ -475,9 +574,17 @@ onUnmounted(() => {
         <path v-for="feature in contextGroups.roadPath" :key="feature.id" :d="feature.d" class="real-road-path" />
         <path :d="fallbackBoundary" class="real-boundary-fill" />
         <path :d="fallbackBoundary" class="real-boundary-outline" />
+        <g v-if="fallbackDemoResult" class="real-demo-result" aria-hidden="true">
+          <circle v-if="analysisMode !== 'cpp' && fallbackDemoResult.displayArea.type === 'circle'" :cx="fallbackDemoResult.displayArea.center.x" :cy="fallbackDemoResult.displayArea.center.y" :r="fallbackDemoResult.displayArea.radius" class="real-demo-area" />
+          <path v-else-if="fallbackDemoResult.displayArea.type === 'polygon'" :d="localAreaPath(fallbackDemoResult)" class="real-demo-area" fill-rule="evenodd" />
+          <path v-for="segment in fallbackDemoResult.routeSegments" :key="segment.id" :d="linePath(segment.points)" class="real-demo-route" pathLength="1" :style="{ '--route-delay': routeDelay(segment, fallbackDemoResult) }" />
+          <path v-if="fallbackDemoResult.accessLink?.length > 2" :d="linePath(fallbackDemoResult.accessLink.points)" class="real-demo-access" />
+        </g>
       </g>
       <g v-if="fallbackCandidate" :style="{ transform: fallbackCandidateTransform }" class="real-candidate-mark" aria-hidden="true">
-        <circle r="12" class="real-candidate-halo" /><circle r="6" class="real-candidate-dot" />
+        <g class="real-candidate-glyph" :style="{ transform: `scale(${candidateMarkerScale})` }">
+          <circle r="8" class="real-candidate-halo" /><circle r="4" class="real-candidate-dot" />
+        </g>
       </g>
     </svg>
 
@@ -493,8 +600,15 @@ onUnmounted(() => {
       <path v-for="(path, index) in projectedResult?.gaps ?? []" :key="`gap-${index}`" :d="path" class="real-analysis-gap" />
       <path :d="liveBoundaryPath" class="real-live-boundary-fill" fill-rule="evenodd" />
       <path :d="liveBoundaryPath" class="real-live-boundary-outline" />
+      <g v-if="liveDemoResult" class="real-demo-result">
+        <path :d="liveDemoResult.area" class="real-demo-area" />
+        <path v-for="segment in liveDemoResult.routes" :key="segment.id" :d="segment.d" class="real-demo-route" pathLength="1" :style="{ '--route-delay': segment.delay }" />
+        <path v-if="analysisResult.accessLink?.length > 2" :d="liveDemoResult.access" class="real-demo-access" />
+      </g>
       <g v-if="liveCandidate" :transform="`translate(${liveCandidate.x} ${liveCandidate.y})`" class="real-candidate-mark">
-        <circle r="12" class="real-candidate-halo" /><circle r="6" class="real-candidate-dot" />
+        <g class="real-candidate-glyph" :style="{ transform: `scale(${candidateMarkerScale})` }">
+          <circle r="8" class="real-candidate-halo" /><circle r="4" class="real-candidate-dot" />
+        </g>
       </g>
     </svg>
 
@@ -503,8 +617,11 @@ onUnmounted(() => {
       <span>{{ stateMessage }}</span>
     </div>
     <div class="real-map-actions">
-      <p>虚线内可选起点，外围仅用于展示<br /><strong>点击区内位置，记录候选起点</strong></p>
+      <p>虚线内可选起点，外围可显示{{ analysisMode === 'cpp' ? '等时圈和街段' : '示意路线' }}<br /><strong>点击区内位置，记录候选起点</strong></p>
       <button type="button" @click.stop="selectRegionCenter">选区域中心</button>
+    </div>
+    <div v-if="analysisResult?.coordinateSystem === 'preview-local-v1'" class="real-demo-legend" aria-label="合成示意图例">
+      <span><i :class="cppSyntheticResult ? 'legend-area' : 'legend-circle'"></i>{{ cppSyntheticResult ? 'C++ 路网等时圈 · 近似面' : '固定半径示意' }}</span><span><i class="legend-route"></i>{{ cppSyntheticResult ? 'C++ 可达街段' : '临时路网路线' }}</span><span v-if="analysisResult?.accessLink"><i class="legend-access"></i>估算接入 · 未核实</span>
     </div>
     <div ref="probeEl" class="real-map-probe" :class="{ visible: probeVisible, outside: !hoverInside }" aria-hidden="true">
       <span></span><small>{{ hoverInside ? "选起点" : "区外" }}</small>

@@ -10,6 +10,10 @@ add_executable(test_ring_builder test_ring_builder.cpp)
 target_link_libraries(test_ring_builder PRIVATE isochrone_core)
 add_test(NAME ring_builder COMMAND test_ring_builder)
 
+add_executable(test_road_enclosure test_road_enclosure.cpp)
+target_link_libraries(test_road_enclosure PRIVATE isochrone_core)
+add_test(NAME road_enclosure COMMAND test_road_enclosure)
+
 add_executable(test_engine test_engine.cpp)
 target_link_libraries(test_engine PRIVATE isochrone_core)
 add_test(NAME graph_engine COMMAND test_engine)

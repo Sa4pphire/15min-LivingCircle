@@ -115,6 +115,7 @@ std::string serialize_engine_result(const EngineResult& result) {
          << "\"snappedOriginMeters\":";
   write_point(result.snapped_origin);
   output << ",\"snapDistanceMeters\":" << result.snap_distance_meters
+         << ",\"originAccessSeconds\":" << result.origin_access_seconds
          << ",\"reachableEdges\":[";
   for (std::size_t i = 0; i < result.reachable_edges.size(); ++i) {
     if (i) output << ',';

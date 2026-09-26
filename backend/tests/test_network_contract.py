@@ -48,6 +48,8 @@ def test_polygon_holes_and_connected_over_time() -> None:
             "travelTimeSeconds": 1000.0,
         }],
         "snapDistanceMeters": 0,
+        "originAccessSeconds": 0,
+        "snappedOriginMeters": [0, 0],
         "diagnostics": {"reachableNodeCount": 1,
                         "reachableCrossingCount": 0, "warnings": []},
     }
@@ -78,6 +80,8 @@ def test_python_cpp_synthetic_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None
         engine.settings, cpp_engine_path=binary))
     payload, metadata = network.load_engine_request(
         CenterPoint(lng=121.5, lat=31.3))
+    assert payload["displayAreaRadiusMeters"] == 80
+    assert payload["displayMinHoleAreaSquareMeters"] == 2500
     assert payload["originEdgeId"] == "west_south_sidewalk"
     assert any(edge["kind"] == "shared_way" for edge in payload["edges"])
     result = asyncio.run(engine.run_engine(payload))

@@ -29,8 +29,15 @@
 .real-analysis-area { fill: rgba(20, 125, 114, .12); stroke: #147d72; stroke-width: 1.5; }
 .real-analysis-walkway { fill: none; stroke: #147d72; stroke-width: 5; stroke-linecap: round; }
 .real-analysis-gap { fill: none; stroke: #d1764e; stroke-width: 6; stroke-linecap: round; }
+.real-demo-result { pointer-events: none; }
+.real-demo-area { fill: rgba(20, 125, 114, .09); fill-rule: evenodd; stroke: #0a786d; stroke-width: 2.6; vector-effect: non-scaling-stroke; animation: real-circle-reveal .65s ease-out both; }
+.real-demo-route { fill: none; stroke: #087e71; stroke-width: 4.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .62s cubic-bezier(.22, .7, .3, 1) var(--route-delay, .5s) forwards; }
+.real-demo-access { fill: none; stroke: #d1764e; stroke-width: 2.5; stroke-dasharray: 4 4; stroke-linecap: round; vector-effect: non-scaling-stroke; animation: real-circle-reveal .5s ease-out .3s both; }
+@keyframes real-circle-reveal { from { opacity: 0; } to { opacity: 1; } }
+@keyframes real-route-draw { to { stroke-dashoffset: 0; } }
 .real-candidate-halo { fill: #fff; stroke: rgba(20, 125, 114, .27); stroke-width: 2; }
 .real-candidate-dot { fill: #147d72; stroke: #fff; stroke-width: 1.5; }
+.real-candidate-glyph { transform-box: fill-box; transform-origin: center; transition: transform .42s cubic-bezier(.2, .75, .2, 1); }
 .real-map-note { position: absolute; z-index: 4; top: 99px; left: 19px; display: flex; align-items: center; gap: 8px; max-width: min(430px, calc(100% - 38px)); padding: 9px 12px; background: rgba(251, 253, 252, .92); color: #476f62; font-size: 11px; line-height: 1.4; box-shadow: 0 3px 15px rgba(27, 69, 57, .06); }
 .real-note-signal { flex: none; width: 6px; height: 6px; border-radius: 50%; background: #6eb28c; }
 .real-map-actions { position: absolute; z-index: 4; right: 22px; bottom: 22px; display: grid; gap: 9px; justify-items: start; max-width: min(245px, 60vw); padding: 15px 17px; background: rgba(251, 253, 252, .94); color: #31574c; box-shadow: 0 5px 24px rgba(33, 66, 53, .11); }
@@ -39,6 +46,13 @@
 .real-map-actions button { padding: 7px 11px; border: 0; border-radius: 4px; background: #dcefe4; color: #176b5e; font-size: 11px; font-weight: 650; cursor: pointer; transition: background .16s ease, transform .16s ease; }
 .real-map-actions button:hover { background: #c8e9d5; transform: translateY(-2px); }
 .real-map-actions button:active { transform: scale(.97); }
+.real-demo-legend { position: absolute; z-index: 4; left: 16px; bottom: 17px; display: flex; flex-wrap: wrap; gap: 8px 14px; max-width: calc(100% - 310px); padding: 8px 10px; background: rgba(251, 253, 252, .94); color: #31574c; font-size: 10px; box-shadow: 0 2px 12px rgba(33, 66, 53, .07); pointer-events: none; }
+.real-demo-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.real-demo-legend i { display: inline-block; flex: none; width: 13px; height: 8px; }
+.real-demo-legend .legend-circle { height: 11px; width: 11px; border: 1.5px solid #147d72; border-radius: 50%; background: rgba(20, 125, 114, .1); }
+.real-demo-legend .legend-area { height: 11px; width: 14px; border: 1.5px solid #147d72; background: rgba(20, 125, 114, .1); clip-path: polygon(5% 42%, 28% 10%, 69% 18%, 100% 54%, 82% 95%, 34% 84%); }
+.real-demo-legend .legend-route { border-top: 3px solid #087e71; transform: translateY(2px); }
+.real-demo-legend .legend-access { border-top: 2px dashed #d1764e; transform: translateY(2px); }
 .real-map-probe { position: absolute; z-index: 6; left: 0; top: 0; display: flex; align-items: center; gap: 14px; opacity: 0; pointer-events: none; transform: translate3d(-100px,-100px,0); transition: opacity .12s ease; }
 .real-map-probe.visible { opacity: 1; }
 .real-map-probe > span { width: 28px; height: 28px; margin: -14px; border: 1px solid #148375; border-radius: 50%; background: rgba(20, 125, 114, .12); box-shadow: 0 0 0 5px rgba(20, 125, 114, .06); }
@@ -51,11 +65,14 @@
   .real-map-actions { right: 9px; bottom: 10px; padding: 10px 12px; max-width: 210px; }
   .real-map-actions p { font-size: 10px; }
   .real-map-probe { display: none; }
+  .real-demo-legend { left: 8px; bottom: 8px; max-width: calc(100% - 235px); padding: 6px; gap: 4px 8px; font-size: 9px; }
 }
 @media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
   .real-map-probe { display: none; }
   .real-baidu-map, .real-map-actions button { transition: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .real-context, .real-fallback-svg .real-candidate-mark { transition: none; }
+  .real-context, .real-fallback-svg .real-candidate-mark, .real-candidate-glyph { transition: none; }
+  .real-demo-area, .real-demo-access, .real-demo-route { animation: none; opacity: 1; }
+  .real-demo-route { stroke-dashoffset: 0; }
 }
