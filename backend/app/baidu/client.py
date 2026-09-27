@@ -1,4 +1,11 @@
 """百度地图 Web API 客户端。"""
+from pathlib import Path
+
+from ..cache import (
+    get_cached_json,
+    make_cache_key,
+    save_cached_json,
+)
 
 from typing import Any
 
@@ -19,24 +26,47 @@ class BaiduClient:
         *,
         ak: str | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
-    ) -> None:
+        cache_dir: Path | None = None,
+        cache_enabled: bool | None = None,
+) -> None:
         self._ak = settings.baidu_server_ak if ak is None else ak
+        self._cache_dir = cache_dir
+        self._cache_enabled = (
+            transport is None
+            if cache_enabled is None
+            else cache_enabled
+)
         self._http = httpx.AsyncClient(
             base_url=settings.baidu_api_base_url,
             timeout=settings.baidu_timeout_seconds,
             transport=transport,
         )
 
-    # 异步关闭 HTTP 客户端，释放网络连接
+    # 异步关闭 HTTP 客户端，释放网络连接；"async def"用来定义“异步函数”，可以在函数内部使用“await”关键字等待异步操作完成。
     async def aclose(self) -> None:
         await self._http.aclose()
 
     # 统一发送百度 API 请求，解析 JSON，并分类处理错误
     async def _get_json(
-        self, path: str, params: dict[str, Any]
-    ) -> dict[str, Any]:
+        self,
+        path: str,
+        params: dict[str, Any],
+) -> dict[str, Any]:
         if not self._ak:
             raise BaiduAuthError("未配置百度服务端 AK")
+        cache_key = None
+
+        if self._cache_enabled:
+            cache_key = make_cache_key(
+                f"baidu:{path}",
+                params,
+            )
+            cached = get_cached_json(
+                cache_key,
+                cache_dir=self._cache_dir,
+            )
+            if isinstance(cached, dict):
+                return cached
 
         try:
             response = await self._http.get(
@@ -102,6 +132,13 @@ class BaiduClient:
             raise BaiduApiError(
                 f"百度 API 错误：{status}"
             )
+
+        if self._cache_enabled and cache_key is not None:
+            save_cached_json(
+                cache_key,
+                payload,
+                cache_dir=self._cache_dir,
+           )
 
         return payload
 
