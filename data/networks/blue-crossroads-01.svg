@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="-363.15 -1437.85 180 180" role="img" aria-labelledby="network-title network-desc">
+<title id="network-title">蓝色圈选路口：转弯与过街校对（未实地核实）</title>
+<desc id="network-desc">仅展示步行道路和图节点。深绿为共享通道，蓝绿为双侧人行道，棕色为转向连接，红线与红点为未经核实的过街连接及其端点；空心橙点为度数一的断头节点。蓝色连接与蓝点为用户本轮人工校对的位置，仍未现场核实。</desc>
+<metadata>Source: data/networks/synthetic-preview.json; synthetic walking graph, not field-verified.</metadata>
+<style>
+.edge { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.shared_way { stroke: #245c52; stroke-width: 4.1; opacity: .85; }
+.sidewalk { stroke: #75a5a0; stroke-width: 3.5; opacity: .9; }
+.turn { stroke: #b17c44; stroke-width: 2.5; opacity: .85; }
+.crossing { stroke: #c64536; stroke-width: 5.5; stroke-dasharray: 7 4; }
+.manual-link { stroke: #009cd4; stroke-width: 6.5; opacity: 1; }
+.edge:hover { stroke-width: 12; opacity: 1; }
+.node { stroke-width: 0; }
+.ordinary-node { fill: #54746e; opacity: .58; }
+.junction-node { fill: #153c36; }
+.terminal-node { fill: #fff; stroke: #c3843d; stroke-width: 2.5; }
+.crossing-node { fill: #c64536; stroke: #fff; stroke-width: 2; }
+.manual-node { fill: #009cd4; stroke: #fff; stroke-width: 2; }
+.node:hover { fill: #141414; stroke: #fff; stroke-width: 3; }
+</style>
+<g id="roads-shared_way">
+<path class="edge shared_way" d="M-315.5 -1360.1 L-326.8 -1346.8"><title>共享通道 | ID: w:1022478447:0:0 | from: shared:p:-315.5:-1360.1 | to: shared:p:-326.8:-1346.8 | streetBlockId: shared:1022478447 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-326.8 -1346.8 L-339 -1345.2"><title>共享通道 | ID: w:1022478447:1:0 | from: shared:p:-326.8:-1346.8 | to: shared:p:-339.0:-1345.2 | streetBlockId: shared:1022478447 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-339 -1345.2 L-355 -1330.6"><title>共享通道 | ID: w:1022478447:2:0 | from: shared:p:-339.0:-1345.2 | to: shared:p:-355.0:-1330.6 | streetBlockId: shared:1022478447 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-355 -1330.6 L-348 -1322"><title>共享通道 | ID: w:1022478447:3:0 | from: shared:p:-355.0:-1330.6 | to: shared:p:-348.0:-1322.0 | streetBlockId: shared:1022478447 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-348 -1322 L-341.3 -1322.3"><title>共享通道 | ID: w:1022478447:4:0 | from: shared:p:-348.0:-1322.0 | to: shared:p:-341.3:-1322.3 | streetBlockId: shared:1022478447 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-341.3 -1322.3 L-329.7 -1315.3"><title>共享通道 | ID: w:1022478447:5:0 | from: shared:p:-341.3:-1322.3 | to: shared:p:-329.7:-1315.3 | streetBlockId: shared:1022478447 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-329.7 -1315.3 L-322.8 -1302.5"><title>共享通道 | ID: w:1022478447:6:0 | from: shared:p:-329.7:-1315.3 | to: shared:p:-322.8:-1302.5 | streetBlockId: shared:1022478447 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-322.8 -1302.5 L-294.1 -1345.2"><title>共享通道 | ID: w:1022478447:7:0 | from: shared:p:-322.8:-1302.5 | to: shared:p:-294.1:-1345.2 | streetBlockId: shared:1022478447 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-294.1 -1345.2 L-300 -1354.4"><title>共享通道 | ID: w:1022478447:8:0 | from: shared:p:-294.1:-1345.2 | to: shared:p:-300.0:-1354.4 | streetBlockId: shared:1022478447 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-300 -1354.4 L-315.5 -1360.1"><title>共享通道 | ID: w:1022478447:9:0 | from: shared:p:-300.0:-1354.4 | to: shared:p:-315.5:-1360.1 | streetBlockId: shared:1022478447 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-486.7 -1458.9 L-302.2 -1352.3"><title>共享通道 | ID: w:1022478448:10:0 | from: shared:p:-486.7:-1458.9 | to: shared:p:-302.2:-1352.3 | streetBlockId: shared:1022478448 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-302.2 -1352.3 L-299.1 -1345.4"><title>共享通道 | ID: w:1022478448:11:0 | from: shared:p:-302.2:-1352.3 | to: shared:p:-299.1:-1345.4 | streetBlockId: shared:1022478448 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-299.1 -1345.4 L-287.1 -1334.1"><title>共享通道 | ID: w:1022478448:12:0 | from: shared:p:-299.1:-1345.4 | to: shared:p:-287.1:-1334.1 | streetBlockId: shared:1022478448 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-287.1 -1334.1 L-266.5 -1320.3"><title>共享通道 | ID: w:1022478448:13:0 | from: shared:p:-287.1:-1334.1 | to: shared:p:-266.5:-1320.3 | streetBlockId: shared:1022478448 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-299.1 -1345.4 L-344.6 -1326.7"><title>共享通道 | ID: w:1022478450:0:0 | from: shared:p:-299.1:-1345.4 | to: shared:p:-344.6:-1326.7 | streetBlockId: shared:1022478450 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-344.6 -1326.7 L-348.1 -1347.2"><title>共享通道 | ID: w:1022478450:1:0 | from: shared:p:-344.6:-1326.7 | to: shared:p:-348.1:-1347.2 | streetBlockId: shared:1022478450 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-348.1 -1347.2 L-360.3 -1337.9"><title>共享通道 | ID: w:1022478450:2:0 | from: shared:p:-348.1:-1347.2 | to: shared:p:-360.3:-1337.9 | streetBlockId: shared:1022478450 | sharedWayType: shared_alley</title></path>
+<path class="edge shared_way" d="M-360.3 -1337.9 L-375.5 -1346.6"><title>共享通道 | ID: w:1022478450:3:0 | from: shared:p:-360.3:-1337.9 | to: shared:p:-375.5:-1346.6 | streetBlockId: shared:1022478450 | sharedWayType: shared_alley</title></path>
+</g>
+<g id="roads-sidewalk">
+<path class="edge sidewalk" d="M-153.66 -1262.2 L-206.46 -1300.37"><title>普通道路一侧人行道 | ID: w:74415448:5:0:left | from: major:74415448:p:-152.0:-1264.7:left | to: major:74415448:p:-204.7:-1302.8:left | streetBlockId: major:74415448 | side: left</title></path>
+<path class="edge sidewalk" d="M-150.34 -1267.2 L-202.94 -1305.23"><title>普通道路一侧人行道 | ID: w:74415448:5:0:right | from: major:74415448:p:-152.0:-1264.7:right | to: major:74415448:p:-204.7:-1302.8:right | streetBlockId: major:74415448 | side: right</title></path>
+<path class="edge sidewalk" d="M-234.94 -1401.8 L-127.6 -1571.8"><title>普通道路一侧人行道 | ID: w:74415455:0:0:left | from: major:74415455:p:-232.4:-1400.2:left | to: major:74415455:p:-125.0:-1570.3:left | streetBlockId: major:74415455 | side: left</title></path>
+<path class="edge sidewalk" d="M-229.86 -1398.6 L-122.4 -1568.81"><title>普通道路一侧人行道 | ID: w:74415455:0:0:right | from: major:74415455:p:-232.4:-1400.2:right | to: major:74415455:p:-125.0:-1570.3:right | streetBlockId: major:74415455 | side: right</title></path>
+<path class="edge sidewalk" d="M-284.47 -1333.93 L-325.78 -1267.57"><title>普通道路一侧人行道 | ID: w:74415456:0:0:left | from: manual-junction:blue-crossroads-01:port:sw-west-inner | to: major:74415456:p:-328.3:-1269.2:left | streetBlockId: major:74415456 | side: left</title></path>
+<path class="edge sidewalk" d="M-289.56 -1337.11 L-330.82 -1270.83"><title>普通道路一侧人行道 | ID: w:74415456:0:0:right | from: manual-junction:blue-crossroads-01:port:sw-west | to: major:74415456:p:-328.3:-1269.2:right | streetBlockId: major:74415456 | side: right</title></path>
+<path class="edge sidewalk" d="M-325.78 -1267.57 L-534.75 -958.61"><title>普通道路一侧人行道 | ID: w:74415456:1:0:left | from: major:74415456:p:-328.3:-1269.2:left | to: major:74415456:p:-537.3:-960.2:left | streetBlockId: major:74415456 | side: left</title></path>
+<path class="edge sidewalk" d="M-330.82 -1270.83 L-539.85 -961.79"><title>普通道路一侧人行道 | ID: w:74415456:1:0:right | from: major:74415456:p:-328.3:-1269.2:right | to: major:74415456:p:-537.3:-960.2:right | streetBlockId: major:74415456 | side: right</title></path>
+<path class="edge sidewalk" d="M-206.46 -1300.37 L-235.16 -1321.07"><title>普通道路一侧人行道 | ID: w:168476042:0:0:left | from: major:74415448:p:-204.7:-1302.8:left | to: major:168476042:p:-233.4:-1323.5:left | streetBlockId: major:168476042 | side: left</title></path>
+<path class="edge sidewalk" d="M-202.94 -1305.23 L-231.65 -1325.93"><title>普通道路一侧人行道 | ID: w:168476042:0:0:right | from: major:74415448:p:-204.7:-1302.8:right | to: major:168476042:p:-233.4:-1323.5:right | streetBlockId: major:168476042 | side: right</title></path>
+<path class="edge sidewalk" d="M-235.16 -1321.07 L-254.95 -1333.03"><title>普通道路一侧人行道 | ID: w:168476055:0:0:left | from: major:168476042:p:-233.4:-1323.5:left | to: manual-junction:blue-crossroads-01:port:se-south | streetBlockId: major:168476055 | side: left</title></path>
+<path class="edge sidewalk" d="M-231.65 -1325.93 L-251.85 -1338.15"><title>普通道路一侧人行道 | ID: w:168476055:0:0:right | from: major:168476042:p:-233.4:-1323.5:right | to: manual-junction:blue-crossroads-01:port:se-north | streetBlockId: major:168476055 | side: right</title></path>
+<path class="edge sidewalk" d="M-534.94 -961.29 L-320.1 -1270.37"><title>普通道路一侧人行道 | ID: w:225928287:3:0:left | from: major:225928287:p:-532.4:-959.7:left | to: major:225928287:p:-317.6:-1268.7:left | streetBlockId: major:225928287 | side: left</title></path>
+<path class="edge sidewalk" d="M-529.86 -958.11 L-315.11 -1267.04"><title>普通道路一侧人行道 | ID: w:225928287:3:0:right | from: major:225928287:p:-532.4:-959.7:right | to: major:225928287:p:-317.6:-1268.7:right | streetBlockId: major:225928287 | side: right</title></path>
+<path class="edge sidewalk" d="M-320.1 -1270.37 L-281.03 -1331.36"><title>普通道路一侧人行道 | ID: w:225928287:4:0:left | from: major:225928287:p:-317.6:-1268.7:left | to: manual-junction:blue-crossroads-01:port:sw-east-inner | streetBlockId: major:225928287 | side: left</title></path>
+<path class="edge sidewalk" d="M-315.11 -1267.04 L-275.98 -1328.12"><title>普通道路一侧人行道 | ID: w:225928287:4:0:right | from: major:225928287:p:-317.6:-1268.7:right | to: manual-junction:blue-crossroads-01:port:sw-east | streetBlockId: major:225928287 | side: right</title></path>
+<path class="edge sidewalk" d="M-408.08 -1430.69 L-291.52 -1362.48"><title>普通道路一侧人行道 | ID: w:441758702:3:0:s1:left | from: major:441758702:p:-409.6:-1428.1:left | to: manual-junction:blue-crossroads-01:port:nw-north | streetBlockId: major:441758702 | side: left</title></path>
+<path class="edge sidewalk" d="M-411.12 -1425.51 L-294.55 -1357.3"><title>普通道路一侧人行道 | ID: w:441758702:3:0:s1:right | from: major:441758702:p:-409.6:-1428.1:right | to: manual-junction:blue-crossroads-01:port:nw-south | streetBlockId: major:441758702 | side: right</title></path>
+<path class="edge sidewalk" d="M-261.43 -1361.55 L-234.94 -1401.8"><title>普通道路一侧人行道 | ID: w:1322655091:0:0:left | from: manual-junction:blue-crossroads-01:port:ne-east-inner | to: major:74415455:p:-232.4:-1400.2:left | streetBlockId: major:1322655091 | side: left</title></path>
+<path class="edge sidewalk" d="M-256.38 -1358.32 L-229.86 -1398.6"><title>普通道路一侧人行道 | ID: w:1322655091:0:0:right | from: manual-junction:blue-crossroads-01:port:ne-east | to: major:74415455:p:-232.4:-1400.2:right | streetBlockId: major:1322655091 | side: right</title></path>
+<path class="edge sidewalk" d="M-174.97 -1502.05 L-265.1 -1364.28"><title>普通道路一侧人行道 | ID: w:1322655092:0:0:left | from: major:74415469:p:-177.6:-1503.5:left | to: manual-junction:blue-crossroads-01:port:ne-west-inner | streetBlockId: major:1322655092 | side: left</title></path>
+<path class="edge sidewalk" d="M-180.23 -1504.95 L-270.19 -1367.45"><title>普通道路一侧人行道 | ID: w:1322655092:0:0:right | from: major:74415469:p:-177.6:-1503.5:right | to: manual-junction:blue-crossroads-01:port:ne-west | streetBlockId: major:1322655092 | side: right</title></path>
+</g>
+<g id="roads-turn">
+<path class="edge turn manual-link" d="M-270.19 -1367.45 L-291.52 -1362.48"><title>显式转向连接 | ID: manual-junction:blue-crossroads-01:corner-north | from: manual-junction:blue-crossroads-01:port:ne-west | to: manual-junction:blue-crossroads-01:port:nw-north | 人工校对: blue-crossroads-01 | 未现场核实</title></path>
+<path class="edge turn manual-link" d="M-294.55 -1357.3 L-289.56 -1337.11"><title>显式转向连接 | ID: manual-junction:blue-crossroads-01:corner-west | from: manual-junction:blue-crossroads-01:port:nw-south | to: manual-junction:blue-crossroads-01:port:sw-west | 人工校对: blue-crossroads-01 | 未现场核实</title></path>
+<path class="edge turn manual-link" d="M-275.98 -1328.12 L-254.95 -1333.03"><title>显式转向连接 | ID: manual-junction:blue-crossroads-01:corner-south | from: manual-junction:blue-crossroads-01:port:sw-east | to: manual-junction:blue-crossroads-01:port:se-south | 人工校对: blue-crossroads-01 | 未现场核实</title></path>
+<path class="edge turn manual-link" d="M-251.85 -1338.15 L-256.38 -1358.32"><title>显式转向连接 | ID: manual-junction:blue-crossroads-01:corner-east | from: manual-junction:blue-crossroads-01:port:se-north | to: manual-junction:blue-crossroads-01:port:ne-east | 人工校对: blue-crossroads-01 | 未现场核实</title></path>
+</g>
+<g id="roads-crossing">
+<path class="edge crossing manual-link" d="M-270.19 -1367.45 L-256.38 -1358.32"><title>显式过街连接（合成，未核实） | ID: manual-junction:blue-crossroads-01:cross-ne | from: manual-junction:blue-crossroads-01:port:ne-west | to: manual-junction:blue-crossroads-01:port:ne-east | 人工校对: blue-crossroads-01 | 未现场核实 | 等待时间: 20.0 秒</title></path>
+<path class="edge crossing manual-link" d="M-289.56 -1337.11 L-275.98 -1328.12"><title>显式过街连接（合成，未核实） | ID: manual-junction:blue-crossroads-01:cross-sw | from: manual-junction:blue-crossroads-01:port:sw-west | to: manual-junction:blue-crossroads-01:port:sw-east | 人工校对: blue-crossroads-01 | 未现场核实 | 等待时间: 20.0 秒</title></path>
+<path class="edge crossing manual-link" d="M-291.52 -1362.48 L-294.55 -1357.3"><title>显式过街连接（合成，未核实） | ID: manual-junction:blue-crossroads-01:cross-nw | from: manual-junction:blue-crossroads-01:port:nw-north | to: manual-junction:blue-crossroads-01:port:nw-south | 人工校对: blue-crossroads-01 | 未现场核实 | 等待时间: 20.0 秒</title></path>
+<path class="edge crossing manual-link" d="M-251.85 -1338.15 L-254.95 -1333.03"><title>显式过街连接（合成，未核实） | ID: manual-junction:blue-crossroads-01:cross-se | from: manual-junction:blue-crossroads-01:port:se-north | to: manual-junction:blue-crossroads-01:port:se-south | 人工校对: blue-crossroads-01 | 未现场核实 | 等待时间: 20.0 秒</title></path>
+<path class="edge crossing manual-link" d="M-265.1 -1364.28 L-284.47 -1333.93"><title>显式过街连接（合成，未核实） | ID: manual-junction:blue-crossroads-01:cross-west-inner | from: manual-junction:blue-crossroads-01:port:ne-west-inner | to: manual-junction:blue-crossroads-01:port:sw-west-inner | 人工校对: blue-crossroads-01 | 未现场核实 | 等待时间: 20.0 秒</title></path>
+<path class="edge crossing manual-link" d="M-261.43 -1361.55 L-281.03 -1331.36"><title>显式过街连接（合成，未核实） | ID: manual-junction:blue-crossroads-01:cross-east-inner | from: manual-junction:blue-crossroads-01:port:ne-east-inner | to: manual-junction:blue-crossroads-01:port:sw-east-inner | 人工校对: blue-crossroads-01 | 未现场核实 | 等待时间: 20.0 秒</title></path>
+</g>
+<g id="nodes-ordinary">
+<circle class="node ordinary-node" cx="-206.46" cy="-1300.37" r="1.8"><title>节点 ID: major:74415448:p:-204.7:-1302.8:left | 度数: 2 | 局部坐标: (-206.458, 1300.369) m</title></circle>
+<circle class="node ordinary-node" cx="-202.94" cy="-1305.23" r="1.8"><title>节点 ID: major:74415448:p:-204.7:-1302.8:right | 度数: 2 | 局部坐标: (-202.942, 1305.231) m</title></circle>
+<circle class="node ordinary-node" cx="-234.94" cy="-1401.8" r="1.8"><title>节点 ID: major:74415455:p:-232.4:-1400.2:left | 度数: 2 | 局部坐标: (-234.937, 1401.802) m</title></circle>
+<circle class="node ordinary-node" cx="-229.86" cy="-1398.6" r="1.8"><title>节点 ID: major:74415455:p:-232.4:-1400.2:right | 度数: 2 | 局部坐标: (-229.863, 1398.598) m</title></circle>
+<circle class="node ordinary-node" cx="-325.78" cy="-1267.57" r="1.8"><title>节点 ID: major:74415456:p:-328.3:-1269.2:left | 度数: 2 | 局部坐标: (-325.784, 1267.567) m</title></circle>
+<circle class="node ordinary-node" cx="-330.82" cy="-1270.83" r="1.8"><title>节点 ID: major:74415456:p:-328.3:-1269.2:right | 度数: 2 | 局部坐标: (-330.816, 1270.833) m</title></circle>
+<circle class="node ordinary-node" cx="-235.16" cy="-1321.07" r="1.8"><title>节点 ID: major:168476042:p:-233.4:-1323.5:left | 度数: 2 | 局部坐标: (-235.155, 1321.067) m</title></circle>
+<circle class="node ordinary-node" cx="-231.65" cy="-1325.93" r="1.8"><title>节点 ID: major:168476042:p:-233.4:-1323.5:right | 度数: 2 | 局部坐标: (-231.645, 1325.933) m</title></circle>
+<circle class="node ordinary-node" cx="-320.1" cy="-1270.37" r="1.8"><title>节点 ID: major:225928287:p:-317.6:-1268.7:left | 度数: 2 | 局部坐标: (-320.095, 1270.365) m</title></circle>
+<circle class="node ordinary-node" cx="-315.11" cy="-1267.04" r="1.8"><title>节点 ID: major:225928287:p:-317.6:-1268.7:right | 度数: 2 | 局部坐标: (-315.105, 1267.035) m</title></circle>
+<circle class="node ordinary-node" cx="-315.5" cy="-1360.1" r="1.8"><title>节点 ID: shared:p:-315.5:-1360.1 | 度数: 2 | 局部坐标: (-315.5, 1360.1) m</title></circle>
+<circle class="node ordinary-node" cx="-326.8" cy="-1346.8" r="1.8"><title>节点 ID: shared:p:-326.8:-1346.8 | 度数: 2 | 局部坐标: (-326.8, 1346.8) m</title></circle>
+<circle class="node ordinary-node" cx="-339" cy="-1345.2" r="1.8"><title>节点 ID: shared:p:-339.0:-1345.2 | 度数: 2 | 局部坐标: (-339.0, 1345.2) m</title></circle>
+<circle class="node ordinary-node" cx="-355" cy="-1330.6" r="1.8"><title>节点 ID: shared:p:-355.0:-1330.6 | 度数: 2 | 局部坐标: (-355.0, 1330.6) m</title></circle>
+<circle class="node ordinary-node" cx="-348" cy="-1322" r="1.8"><title>节点 ID: shared:p:-348.0:-1322.0 | 度数: 2 | 局部坐标: (-348.0, 1322.0) m</title></circle>
+<circle class="node ordinary-node" cx="-341.3" cy="-1322.3" r="1.8"><title>节点 ID: shared:p:-341.3:-1322.3 | 度数: 2 | 局部坐标: (-341.3, 1322.3) m</title></circle>
+<circle class="node ordinary-node" cx="-329.7" cy="-1315.3" r="1.8"><title>节点 ID: shared:p:-329.7:-1315.3 | 度数: 2 | 局部坐标: (-329.7, 1315.3) m</title></circle>
+<circle class="node ordinary-node" cx="-322.8" cy="-1302.5" r="1.8"><title>节点 ID: shared:p:-322.8:-1302.5 | 度数: 2 | 局部坐标: (-322.8, 1302.5) m</title></circle>
+<circle class="node ordinary-node" cx="-294.1" cy="-1345.2" r="1.8"><title>节点 ID: shared:p:-294.1:-1345.2 | 度数: 2 | 局部坐标: (-294.1, 1345.2) m</title></circle>
+<circle class="node ordinary-node" cx="-300" cy="-1354.4" r="1.8"><title>节点 ID: shared:p:-300.0:-1354.4 | 度数: 2 | 局部坐标: (-300.0, 1354.4) m</title></circle>
+<circle class="node ordinary-node" cx="-302.2" cy="-1352.3" r="1.8"><title>节点 ID: shared:p:-302.2:-1352.3 | 度数: 2 | 局部坐标: (-302.2, 1352.3) m</title></circle>
+<circle class="node ordinary-node" cx="-287.1" cy="-1334.1" r="1.8"><title>节点 ID: shared:p:-287.1:-1334.1 | 度数: 2 | 局部坐标: (-287.1, 1334.1) m</title></circle>
+<circle class="node ordinary-node" cx="-344.6" cy="-1326.7" r="1.8"><title>节点 ID: shared:p:-344.6:-1326.7 | 度数: 2 | 局部坐标: (-344.6, 1326.7) m</title></circle>
+<circle class="node ordinary-node" cx="-348.1" cy="-1347.2" r="1.8"><title>节点 ID: shared:p:-348.1:-1347.2 | 度数: 2 | 局部坐标: (-348.1, 1347.2) m</title></circle>
+<circle class="node ordinary-node" cx="-360.3" cy="-1337.9" r="1.8"><title>节点 ID: shared:p:-360.3:-1337.9 | 度数: 2 | 局部坐标: (-360.3, 1337.9) m</title></circle>
+</g>
+<g id="nodes-junction">
+<circle class="node junction-node" cx="-299.1" cy="-1345.4" r="3.8"><title>节点 ID: shared:p:-299.1:-1345.4 | 度数: 3 | 局部坐标: (-299.1, 1345.4) m</title></circle>
+</g>
+<g id="nodes-terminal">
+<circle class="node terminal-node" cx="-266.5" cy="-1320.3" r="5.2"><title>节点 ID: shared:p:-266.5:-1320.3 | 度数: 1 | 局部坐标: (-266.5, 1320.3) m</title></circle>
+</g>
+<g id="nodes-crossing">
+<circle class="node crossing-node manual-node" cx="-270.19" cy="-1367.45" r="3.4"><title>节点 ID: manual-junction:blue-crossroads-01:port:ne-west | 度数: 3 | 局部坐标: (-270.192, 1367.448) m</title></circle>
+<circle class="node crossing-node manual-node" cx="-265.1" cy="-1364.28" r="3.4"><title>节点 ID: manual-junction:blue-crossroads-01:port:ne-west-inner | 度数: 2 | 局部坐标: (-265.099, 1364.277) m</title></circle>
+<circle class="node crossing-node manual-node" cx="-261.43" cy="-1361.55" r="3.4"><title>节点 ID: manual-junction:blue-crossroads-01:port:ne-east-inner | 度数: 2 | 局部坐标: (-261.429, 1361.553) m</title></circle>
+<circle class="node crossing-node manual-node" cx="-256.38" cy="-1358.32" r="3.4"><title>节点 ID: manual-junction:blue-crossroads-01:port:ne-east | 度数: 3 | 局部坐标: (-256.377, 1358.317) m</title></circle>
+<circle class="node crossing-node manual-node" cx="-289.56" cy="-1337.11" r="3.4"><title>节点 ID: manual-junction:blue-crossroads-01:port:sw-west | 度数: 3 | 局部坐标: (-289.56, 1337.105) m</title></circle>
+<circle class="node crossing-node manual-node" cx="-284.47" cy="-1333.93" r="3.4"><title>节点 ID: manual-junction:blue-crossroads-01:port:sw-west-inner | 度数: 2 | 局部坐标: (-284.466, 1333.933) m</title></circle>
+<circle class="node crossing-node manual-node" cx="-281.03" cy="-1331.36" r="3.4"><title>节点 ID: manual-junction:blue-crossroads-01:port:sw-east-inner | 度数: 2 | 局部坐标: (-281.033, 1331.36) m</title></circle>
+<circle class="node crossing-node manual-node" cx="-275.98" cy="-1328.12" r="3.4"><title>节点 ID: manual-junction:blue-crossroads-01:port:sw-east | 度数: 3 | 局部坐标: (-275.982, 1328.124) m</title></circle>
+<circle class="node crossing-node manual-node" cx="-291.52" cy="-1362.48" r="3.4"><title>节点 ID: manual-junction:blue-crossroads-01:port:nw-north | 度数: 3 | 局部坐标: (-291.521, 1362.48) m</title></circle>
+<circle class="node crossing-node manual-node" cx="-294.55" cy="-1357.3" r="3.4"><title>节点 ID: manual-junction:blue-crossroads-01:port:nw-south | 度数: 3 | 局部坐标: (-294.551, 1357.302) m</title></circle>
+<circle class="node crossing-node manual-node" cx="-251.85" cy="-1338.15" r="3.4"><title>节点 ID: manual-junction:blue-crossroads-01:port:se-north | 度数: 3 | 局部坐标: (-251.846, 1338.151) m</title></circle>
+<circle class="node crossing-node manual-node" cx="-254.95" cy="-1333.03" r="3.4"><title>节点 ID: manual-junction:blue-crossroads-01:port:se-south | 度数: 3 | 局部坐标: (-254.946, 1333.025) m</title></circle>
+</g>
+</svg>

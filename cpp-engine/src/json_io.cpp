@@ -177,7 +177,39 @@ std::string serialize_engine_result(const EngineResult& result) {
     }
     output << '}';
   }
-  output << "],\"diagnostics\":{\"reachableNodeCount\":"
+  output << ']';
+  if (result.is_local_experiment) {
+    output << ",\"localGrayZones\":[";
+    for (std::size_t i = 0; i < result.local_gray_zones.size(); ++i) {
+      if (i) output << ',';
+      const LocalGrayZone& zone = result.local_gray_zones[i];
+      output << "{\"category\":\"" << escape_json(zone.category) << '"';
+      const auto write_local_edges = [&](const char* name,
+                                         const std::vector<ReachableEdge>& edges) {
+        output << ",\"" << name << "\":[";
+        for (std::size_t j = 0; j < edges.size(); ++j) {
+          if (j) output << ',';
+          write_edge(edges[j]);
+        }
+        output << ']';
+      };
+      write_local_edges("coveredEdges", zone.covered_edges);
+      write_local_edges("candidateUncoveredEdges", zone.candidate_uncovered_edges);
+      write_local_edges("unknownEdges", zone.unknown_edges);
+      output << ",\"coveredLengthMeters\":" << zone.covered_length_meters
+             << ",\"candidateUncoveredLengthMeters\":"
+             << zone.candidate_uncovered_length_meters
+             << ",\"unknownLengthMeters\":" << zone.unknown_length_meters
+             << ",\"warnings\":[";
+      for (std::size_t j = 0; j < zone.warnings.size(); ++j) {
+        if (j) output << ',';
+        output << '"' << escape_json(zone.warnings[j]) << '"';
+      }
+      output << "]}";
+    }
+    output << ']';
+  }
+  output << ",\"diagnostics\":{\"reachableNodeCount\":"
          << result.reachable_node_count
          << ",\"reachableCrossingCount\":"
          << result.reachable_crossing_count

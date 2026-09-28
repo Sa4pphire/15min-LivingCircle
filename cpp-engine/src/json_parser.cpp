@@ -299,46 +299,32 @@ EdgeKind edge_kind(const std::string& value) {
   throw std::invalid_argument("unknown edge kind: " + value);
 }
 
-}  // namespace
-
-EngineInput parse_engine_input(std::string_view input) {
+JsonValue parse_root(std::string_view input) {
   if (input.size() > 20'000'000) {
     throw std::invalid_argument("engine input is too large");
   }
-  const JsonValue root = Parser(input).parse();
-  EngineInput result;
+  JsonValue root = Parser(input).parse();
   const double version = number(field(root, "schemaVersion"));
   if (version != 2.0) {
     throw std::invalid_argument("schemaVersion must be 2");
   }
-  result.origin = point(field(root, "originMeters"));
-  if (const auto* value = optional_field(root, "originEdgeId")) {
-    if (value->type != JsonValue::Type::null_value) {
-      result.origin_edge_id = string(*value);
+  return root;
+}
+
+void parse_local_experiment(const JsonValue& root, EngineInput& result) {
+  if (const auto* local = optional_field(root, "localExperiment")) {
+    LocalExperiment experiment;
+    if (const auto* status = optional_field(*local, "topologyStatus")) {
+      experiment.topology_status = string(*status);
     }
+    for (const auto& node_id : array(field(*local, "boundaryNodeIds"))) {
+      experiment.boundary_node_ids.push_back(string(node_id));
+    }
+    result.local_experiment = std::move(experiment);
   }
-  result.threshold_seconds = number(field(root, "thresholdSeconds"));
-  result.walking_speed_meters_per_second =
-      number(field(root, "walkingSpeedMetersPerSecond"));
-  result.crossing_wait_seconds = number(field(root, "crossingWaitSeconds"));
-  if (const auto* value = optional_field(root, "maxOriginSnapMeters")) {
-    result.max_origin_snap_meters = number(*value);
-  }
-  if (const auto* value = optional_field(root, "allowOffNetworkOrigin")) {
-    result.allow_off_network_origin = boolean(*value);
-  }
-  if (const auto* value = optional_field(root, "displayBufferMeters")) {
-    result.display_buffer_meters = number(*value);
-  }
-  if (const auto* value = optional_field(root, "displayAreaRadiusMeters")) {
-    result.display_area_radius_meters = number(*value);
-  }
-  if (const auto* value = optional_field(root, "displayMinHoleAreaSquareMeters")) {
-    result.display_min_hole_area_square_meters = number(*value);
-  }
-  if (const auto* value = optional_field(root, "displayGridStepMeters")) {
-    result.display_grid_step_meters = number(*value);
-  }
+}
+
+EngineInput parse_graph(const JsonValue& root, EngineInput result) {
   const auto& nodes = array(field(root, "nodes"));
   const auto& edges = array(field(root, "edges"));
   // The synthetic full-map fixture duplicates major-road centreline vertices
@@ -414,12 +400,84 @@ EngineInput parse_engine_input(std::string_view input) {
       throw std::invalid_argument("too many service categories");
     }
     for (const auto& value : array(*categories)) {
-      result.service_categories.push_back({string(field(value, "id")),
-          string(field(value, "dataStatus"))});
+      ServiceCategory category;
+      category.id = string(field(value, "id"));
+      category.data_status = string(field(value, "dataStatus"));
+      if (const auto* inventory = optional_field(value, "localInventoryStatus")) {
+        category.local_inventory_status = string(*inventory);
+      }
+      result.service_categories.push_back(std::move(category));
     }
   }
   validate_graph(result);
   return result;
+}
+
+}  // namespace
+
+EngineInput parse_engine_input(std::string_view input) {
+  const JsonValue root = parse_root(input);
+  EngineInput result;
+  result.origin = point(field(root, "originMeters"));
+  if (const auto* value = optional_field(root, "originEdgeId")) {
+    if (value->type != JsonValue::Type::null_value) {
+      result.origin_edge_id = string(*value);
+    }
+  }
+  parse_local_experiment(root, result);
+  if (const auto* threshold = optional_field(root, "thresholdSeconds")) {
+    result.threshold_seconds = number(*threshold);
+  } else if (result.local_experiment) {
+    result.threshold_seconds = 180.0;
+  } else {
+    result.threshold_seconds = number(field(root, "thresholdSeconds"));
+  }
+  result.walking_speed_meters_per_second =
+      number(field(root, "walkingSpeedMetersPerSecond"));
+  result.crossing_wait_seconds = number(field(root, "crossingWaitSeconds"));
+  if (const auto* value = optional_field(root, "maxOriginSnapMeters")) {
+    result.max_origin_snap_meters = number(*value);
+  }
+  if (const auto* value = optional_field(root, "allowOffNetworkOrigin")) {
+    result.allow_off_network_origin = boolean(*value);
+  }
+  if (const auto* value = optional_field(root, "displayBufferMeters")) {
+    result.display_buffer_meters = number(*value);
+  }
+  if (const auto* value = optional_field(root, "displayAreaRadiusMeters")) {
+    result.display_area_radius_meters = number(*value);
+  }
+  if (const auto* value = optional_field(root, "displayMinHoleAreaSquareMeters")) {
+    result.display_min_hole_area_square_meters = number(*value);
+  }
+  if (const auto* value = optional_field(root, "displayGridStepMeters")) {
+    result.display_grid_step_meters = number(*value);
+  }
+  return parse_graph(root, std::move(result));
+}
+
+EngineInput parse_synthetic_network(std::string_view input, Point origin,
+                                  std::optional<std::string> origin_edge_id,
+                                  bool local_experiment) {
+  const JsonValue root = parse_root(input);
+  if (!boolean(field(root, "synthetic"))) {
+    throw std::invalid_argument("file demo requires synthetic: true");
+  }
+  EngineInput result;
+  result.origin = origin;
+  result.origin_edge_id = std::move(origin_edge_id);
+  result.display_min_hole_area_square_meters = 2500.0;
+  result.allow_off_network_origin = !local_experiment;
+  result.max_origin_snap_meters = local_experiment ? 5.0 : 1170.0;
+  if (local_experiment) {
+    result.threshold_seconds = 180.0;
+    result.local_experiment = LocalExperiment{};
+    // Missing boundary declarations stay incomplete; never infer them from degree.
+    parse_local_experiment(root, result);
+  } else if (optional_field(root, "localExperiment")) {
+    throw std::invalid_argument("local experiment graph requires --local");
+  }
+  return parse_graph(root, std::move(result));
 }
 
 }  // namespace isochrone

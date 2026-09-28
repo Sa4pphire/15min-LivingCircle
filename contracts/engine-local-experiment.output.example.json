@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 2,
+  "success": true,
+  "result": {
+    "snappedOriginMeters": [200, 0],
+    "snapDistanceMeters": 0,
+    "originAccessSeconds": 0,
+    "reachableEdges": [
+      { "edgeId": "west_lane", "kind": "shared_way", "pathMeters": [[0, 0], [200, 0]], "widthMeters": 4 },
+      { "edgeId": "east_lane", "kind": "shared_way", "pathMeters": [[200, 0], [434, 0]], "widthMeters": 4 }
+    ],
+    "frontierMeters": [[434, 0]],
+    "displayPolygonMeters": [],
+    "displayGeometryMeters": { "type": "MultiPolygon", "coordinates": [] },
+    "facilityTravelTimes": [
+      {
+        "id": "synthetic_shop",
+        "accessEdgeId": "west_lane",
+        "reachable": true,
+        "travelTimeSeconds": 153.846153846154,
+        "category": "shopping",
+        "bestEntranceId": "door"
+      }
+    ],
+    "grayZones": [],
+    "localGrayZones": [
+      {
+        "category": "shopping",
+        "coveredEdges": [
+          { "edgeId": "west_lane", "kind": "shared_way", "pathMeters": [[0, 0], [200, 0]], "widthMeters": 4 },
+          { "edgeId": "east_lane", "kind": "shared_way", "pathMeters": [[200, 0], [234, 0]], "widthMeters": 4 }
+        ],
+        "candidateUncoveredEdges": [
+          { "edgeId": "east_lane", "kind": "shared_way", "pathMeters": [[234, 0], [366, 0]], "widthMeters": 4 }
+        ],
+        "unknownEdges": [
+          { "edgeId": "east_lane", "kind": "shared_way", "pathMeters": [[366, 0], [434, 0]], "widthMeters": 4 }
+        ],
+        "coveredLengthMeters": 234,
+        "candidateUncoveredLengthMeters": 132,
+        "unknownLengthMeters": 68,
+        "warnings": []
+      },
+      {
+        "category": "healthcare",
+        "coveredEdges": [],
+        "candidateUncoveredEdges": [],
+        "unknownEdges": [
+          { "edgeId": "west_lane", "kind": "shared_way", "pathMeters": [[0, 0], [200, 0]], "widthMeters": 4 },
+          { "edgeId": "east_lane", "kind": "shared_way", "pathMeters": [[200, 0], [434, 0]], "widthMeters": 4 }
+        ],
+        "coveredLengthMeters": 0,
+        "candidateUncoveredLengthMeters": 0,
+        "unknownLengthMeters": 434,
+        "warnings": ["LOCAL_FACILITY_INVENTORY_INCOMPLETE"]
+      }
+    ],
+    "diagnostics": {
+      "reachableNodeCount": 2,
+      "reachableCrossingCount": 0,
+      "closedRoadFaceCount": 0,
+      "roadClosureFilledCellCount": 0,
+      "warnings": []
+    }
+  }
+}

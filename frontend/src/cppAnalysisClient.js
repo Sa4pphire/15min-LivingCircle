@@ -2,6 +2,7 @@
 // reports WGS-84 for this fixture; convert it back to the SVG preview's local
 // south-positive coordinates. Nothing here claims verified pedestrian access.
 import { localToWgs, wgsToLocal } from "./mapGeometry.js";
+import { poiCandidates } from "./poiFacilities.js";
 
 export const PREVIEW_ORIGIN_WGS84 = [121.505, 31.333];
 
@@ -59,6 +60,9 @@ export function normalizeCppReport(report, origin) {
     displayArea: { type: "polygon", geometry: localizeGeometry(report.isochrone?.geometry) },
     routeSegments,
     accessLink,
+    poiFacilities: poiCandidates(report),
+    poiCategories: report.poiCategories ?? [],
+    poiInfo: report.metadata.poi ?? null,
     summary: {
       routeSegmentCount: routeSegments.length,
       originSnapMeters: accessMeters,
@@ -78,7 +82,7 @@ async function responseJson(response) {
   return data;
 }
 
-export async function requestCppMapAnalysis({ origin }, { signal, fetchImpl = fetch } = {}) {
+export async function requestCppMapAnalysis({ origin, includePois = true, refreshPois = false }, { signal, fetchImpl = fetch } = {}) {
   if (!Number.isFinite(origin?.x) || !Number.isFinite(origin?.y)) {
     throw new Error("INVALID_ANALYSIS_ORIGIN");
   }
@@ -86,11 +90,11 @@ export async function requestCppMapAnalysis({ origin }, { signal, fetchImpl = fe
   const accepted = await responseJson(await fetchImpl("/api/v1/synthetic-analyses", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ center: { lng, lat, coordType: "wgs84ll" }, minutes: 15 }),
+    body: JSON.stringify({ center: { lng, lat, coordType: "wgs84ll" }, minutes: 15, includePois, refreshPois }),
     signal,
   }));
   if (!accepted.analysisId) throw new Error("MISSING_ANALYSIS_ID");
-  const deadline = Date.now() + 30_000;
+  const deadline = Date.now() + 60_000;
   while (Date.now() < deadline) {
     if (signal?.aborted) throw new DOMException("Analysis cancelled", "AbortError");
     const state = await responseJson(await fetchImpl(

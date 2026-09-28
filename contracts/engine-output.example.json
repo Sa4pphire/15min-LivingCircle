@@ -61,6 +61,8 @@
     "diagnostics": {
       "reachableNodeCount": 2,
       "reachableCrossingCount": 0,
+      "closedRoadFaceCount": 0,
+      "roadClosureFilledCellCount": 0,
       "warnings": ["NETWORK_MAY_END_BEFORE_TIME_LIMIT"]
     }
   }

@@ -13,6 +13,9 @@ import {
   wgsToLocal,
 } from "./mapGeometry";
 import "./realMap.css";
+import PoiInventoryPanel from "./PoiInventoryPanel.vue";
+import { poiAccessLabel, poiCategoryStyles, visiblePois } from "./poiFacilities.js";
+import { cppOverviewFit, cppOverviewInsets, cppOverviewPoints } from "./cppOverview.js";
 
 const props = defineProps({
   candidate: { type: Object, default: null },
@@ -50,6 +53,8 @@ const probeVisible = ref(false);
 const fallbackAnimated = ref(false);
 const fallbackPan = ref({ x: 0, y: 0 });
 const fallbackDragging = ref(false);
+const poiCategory = ref("all");
+const selectedPoi = ref(null);
 let map;
 let BMap;
 let observer;
@@ -69,7 +74,9 @@ const fallbackFit = computed(() => fitLocalPoints(
   displayCornersLocal, viewport.value.width, viewport.value.height, 0.04,
 ));
 const fallbackView = computed(() => {
-  const fitted = zoomedFit(
+  const overview = props.zoomTier === "result" && props.analysisMode === "cpp"
+    ? cppOverviewFit(props.analysisResult, viewport.value.width, viewport.value.height) : null;
+  const fitted = overview ?? zoomedFit(
     fallbackFit.value,
     viewport.value.width,
     viewport.value.height,
@@ -203,6 +210,18 @@ const projectedResult = computed(() => {
       geometryToSvgPath(feature.geometry, project)),
   };
 });
+const poiMarkers = computed(() => {
+  projectionVersion.value;
+  return visiblePois(props.analysisResult, poiCategory.value).flatMap((poi) => {
+    if (mapState.value === "ready" && map && BMap && poi.bd09) {
+      const pixel = map.pointToPixel(new BMap.Point(...poi.bd09));
+      return [{ ...poi, pixel: [pixel.x, pixel.y] }];
+    }
+    if (!poi.point) return [];
+    const { scale, translateX, translateY } = fallbackView.value;
+    return [{ ...poi, pixel: [translateX + poi.point[0] * scale, translateY + poi.point[1] * scale] }];
+  });
+});
 const stateMessage = computed(() => props.analysisMode === "cpp" ? ({
   loading: "正在载入底图并校准合成路网范围…",
   "no-key": "共享 SVG 底图 · C++ 合成路网演示",
@@ -250,8 +269,16 @@ function scheduleProjection() {
 function fitBaiduViewport() {
   if (!map || !BMap || !displayCornersBd09.value) return;
   const margin = Math.max(16, Math.round(Math.min(viewport.value.width, viewport.value.height) * 0.04));
-  map.setViewport(displayCornersBd09.value.map(([lng, lat]) => new BMap.Point(lng, lat)), {
-    margins: [margin, margin, margin, margin],
+  const overview = props.zoomTier === "result" && props.analysisMode === "cpp"
+    ? cppOverviewPoints(props.analysisResult) : [];
+  const points = overview.length ? [
+    ...overview.map(localToBd09), ...visiblePois(props.analysisResult).map(poi => poi.bd09),
+  ].filter(point => Array.isArray(point) && point.length === 2 && point.every(Number.isFinite))
+    : displayCornersBd09.value;
+  const inset = cppOverviewInsets(viewport.value.width, viewport.value.height);
+  map.setViewport(points.map(([lng, lat]) => new BMap.Point(lng, lat)), {
+    margins: overview.length ? [inset.top, inset.right, inset.bottom, inset.left]
+      : [margin, margin, margin, margin],
   });
   fittedZoom = map.getZoom();
   fittedCenter = map.getCenter();
@@ -260,7 +287,7 @@ function fitBaiduViewport() {
 
 function applyBaiduZoom(animate = true) {
   if (!map || !BMap || !Number.isFinite(fittedZoom) || !fittedCenter) return;
-  if (props.zoomTier === "small") map.disableDragging?.();
+  if (["small", "result"].includes(props.zoomTier)) map.disableDragging?.();
   else map.enableDragging?.();
   const candidate = props.candidate?.coordType === "bd09ll" ? props.candidate : null;
   const center = props.zoomTier === "large" && candidate
@@ -347,7 +374,7 @@ function handleMapClick(event) {
 
 function handleFallbackClick(event) {
   if (!fallbackActive.value || suppressFallbackClick ||
-    event.target.closest("button, a, .real-map-actions, .real-map-note, .real-map-toast")) return;
+    event.target.closest("button, a, .real-map-actions, .real-map-note, .real-map-toast, .real-poi-marker, .real-poi-panel, .real-poi-popover")) return;
   const local = fallbackPointFromClient(event.clientX, event.clientY);
   if (!local) return;
   const [lng, lat] = localToWgs(local, fallbackOrigin);
@@ -362,9 +389,9 @@ function fallbackPointFromClient(clientX, clientY) {
 }
 
 function beginFallbackDrag(event) {
-  if (!fallbackActive.value || props.zoomTier === "small" ||
+  if (!fallbackActive.value || ["small", "result"].includes(props.zoomTier) ||
     (event.pointerType === "mouse" && event.button !== 0) ||
-    event.target.closest("button, a, .real-map-actions, .real-map-note, .real-map-toast")) return;
+    event.target.closest("button, a, .real-map-actions, .real-map-note, .real-map-toast, .real-poi-marker, .real-poi-panel, .real-poi-popover")) return;
   contextEl.value?.getAnimations().forEach((animation) => animation.finish());
   fallbackDrag = {
     pointerId: event.pointerId,
@@ -494,13 +521,18 @@ function handleNativeDragEnd() {
 
 watch(() => props.zoomTier, () => {
   fallbackPan.value = { x: 0, y: 0 };
-  if (mapState.value === "ready") applyBaiduZoom();
+  if (mapState.value === "ready") fitBaiduViewport();
 });
 watch(() => props.candidate, () => {
+  selectedPoi.value = null;
   if (props.zoomTier === "large") {
     fallbackPan.value = { x: 0, y: 0 };
     if (mapState.value === "ready") applyBaiduZoom();
   } else if (mapState.value === "ready") scheduleProjection();
+});
+watch(() => props.analysisResult, () => {
+  selectedPoi.value = null;
+  if (props.zoomTier === "result" && mapState.value === "ready") fitBaiduViewport();
 });
 onMounted(() => {
   updateSize();
@@ -534,7 +566,7 @@ onUnmounted(() => {
   <div
     ref="stageEl"
     class="real-map-stage"
-    :class="{ 'is-outside': !hoverInside, 'can-pan': zoomTier !== 'small', 'is-panning': fallbackDragging, 'can-animate': fallbackAnimated }"
+    :class="{ 'is-outside': !hoverInside, 'can-pan': !['small', 'result'].includes(zoomTier), 'is-panning': fallbackDragging, 'can-animate': fallbackAnimated, 'has-cpp-result': cppSyntheticResult }"
     role="group"
     aria-label="四路围合演示区域地图，可点击区域内位置设置候选起点"
     @click="handleFallbackClick"
@@ -611,6 +643,27 @@ onUnmounted(() => {
         </g>
       </g>
     </svg>
+
+    <svg v-if="analysisMode === 'cpp' && analysisResult" class="real-poi-layer"
+      :viewBox="`0 0 ${viewport.width} ${viewport.height}`" role="group" aria-label="等时圈内基础设施候选点位">
+      <g v-for="poi in poiMarkers" :key="poi.id" class="real-poi-marker"
+        :transform="`translate(${poi.pixel[0]} ${poi.pixel[1]})`" tabindex="0" role="button"
+        :aria-label="`${poiCategoryStyles[poi.category].label}：${poi.name}`"
+        @pointerdown.stop @click.stop="selectedPoi = poi" @keydown.enter.stop="selectedPoi = poi" @keydown.space.prevent.stop="selectedPoi = poi">
+        <title>{{ poi.name }} · {{ poiAccessLabel(poi) }}</title>
+        <circle r="11" :stroke="poiCategoryStyles[poi.category].color" />
+        <text text-anchor="middle" dominant-baseline="central" :fill="poiCategoryStyles[poi.category].color">{{ poiCategoryStyles[poi.category].glyph }}</text>
+      </g>
+    </svg>
+    <PoiInventoryPanel v-if="analysisMode === 'cpp' && analysisResult" class="real-poi-panel"
+      compact :result="analysisResult" :category="poiCategory" @category="poiCategory = $event; selectedPoi = null" />
+    <div v-if="selectedPoi" class="real-poi-popover" role="status" @pointerdown.stop @click.stop>
+      <button type="button" aria-label="关闭设施详情" @click.stop="selectedPoi = null">×</button>
+      <strong>{{ selectedPoi.name }}</strong>
+      <span>{{ poiCategoryStyles[selectedPoi.category].label }} · 百度 POI</span>
+      <small>{{ poiAccessLabel(selectedPoi) }}</small>
+      <small v-if="selectedPoi.address">{{ selectedPoi.address }}</small>
+    </div>
 
     <div class="real-map-note">
       <span class="real-note-signal" aria-hidden="true"></span>

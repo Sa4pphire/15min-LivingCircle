@@ -59,6 +59,15 @@ struct FacilityAccess {
 struct ServiceCategory {
   std::string id;
   std::string data_status;
+  // Independent of online POI review: completeness inside the local patch.
+  std::string local_inventory_status{"incomplete"};
+};
+
+struct LocalExperiment {
+  // Every point at which the surveyed graph was cut, not genuine dead ends.
+  std::vector<std::string> boundary_node_ids;
+  // "verified" also asserts that every cut exit has been marked.
+  std::string topology_status{"incomplete"};
 };
 
 struct EngineInput {
@@ -82,6 +91,7 @@ struct EngineInput {
   std::vector<WalkEdge> edges;
   std::vector<FacilityAccess> facilities;
   std::vector<ServiceCategory> service_categories;
+  std::optional<LocalExperiment> local_experiment;
 };
 
 struct ReachableEdge {
@@ -114,7 +124,19 @@ struct GrayZone {
   double reachable_length_meters{};
 };
 
+struct LocalGrayZone {
+  std::string category;
+  std::vector<ReachableEdge> covered_edges;
+  std::vector<ReachableEdge> candidate_uncovered_edges;
+  std::vector<ReachableEdge> unknown_edges;
+  double covered_length_meters{};
+  double candidate_uncovered_length_meters{};
+  double unknown_length_meters{};
+  std::vector<std::string> warnings;
+};
+
 struct EngineResult {
+  bool is_local_experiment{};
   Point snapped_origin;
   double snap_distance_meters{};
   double origin_access_seconds{};
@@ -123,6 +145,7 @@ struct EngineResult {
   std::vector<DisplayPolygon> display_polygons;
   std::vector<FacilityTravelTime> facility_travel_times;
   std::vector<GrayZone> gray_zones;
+  std::vector<LocalGrayZone> local_gray_zones;
   std::size_t reachable_node_count{};
   std::size_t reachable_crossing_count{};
   std::size_t closed_road_face_count{};

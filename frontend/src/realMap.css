@@ -1,4 +1,15 @@
 .real-map-stage { position: relative; width: 100%; height: 100%; overflow: hidden; background: #eaf0ec; cursor: crosshair; isolation: isolate; }
+.real-poi-layer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+.real-poi-marker { pointer-events: auto; cursor: pointer; }
+.real-poi-marker circle { fill: #fbfdfb; stroke-width: 2; }
+.real-poi-marker text { font-size: 10px; font-weight: 700; pointer-events: none; }
+.real-poi-marker:focus-visible { outline: 2px solid #2f6e91; outline-offset: 3px; }
+.real-poi-panel { position: absolute; z-index: 5; top: 146px; left: 19px; max-width: calc(100% - 38px); }
+.real-poi-popover { position: absolute; z-index: 6; right: 19px; bottom: 104px; width: min(260px, calc(100% - 38px)); padding: 16px; background: #fbfdfb; border-left: 3px solid #147d72; display: grid; gap: 7px; color: #173c3a; font-size: 12px; }
+.real-poi-popover > button { position: absolute; right: 5px; top: 4px; border: 0; background: transparent; font-size: 20px; cursor: pointer; }
+.real-poi-popover strong { padding-right: 13px; }
+.real-poi-popover small { font-size: 10px; line-height: 1.6; color: #5a756b; }
+@media (max-width: 600px) { .real-poi-panel { top: 136px; left: 10px; max-width: calc(100% - 105px); } }
 .real-map-stage.can-pan { cursor: grab; touch-action: none; }
 .real-map-stage.is-panning { cursor: grabbing; }
 .real-map-stage.is-outside { cursor: not-allowed; }
@@ -42,6 +53,7 @@
 .real-note-signal { flex: none; width: 6px; height: 6px; border-radius: 50%; background: #6eb28c; }
 .real-map-actions { position: absolute; z-index: 4; right: 22px; bottom: 22px; display: grid; gap: 9px; justify-items: start; max-width: min(245px, 60vw); padding: 15px 17px; background: rgba(251, 253, 252, .94); color: #31574c; box-shadow: 0 5px 24px rgba(33, 66, 53, .11); }
 .real-map-actions p { margin: 0; font-size: 11px; line-height: 1.6; }
+.has-cpp-result .real-map-actions p { display: none; }
 .real-map-actions strong { font-size: 12px; font-weight: 650; }
 .real-map-actions button { padding: 7px 11px; border: 0; border-radius: 4px; background: #dcefe4; color: #176b5e; font-size: 11px; font-weight: 650; cursor: pointer; transition: background .16s ease, transform .16s ease; }
 .real-map-actions button:hover { background: #c8e9d5; transform: translateY(-2px); }
@@ -49,6 +61,7 @@
 .real-demo-legend { position: absolute; z-index: 4; left: 16px; bottom: 17px; display: flex; flex-wrap: wrap; gap: 8px 14px; max-width: calc(100% - 310px); padding: 8px 10px; background: rgba(251, 253, 252, .94); color: #31574c; font-size: 10px; box-shadow: 0 2px 12px rgba(33, 66, 53, .07); pointer-events: none; }
 .real-demo-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .real-demo-legend i { display: inline-block; flex: none; width: 13px; height: 8px; }
+.has-cpp-result .real-demo-legend { max-width: calc(100% - 150px); }
 .real-demo-legend .legend-circle { height: 11px; width: 11px; border: 1.5px solid #147d72; border-radius: 50%; background: rgba(20, 125, 114, .1); }
 .real-demo-legend .legend-area { height: 11px; width: 14px; border: 1.5px solid #147d72; background: rgba(20, 125, 114, .1); clip-path: polygon(5% 42%, 28% 10%, 69% 18%, 100% 54%, 82% 95%, 34% 84%); }
 .real-demo-legend .legend-route { border-top: 3px solid #087e71; transform: translateY(2px); }
@@ -66,6 +79,7 @@
   .real-map-actions p { font-size: 10px; }
   .real-map-probe { display: none; }
   .real-demo-legend { left: 8px; bottom: 8px; max-width: calc(100% - 235px); padding: 6px; gap: 4px 8px; font-size: 9px; }
+  .has-cpp-result .real-demo-legend { max-width: calc(100% - 120px); }
 }
 @media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
   .real-map-probe { display: none; }

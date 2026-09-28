@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "coordinateSystem": "engine-local-meters",
+  "synthetic": true,
+  "description": "SVG 人工校对记录；仅用于合成演示，未核实实际人行横道及通行许可。",
+  "crossings": [
+    {
+      "id": "park-loop-north",
+      "fromNodeId": "shared:p:54.5:-501.1",
+      "nearEdgeId": "w:132889770:0:0:right",
+      "farEdgeId": "w:133097700:1:0:s1:right",
+      "waitSeconds": 20,
+      "verificationStatus": "user_marked_unverified",
+      "source": "用户 2026-09-28 校对 SVG 蓝点：codex-clipboard-da0baa0b-fd4f-4db8-828f-77c293bd9203.png（上方蓝点）"
+    },
+    {
+      "id": "park-loop-south",
+      "fromNodeId": "shared:p:-10.6:-430.4",
+      "nearEdgeId": "w:132889770:0:0:right",
+      "farEdgeId": "w:133097700:1:0:s0:right",
+      "waitSeconds": 20,
+      "verificationStatus": "user_marked_unverified",
+      "source": "用户 2026-09-28 校对 SVG 蓝点：codex-clipboard-da0baa0b-fd4f-4db8-828f-77c293bd9203.png（下方蓝点）"
+    }
+  ],
+  "junctions": [
+    {
+      "id": "blue-crossroads-01",
+      "centerMeters": [-273.15, 1347.85],
+      "verificationStatus": "user_marked_unverified",
+      "source": "用户 2026-09-28 SVG 蓝色圈选十字路口：codex-clipboard-ea8c1954-1058-4627-8342-1c818a8b6c54.png；转弯与过街位置为演示模型，未实地核实。",
+      "retireEdgeIds": [
+        "w:226889561:0:0",
+        "synthetic-turn:w:226889561:0:0:p:-268.8:-1344.9",
+        "synthetic-turn:w:226889561:0:0:p:-277.5:-1350.8"
+      ],
+      "ports": [
+        {"id": "ne-west", "edgeId": "w:1322655092:0:0:right", "endpointNodeId": "major:74415456:p:-277.5:-1350.8:right", "setbackMeters": 18},
+        {"id": "ne-west-inner", "edgeId": "w:1322655092:0:0:left", "endpointNodeId": "major:74415456:p:-277.5:-1350.8:left", "setbackMeters": 18},
+        {"id": "ne-east-inner", "edgeId": "w:1322655091:0:0:left", "endpointNodeId": "major:225928287:p:-268.8:-1344.9:left", "setbackMeters": 18},
+        {"id": "ne-east", "edgeId": "w:1322655091:0:0:right", "endpointNodeId": "major:225928287:p:-268.8:-1344.9:right", "setbackMeters": 18},
+        {"id": "sw-west", "edgeId": "w:74415456:0:0:right", "endpointNodeId": "major:74415456:p:-277.5:-1350.8:right", "setbackMeters": 18},
+        {"id": "sw-west-inner", "edgeId": "w:74415456:0:0:left", "endpointNodeId": "major:74415456:p:-277.5:-1350.8:left", "setbackMeters": 18},
+        {"id": "sw-east-inner", "edgeId": "w:225928287:4:0:left", "endpointNodeId": "major:225928287:p:-268.8:-1344.9:left", "setbackMeters": 18},
+        {"id": "sw-east", "edgeId": "w:225928287:4:0:right", "endpointNodeId": "major:225928287:p:-268.8:-1344.9:right", "setbackMeters": 18},
+        {"id": "nw-north", "edgeId": "w:441758702:3:0:s1:left", "endpointNodeId": "major:441758702:p:-277.5:-1350.8:left", "setbackMeters": 18},
+        {"id": "nw-south", "edgeId": "w:441758702:3:0:s1:right", "endpointNodeId": "major:441758702:p:-277.5:-1350.8:right", "setbackMeters": 18},
+        {"id": "se-north", "edgeId": "w:168476055:0:0:right", "endpointNodeId": "major:168476055:p:-268.8:-1344.9:right", "setbackMeters": 18},
+        {"id": "se-south", "edgeId": "w:168476055:0:0:left", "endpointNodeId": "major:168476055:p:-268.8:-1344.9:left", "setbackMeters": 18}
+      ],
+      "connectors": [
+        {"id": "corner-north", "kind": "turn", "fromPort": "ne-west", "toPort": "nw-north"},
+        {"id": "corner-west", "kind": "turn", "fromPort": "nw-south", "toPort": "sw-west"},
+        {"id": "corner-south", "kind": "turn", "fromPort": "sw-east", "toPort": "se-south"},
+        {"id": "corner-east", "kind": "turn", "fromPort": "se-north", "toPort": "ne-east"},
+        {"id": "cross-ne", "kind": "crossing", "fromPort": "ne-west", "toPort": "ne-east", "waitSeconds": 20},
+        {"id": "cross-sw", "kind": "crossing", "fromPort": "sw-west", "toPort": "sw-east", "waitSeconds": 20},
+        {"id": "cross-nw", "kind": "crossing", "fromPort": "nw-north", "toPort": "nw-south", "waitSeconds": 20},
+        {"id": "cross-se", "kind": "crossing", "fromPort": "se-north", "toPort": "se-south", "waitSeconds": 20},
+        {"id": "cross-west-inner", "kind": "crossing", "fromPort": "ne-west-inner", "toPort": "sw-west-inner", "waitSeconds": 20},
+        {"id": "cross-east-inner", "kind": "crossing", "fromPort": "ne-east-inner", "toPort": "sw-east-inner", "waitSeconds": 20}
+      ]
+    }
+  ]
+}

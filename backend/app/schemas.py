@@ -14,6 +14,24 @@ class AnalysisRequest(BaseModel):
     originEdgeId: str | None = None
     minutes: Literal[15] = 15
     forceRefresh: bool = False
+    includePois: bool = False
+    refreshPois: bool = False
+
+
+class LocalExperimentRequest(BaseModel):
+    center: CenterPoint
+    originEdgeId: str | None = None
+    includePois: bool = False
+    refreshPois: bool = False
+
+
+class PoiSearchRequest(BaseModel):
+    center: CenterPoint
+    radiusMeters: int = Field(default=1500, ge=100, le=5000)
+    categories: list[Literal["education", "healthcare", "shopping", "public_service"]] = Field(
+        default_factory=lambda: ["education", "healthcare", "shopping", "public_service"],
+        min_length=1, max_length=4)
+    refresh: bool = False
 
 
 class AnalysisAccepted(BaseModel):

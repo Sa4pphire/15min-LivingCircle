@@ -59,13 +59,16 @@ def _to_map_coordinate(point: list[float], origin: dict[str, float]) -> list[flo
 
 
 def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None,
-                        network_path: Path | None = None
+                        network_path: Path | None = None, *,
+                        allow_local_experiment: bool = False
                         ) -> tuple[dict[str, Any], dict[str, Any]]:
     path: Path = network_path if network_path is not None else settings.walking_network_path
     if not path.is_file():
         raise UnsupportedAreaError("演示区域尚未提供经核实的步行路网")
     try:
         network = json.loads(path.read_text(encoding="utf-8"))
+        if "localExperiment" in network and not allow_local_experiment:
+            raise ValueError("局部实验路网只能通过独立 local-experiments 入口加载")
         if network["schemaVersion"] != 2:
             raise ValueError("schemaVersion must be 2")
         synthetic = network.get("synthetic") is True
@@ -196,7 +199,12 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None,
         "networkSource": "synthetic" if network.get("synthetic") else "manual",
         "facilities": facilities,
         "serviceCategories": categories,
+        "networkFile": path.name,
+        "networkNodeCount": len(network["nodes"]),
+        "networkEdgeCount": len(network["edges"]),
     }
+    if "localExperiment" in network:
+        metadata["localExperiment"] = network["localExperiment"]
     return payload, metadata
 
 
@@ -289,6 +297,9 @@ def build_analysis_result(engine_result: dict[str, Any],
                 "bestEntranceId": best_entrance_id,
                 "reachable": reachable,
                 "travelTimeSeconds": seconds,
+                "name": facility.get("name", facility_id),
+                "source": facility.get("source", "annotated"),
+                "accessVerified": facility.get("accessVerified", True),
             },
         })
     requested_categories = {category["id"]: category
@@ -368,6 +379,12 @@ def build_analysis_result(engine_result: dict[str, Any],
         "metrics": {
             "reachableNodeCount": engine_result["diagnostics"]["reachableNodeCount"],
             "reachableCrossingCount": engine_result["diagnostics"]["reachableCrossingCount"],
+            "closedRoadFaceCount": engine_result["diagnostics"].get(
+                "closedRoadFaceCount", 0),
+            "roadClosureFilledCellCount": engine_result["diagnostics"].get(
+                "roadClosureFilledCellCount", 0),
+            "displayPolygonCount": len(polygons),
+            "displayHoleCount": sum(max(0, len(polygon) - 1) for polygon in polygons),
             "facilityCount": len(facilities),
             "reachableFacilityCount": sum(
                 bool(feature["properties"]["reachable"]) for feature in facilities

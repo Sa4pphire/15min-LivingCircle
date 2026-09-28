@@ -1,10 +1,14 @@
 """百度地图 Web API 客户端。"""
 
+import asyncio
+import math
+from pathlib import Path
 from typing import Any
 
 import httpx
 
 from ..settings import settings
+from ..cache import SharedBaiduCache
 from .errors import (
     BaiduApiError,
     BaiduAuthError,
@@ -19,8 +23,17 @@ class BaiduClient:
         *,
         ak: str | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
+        cache_dir: Path | None = None,
+        cache_enabled: bool | None = None,
     ) -> None:
         self._ak = settings.baidu_server_ak if ak is None else ak
+        self._cache_dir = cache_dir
+        self._cache_enabled = transport is None if cache_enabled is None else cache_enabled
+        self._cache = None
+        self._semaphore = asyncio.Semaphore(max(1, min(4, settings.baidu_max_concurrency)))
+        self._halt_error = None
+        self.cache_stats = {"cacheHits": 0, "cacheMisses": 0, "stalePages": 0, "apiRequests": 0}
+        self.cache_fetched_times = []
         self._http = httpx.AsyncClient(
             base_url=settings.baidu_api_base_url,
             timeout=settings.baidu_timeout_seconds,
@@ -31,12 +44,92 @@ class BaiduClient:
     async def aclose(self) -> None:
         await self._http.aclose()
 
+    @property
+    def has_ak(self) -> bool:
+        return bool(self._ak)
+
+    def enable_cache(self, cache: SharedBaiduCache) -> None:
+        """Use the same response cache as regular Python POI callers."""
+        self._cache = cache
+        self._cache_enabled = True
+
+    @staticmethod
+    def _legacy_request(path: str, params: dict):
+        """Read the previous demo cache without keeping a second active store."""
+        if path == "/place/v2/search" and not params.get("region"):
+            lat, lng = [float(value) for value in params["location"].split(",")]
+            coord_type = {1: "wgs84ll", 2: "gcj02ll", 3: "bd09ll"}[params["coord_type"]]
+            legacy = {"endpoint": "place/v2/search", "query": params["query"],
+                      "center": [lng, lat], "radius": params["radius"],
+                      "inputCoordType": coord_type, "outputCoordType": "bd09ll",
+                      "page": params["page_num"], "pageSize": params["page_size"],
+                      "scope": 2, "radiusLimit": True}
+
+            def transform(page):
+                results = []
+                for item in page["items"]:
+                    detail = {"tag": item.get("tag", "")}
+                    if "navigationPoint" in item:
+                        detail["navi_location"] = dict(zip(("lng", "lat"), item["navigationPoint"]))
+                    results.append({"uid": item["uid"], "name": item["name"],
+                                    "address": item.get("address", ""),
+                                    "location": {"lng": item["lng"], "lat": item["lat"]},
+                                    "detail_info": detail})
+                output = {"status": 0, "results": results,
+                          "_cachePageRawCount": page["rawCount"]}
+                if page.get("total") is not None:
+                    output["total"] = page["total"]
+                return output
+            return legacy, transform
+        if path == "/geoconv/v2/" and params.get("model") == 2:
+            anchors = [[float(value) for value in point.split(",")]
+                       for point in params["coords"].split(";")]
+            return {"endpoint": "geoconv/v2", "model": 2, "anchors": anchors}, lambda points: {
+                "status": 0, "result": [{"x": point[0], "y": point[1]} for point in points]}
+        return None
+
     # 统一发送百度 API 请求，解析 JSON，并分类处理错误
     async def _get_json(
-        self, path: str, params: dict[str, Any]
+        self, path: str, params: dict[str, Any], *, refresh: bool = False,
     ) -> dict[str, Any]:
         if not self._ak:
             raise BaiduAuthError("未配置百度服务端 AK")
+        if "ak" in params or "sn" in params:
+            raise BaiduApiError("密钥只能通过客户端配置，不能写入缓存参数")
+
+        async def fetch():
+            async with self._semaphore:
+                if self._halt_error is not None:
+                    raise self._halt_error
+                self.cache_stats["apiRequests"] += 1
+                try:
+                    return await self._request_json(path, params)
+                except (BaiduAuthError, BaiduQuotaError) as exc:
+                    self._halt_error = exc
+                    raise
+
+        if not self._cache_enabled:
+            return await fetch()
+        if self._cache is None:
+            self._cache = SharedBaiduCache(
+                self._cache_dir or settings.analysis_cache_dir,
+                None if self._cache_dir else settings.poi_cache_path)
+        ttl = settings.poi_cache_ttl_hours * 3600 if path == "/place/v2/search" else settings.cache_ttl_hours * 3600
+        if path == "/geoconv/v2/":
+            ttl = settings.poi_cache_stale_hours * 3600
+        parameters = {"provider": settings.baidu_api_base_url, "path": path, "params": params}
+        legacy = self._legacy_request(path, params)
+        if legacy and not refresh:
+            self._cache.migrate_legacy(parameters,
+                                      {"provider": settings.baidu_api_base_url, "version": 1, **legacy[0]},
+                                      legacy[1], ttl)
+        value, source, fetched = await self._cache.get_or_fetch(parameters, fetch,
+                                                               refresh=refresh, ttl_seconds=ttl)
+        self.cache_stats[{"hit": "cacheHits", "miss": "cacheMisses", "stale": "stalePages"}[source]] += 1
+        self.cache_fetched_times.append(fetched)
+        return value
+
+    async def _request_json(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
 
         try:
             response = await self._http.get(
@@ -110,6 +203,7 @@ class BaiduClient:
         self,
         points: list[tuple[float, float]],
         source_coord_type: str,
+        *, refresh: bool = False,
     ) -> list[tuple[float, float]]:
         if source_coord_type == "bd09ll" or not points:
             return list(points)
@@ -134,6 +228,7 @@ class BaiduClient:
                 "model": model,
                 "output": "json",
             },
+            refresh=refresh,
         )
 
         result = payload.get("result")
@@ -221,9 +316,28 @@ class BaiduClient:
         page_num: int = 0,
         page_size: int = 20,
         coord_type: str = "bd09ll",
+        refresh: bool = False,
     ) -> list[dict[str, Any]]:
+        page = await self.search_poi_page(query, center, radius_meters,
+                                        region=region, page_num=page_num,
+                                        page_size=page_size, coord_type=coord_type, refresh=refresh)
+        # Keep the original public helper's return shape for sampling callers.
+        return [{key: item[key] for key in ("uid", "name", "address", "lng", "lat")}
+                for item in page["items"]]
+
+    async def search_poi_page(
+        self, query: str, center: tuple[float, float], radius_meters: int = 1000,
+        *, region: str | None = None, page_num: int = 0, page_size: int = 20,
+        coord_type: str = "bd09ll", refresh: bool = False,
+    ) -> dict[str, Any]:
+        """Detailed, paginated POIs. Input datum does NOT change the BD-09 output."""
         if radius_meters <= 0:
             raise BaiduApiError("POI 搜索半径必须大于 0")
+        if not 1 <= page_size <= 20 or not 0 <= page_num <= 7:
+            raise BaiduApiError("POI 分页参数无效")
+        coordinate_code = {"wgs84ll": 1, "gcj02ll": 2, "bd09ll": 3}.get(coord_type)
+        if coordinate_code is None:
+            raise BaiduApiError("POI 输入坐标类型无效")
 
         # 百度地点检索要求 location 使用“纬度,经度”
         location = f"{center[1]},{center[0]}"
@@ -234,7 +348,9 @@ class BaiduClient:
             "radius": radius_meters,
             "page_num": page_num,
             "page_size": page_size,
-            "coord_type": coord_type,
+            "coord_type": coordinate_code,
+            "scope": 2,
+            "radius_limit": "true",
             "output": "json",
         }
 
@@ -245,6 +361,7 @@ class BaiduClient:
         payload = await self._get_json(
             "/place/v2/search",
             params,
+            refresh=refresh,
         )
 
         raw_results = payload.get("results", [])
@@ -269,6 +386,8 @@ class BaiduClient:
             except (KeyError, TypeError, ValueError):
                 # 单条 POI 坐标异常时跳过，不影响其他结果
                 continue
+            if not math.isfinite(lng) or not math.isfinite(lat) or not (-180 <= lng <= 180 and -90 < lat < 90):
+                continue
 
             uid = item.get("uid")
             name = item.get("name")
@@ -285,7 +404,24 @@ class BaiduClient:
                     "address": str(address or ""),
                     "lng": lng,
                     "lat": lat,
+                    "coordType": "bd09ll",
+                    "tag": str(item["detail_info"].get("tag", "")) if isinstance(item.get("detail_info"), dict) else "",
                 }
             )
-
-        return normalized
+            detail = item.get("detail_info")
+            navi = detail.get("navi_location") if isinstance(detail, dict) else None
+            if isinstance(navi, dict):
+                try:
+                    xy = [float(navi["lng"]), float(navi["lat"])]
+                    if all(math.isfinite(v) for v in xy) and -180 <= xy[0] <= 180 and -90 < xy[1] < 90:
+                        normalized[-1]["navigationPoint"] = xy
+                except (KeyError, TypeError, ValueError):
+                    pass
+        total = payload.get("total")
+        raw_count = payload.get("_cachePageRawCount", len(raw_results))
+        if type(raw_count) is not int or raw_count < len(raw_results):
+            raw_count = len(raw_results)
+        return {"items": normalized, "rawCount": raw_count,
+                "discardedCount": raw_count - len(normalized),
+                "total": total if type(total) is int and total >= 0 else None,
+                "coordType": "bd09ll"}

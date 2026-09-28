@@ -288,6 +288,20 @@ std::vector<Interval> subtract_intervals(
   return result;
 }
 
+std::vector<Interval> intersect_intervals(
+    const std::vector<Interval>& first,
+    const std::vector<Interval>& second) {
+  std::vector<Interval> result;
+  for (const Interval a : first) {
+    for (const Interval b : second) {
+      const double from = std::max(a.from, b.from);
+      const double to = std::min(a.to, b.to);
+      if (to > from + kEpsilon) result.push_back({from, to});
+    }
+  }
+  return result;
+}
+
 double segment_distance(Point point, Point a, Point b) {
   const double dx = b.x - a.x;
   const double dy = b.y - a.y;
@@ -744,6 +758,19 @@ void validate_graph(const EngineInput& input) {
       throw std::invalid_argument("invalid or duplicate walking node");
     }
   }
+  if (input.local_experiment) {
+    if (input.allow_off_network_origin ||
+        (input.local_experiment->topology_status != "verified" &&
+         input.local_experiment->topology_status != "incomplete")) {
+      throw std::invalid_argument("invalid local experiment parameters");
+    }
+    std::unordered_set<std::string> boundary_ids;
+    for (const auto& id : input.local_experiment->boundary_node_ids) {
+      if (!nodes.count(id) || !boundary_ids.insert(id).second) {
+        throw std::invalid_argument("invalid or duplicate boundaryNodeId");
+      }
+    }
+  }
   std::unordered_set<std::string> edge_ids;
   std::unordered_map<std::string, const WalkEdge*> edge_lookup;
   std::unordered_map<std::string, EdgeKind> block_kinds;
@@ -824,7 +851,9 @@ void validate_graph(const EngineInput& input) {
   for (const auto& category : input.service_categories) {
     if (category.id.empty() || !category_ids.insert(category.id).second ||
         (category.data_status != "reviewed_online" &&
-         category.data_status != "incomplete")) {
+         category.data_status != "incomplete") ||
+        (category.local_inventory_status != "verified" &&
+         category.local_inventory_status != "incomplete")) {
       throw std::invalid_argument("invalid or duplicate service category");
     }
   }
@@ -892,6 +921,7 @@ EngineResult compute_reachability(const EngineInput& input) {
         "reaching the nearest walkway uses the entire time budget");
   }
   EngineResult result;
+  result.is_local_experiment = input.local_experiment.has_value();
   result.snapped_origin = snap.point;
   result.snap_distance_meters = snap.distance_meters;
   result.origin_access_seconds = access_seconds;
@@ -1056,23 +1086,85 @@ EngineResult compute_reachability(const EngineInput& input) {
       }
     }
   }
-  RoadClosureFillStats closure_stats;
-  result.display_polygons = isochrone_polygons(
-      result.reachable_edges, timed_edges, arrival, input.threshold_seconds,
-      input.walking_speed_meters_per_second,
-      input.display_area_radius_meters, input.display_buffer_meters,
-      input.display_grid_step_meters,
-      input.display_min_hole_area_square_meters, closure_stats);
-  result.closed_road_face_count = closure_stats.face_count;
-  result.road_closure_filled_cell_count = closure_stats.filled_cell_count;
+  if (!input.local_experiment) {
+    RoadClosureFillStats closure_stats;
+    result.display_polygons = isochrone_polygons(
+        result.reachable_edges, timed_edges, arrival, input.threshold_seconds,
+        input.walking_speed_meters_per_second,
+        input.display_area_radius_meters, input.display_buffer_meters,
+        input.display_grid_step_meters,
+        input.display_min_hole_area_square_meters, closure_stats);
+    result.closed_road_face_count = closure_stats.face_count;
+    result.road_closure_filled_cell_count = closure_stats.filled_cell_count;
 
-  for (const ServiceCategory& category : input.service_categories) {
-    GrayZone zone;
-    zone.category = category.id;
-    zone.status = category.data_status == "reviewed_online"
-        ? "candidate" : "data_insufficient";
-    zone.reachable_length_meters = reachable_street_length;
-    if (category.data_status == "reviewed_online") {
+    for (const ServiceCategory& category : input.service_categories) {
+      GrayZone zone;
+      zone.category = category.id;
+      zone.status = category.data_status == "reviewed_online"
+          ? "candidate" : "data_insufficient";
+      zone.reachable_length_meters = reachable_street_length;
+      if (category.data_status == "reviewed_online") {
+        std::vector<std::pair<std::size_t, double>> sources;
+        for (const EntranceBinding& binding : bindings) {
+          if (input.facilities[binding.facility_index].category == category.id) {
+            sources.emplace_back(binding.node, binding.extra_seconds);
+          }
+        }
+        const std::vector<double> service_times = shortest_times(adjacency, sources);
+        for (const InternalEdge& edge : edges) {
+          if (edge.kind != EdgeKind::sidewalk &&
+              edge.kind != EdgeKind::shared_way) continue;
+          const auto from_origin = reachable_intervals(
+              edge, arrival, input.threshold_seconds,
+              input.walking_speed_meters_per_second);
+          const auto from_facilities = reachable_intervals(
+              edge, service_times, input.threshold_seconds,
+              input.walking_speed_meters_per_second);
+          for (const Interval part : subtract_intervals(
+                   from_origin, from_facilities)) {
+            zone.uncovered_edges.push_back({edge.source_id, edge.kind,
+                slice(edge.path, part.from, part.to), edge.width_meters});
+            zone.uncovered_length_meters += part.to - part.from;
+          }
+        }
+        zone.display_polygons = display_polygons(
+            zone.uncovered_edges, input.display_buffer_meters,
+            input.display_grid_step_meters);
+      }
+      result.gray_zones.push_back(std::move(zone));
+    }
+  } else {
+    std::vector<std::pair<std::size_t, double>> boundary_sources;
+    bool reaches_cut_boundary = false;
+    for (const auto& id : input.local_experiment->boundary_node_ids) {
+      const std::size_t node = node_indices.at(id);
+      boundary_sources.emplace_back(node, 0.0);
+      if (arrival[node] <= input.threshold_seconds + kEpsilon) {
+        reaches_cut_boundary = true;
+      }
+    }
+    if (reaches_cut_boundary) {
+      result.warnings.push_back("LOCAL_REACHABILITY_MAY_BE_TRUNCATED");
+    }
+    const std::vector<double> boundary_times =
+        shortest_times(adjacency, boundary_sources);
+    const bool topology_verified =
+        input.local_experiment->topology_status == "verified";
+    if (!topology_verified) {
+      result.warnings.push_back("LOCAL_TOPOLOGY_UNVERIFIED");
+    }
+
+    for (const ServiceCategory& category : input.service_categories) {
+      LocalGrayZone zone;
+      zone.category = category.id;
+      const bool inventory_verified =
+          category.local_inventory_status == "verified";
+      if (!topology_verified) {
+        zone.warnings.push_back("LOCAL_TOPOLOGY_UNVERIFIED");
+      }
+      if (!inventory_verified) {
+        zone.warnings.push_back("LOCAL_FACILITY_INVENTORY_INCOMPLETE");
+      }
       std::vector<std::pair<std::size_t, double>> sources;
       for (const EntranceBinding& binding : bindings) {
         if (input.facilities[binding.facility_index].category == category.id) {
@@ -1089,25 +1181,41 @@ EngineResult compute_reachability(const EngineInput& input) {
         const auto from_facilities = reachable_intervals(
             edge, service_times, input.threshold_seconds,
             input.walking_speed_meters_per_second);
-        for (const Interval part : subtract_intervals(
-                 from_origin, from_facilities)) {
-          zone.uncovered_edges.push_back({edge.source_id, edge.kind,
-              slice(edge.path, part.from, part.to), edge.width_meters});
-          zone.uncovered_length_meters += part.to - part.from;
+        const auto append_parts = [&](const std::vector<Interval>& parts,
+                                      std::vector<ReachableEdge>& output,
+                                      double& length) {
+          for (const Interval part : parts) {
+            output.push_back({edge.source_id, edge.kind,
+                slice(edge.path, part.from, part.to), edge.width_meters});
+            length += part.to - part.from;
+          }
+        };
+        append_parts(intersect_intervals(from_origin, from_facilities),
+                     zone.covered_edges, zone.covered_length_meters);
+        const auto unserved = subtract_intervals(from_origin, from_facilities);
+        if (!topology_verified || !inventory_verified) {
+          append_parts(unserved, zone.unknown_edges,
+                       zone.unknown_length_meters);
+          continue;
         }
+        const auto from_boundary = reachable_intervals(
+            edge, boundary_times, input.threshold_seconds,
+            input.walking_speed_meters_per_second);
+        append_parts(intersect_intervals(unserved, from_boundary),
+                     zone.unknown_edges, zone.unknown_length_meters);
+        append_parts(subtract_intervals(unserved, from_boundary),
+                     zone.candidate_uncovered_edges,
+                     zone.candidate_uncovered_length_meters);
       }
-      zone.display_polygons = display_polygons(
-          zone.uncovered_edges, input.display_buffer_meters,
-          input.display_grid_step_meters);
+      result.local_gray_zones.push_back(std::move(zone));
     }
-    result.gray_zones.push_back(std::move(zone));
   }
-  if (result.frontier.empty()) {
+  if (!input.local_experiment && result.frontier.empty()) {
     result.warnings.push_back(blocked_crossing
         ? "CROSSING_NOT_COMPLETED_WITHIN_THRESHOLD"
         : "NETWORK_MAY_END_BEFORE_TIME_LIMIT");
   }
-  if (result.display_polygons.empty()) {
+  if (!input.local_experiment && result.display_polygons.empty()) {
     result.warnings.push_back("NO_DISPLAY_POLYGON");
   }
   return result;

@@ -1,6 +1,30 @@
 from dataclasses import dataclass
 from pathlib import Path
 import os
+from dotenv import dotenv_values, load_dotenv
+
+APP_ROOT = Path(__file__).resolve().parents[1]
+# Source checkout: <repo>/backend/app; container: /app/app.
+REPO_ROOT = APP_ROOT.parent if APP_ROOT.name == "backend" else APP_ROOT
+load_dotenv(REPO_ROOT / ".env", override=False)
+load_dotenv(APP_ROOT / ".env", override=False)
+
+
+def _server_ak() -> str:
+    if "BAIDU_SERVER_AK" in os.environ:
+        return os.environ["BAIDU_SERVER_AK"].strip()
+    # Read only the server key. Do not load browser variables into the server
+    # environment or expose this value in health responses/logs/cache entries.
+    for path in (REPO_ROOT / ".env", APP_ROOT / ".env", REPO_ROOT / "frontend/.env.local"):
+        if path.is_file():
+            values = dotenv_values(path, interpolate=False)
+            value = values.get("BAIDU_SERVER_AK") or values.get("VITE_BAIDU_SERVER_AK")
+            if value:
+                return value.strip()
+    return ""
+SYNTHETIC_NETWORK_PATH = Path(os.getenv(
+    "SYNTHETIC_NETWORK_PATH", str(REPO_ROOT / "data/networks/synthetic-preview.json")
+))
 
 
 @dataclass(frozen=True)
@@ -11,12 +35,16 @@ class Settings:
         os.getenv("CPP_ENGINE_PATH", "cpp-engine/build/isochrone_engine")
     )
     analysis_cache_dir: Path = Path(
-        os.getenv("ANALYSIS_CACHE_DIR", "data/cache")
+        os.getenv("ANALYSIS_CACHE_DIR", str(REPO_ROOT / "data/cache"))
     )
     walking_network_path: Path = Path(
         os.getenv("WALKING_NETWORK_PATH", "data/networks/shanghai-new-jiangwan.json")
     )
-    baidu_server_ak: str = os.getenv("BAIDU_SERVER_AK", "")
+    synthetic_network_path: Path = SYNTHETIC_NETWORK_PATH
+    local_experiment_network_path: Path = Path(
+        os.getenv("LOCAL_EXPERIMENT_NETWORK_PATH", str(SYNTHETIC_NETWORK_PATH))
+    )
+    baidu_server_ak: str = _server_ak()
     baidu_api_base_url: str = os.getenv(
     "BAIDU_API_BASE_URL",
     "https://api.map.baidu.com",
@@ -31,8 +59,15 @@ class Settings:
     os.getenv("BAIDU_MAX_RETRIES", "2")
     )
     cache_ttl_hours: int = int(
-    os.getenv("CACHE_TTL_HOURS", "24")
+        os.getenv("CACHE_TTL_HOURS", "24")
     )
+    poi_cache_path: Path = Path(os.getenv(
+        "POI_CACHE_PATH", str(REPO_ROOT / "data/cache/baidu-pois.sqlite3")))
+    poi_cache_ttl_hours: int = int(os.getenv("POI_CACHE_TTL_HOURS", "168"))
+    poi_cache_stale_hours: int = int(os.getenv("POI_CACHE_STALE_HOURS", "720"))
+    poi_max_pages: int = int(os.getenv("POI_MAX_PAGES", "2"))
+    poi_budget_seconds: float = float(os.getenv("POI_BUDGET_SECONDS", "12"))
+    poi_snap_meters: float = float(os.getenv("POI_SNAP_METERS", "3"))
 
 
 settings = Settings()

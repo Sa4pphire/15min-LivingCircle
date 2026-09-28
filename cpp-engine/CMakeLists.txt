@@ -35,6 +35,9 @@ target_include_directories(
 
 add_executable(isochrone_engine src/main.cpp)
 target_link_libraries(isochrone_engine PRIVATE isochrone_core)
+target_compile_definitions(isochrone_engine PRIVATE
+  ISOCHRONE_SYNTHETIC_NETWORK_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/networks/synthetic-preview.json"
+)
 
 if(MSVC)
   target_compile_options(isochrone_core PRIVATE /W4 /permissive-)

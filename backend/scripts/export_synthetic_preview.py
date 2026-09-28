@@ -20,12 +20,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path,
                         default=REPO_ROOT / "data/networks/synthetic-preview.json")
+    parser.add_argument("--annotations", type=Path,
+                        default=REPO_ROOT / "data/networks/synthetic-preview.annotations.json")
     args = parser.parse_args()
     source = REPO_ROOT / "frontend/src/data/demoRoadGraph.local.json"
     context = REPO_ROOT / "frontend/src/data/demoContext.extended.wgs84.json"
     graph = json.loads(source.read_text(encoding="utf-8"))
     origin = json.loads(context.read_text(encoding="utf-8"))["originWgs84"]
-    network = convert_preview_graph(graph, origin)
+    annotations = json.loads(args.annotations.read_text(encoding="utf-8"))
+    if (annotations.get("schemaVersion") != 1 or
+            annotations.get("coordinateSystem") != "engine-local-meters" or
+            not isinstance(annotations.get("crossings"), list) or
+            not isinstance(annotations.get("junctions", []), list)):
+        raise ValueError("invalid synthetic crossing annotation file")
+    network = convert_preview_graph(graph, origin, annotations["crossings"],
+                                    annotations.get("junctions", []))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(network, ensure_ascii=False, separators=(",", ":")),
                            encoding="utf-8")

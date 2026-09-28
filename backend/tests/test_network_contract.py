@@ -51,7 +51,10 @@ def test_polygon_holes_and_connected_over_time() -> None:
         "originAccessSeconds": 0,
         "snappedOriginMeters": [0, 0],
         "diagnostics": {"reachableNodeCount": 1,
-                        "reachableCrossingCount": 0, "warnings": []},
+                        "reachableCrossingCount": 0,
+                        "closedRoadFaceCount": 3,
+                        "roadClosureFilledCellCount": 4,
+                        "warnings": []},
     }
     metadata = {
         "originBd09": {"lng": 121.5, "lat": 31.3},
@@ -63,6 +66,10 @@ def test_polygon_holes_and_connected_over_time() -> None:
     assert len(result["isochrone"]["geometry"]["coordinates"][0]) == 2
     assert result["facilities"]["features"][0]["properties"]["travelTimeSeconds"] == 1000
     assert result["metrics"]["reachableFacilityCount"] == 0
+    assert result["metrics"]["closedRoadFaceCount"] == 3
+    assert result["metrics"]["roadClosureFilledCellCount"] == 4
+    assert result["metrics"]["displayPolygonCount"] == 1
+    assert result["metrics"]["displayHoleCount"] == 1
 
 
 def test_python_cpp_synthetic_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -89,6 +96,10 @@ def test_python_cpp_synthetic_roundtrip(monkeypatch: pytest.MonkeyPatch) -> None
     assert report["metadata"]["networkSource"] == "synthetic"
     assert report["metrics"]["facilityCount"] == 1
     assert report["metrics"]["reachableFacilityCount"] == 1
+    assert report["metrics"]["closedRoadFaceCount"] >= 0
+    assert report["metrics"]["roadClosureFilledCellCount"] >= 0
+    assert report["metrics"]["displayHoleCount"] == sum(
+        len(polygon) - 1 for polygon in report["isochrone"]["geometry"]["coordinates"])
     assert report["facilities"]["features"][0]["properties"]["travelTimeSeconds"] > 0
     assert report["facilities"]["features"][0]["properties"]["bestEntranceId"] in (
         "south_gate", "north_gate")

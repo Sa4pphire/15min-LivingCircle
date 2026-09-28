@@ -74,7 +74,10 @@ def test_generated_full_map_is_reproducible_and_topologically_valid() -> None:
     origin = json.loads((ROOT / "frontend/src/data/demoContext.extended.wgs84.json")
                         .read_text(encoding="utf-8"))["originWgs84"]
     generated = json.loads(GENERATED.read_text(encoding="utf-8"))
-    assert generated == convert_preview_graph(graph, origin)
+    annotations = json.loads((ROOT / "data/networks/synthetic-preview.annotations.json")
+                             .read_text(encoding="utf-8"))
+    assert generated == convert_preview_graph(graph, origin, annotations["crossings"],
+                                              annotations.get("junctions", []))
     assert generated["sourceGraph"]["nodes"] == 8518
     assert generated["sourceGraph"]["edges"] == 9232
     assert len(generated["nodes"]) > len(graph["nodes"])

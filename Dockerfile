@@ -13,6 +13,7 @@ RUN apt-get update \
 RUN g++ --version && cmake --version
 WORKDIR /src/cpp-engine
 COPY cpp-engine/ ./
+COPY data/networks/synthetic-preview.json /src/data/networks/synthetic-preview.json
 RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build --parallel \
     && ctest --test-dir build --output-on-failure
@@ -24,7 +25,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     APP_PORT=8000 \
     STATIC_DIR=/app/static \
     CPP_ENGINE_PATH=/app/bin/isochrone_engine \
-    ANALYSIS_CACHE_DIR=/app/data/cache
+    ANALYSIS_CACHE_DIR=/app/data/cache \
+    SYNTHETIC_NETWORK_PATH=/app/data/networks/synthetic-preview.json
 WORKDIR /app
 COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt

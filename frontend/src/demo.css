@@ -90,6 +90,9 @@ h1, h2, p { margin-top: 0; }
 .map-top-note, .map-bottomline { color: #78928a; }
 .map-canvas { position: relative; overflow: hidden; height: clamp(540px, calc(100vh - 260px), 780px); background: #eaf0ec; }
 .map-page .map-canvas { flex: 1; min-height: 0; height: auto; }
+.map-page .local-experiment-frame .map-topline { position: static; padding: 10px 19px; background: #eaf0ec; }
+.local-experiment-frame .map-head-left { max-width: 100%; }
+.map-page .local-experiment-frame .map-bottomline > span:first-child { display: inline-flex; font-size: 10px; }
 .demo-map { display: block; width: 100%; height: 100%; cursor: crosshair; }
 .demo-map.can-pan { cursor: grab; touch-action: none; }
 .demo-map.is-panning, .demo-map.is-panning * { cursor: grabbing !important; }

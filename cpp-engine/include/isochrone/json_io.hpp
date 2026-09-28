@@ -15,6 +15,12 @@ namespace isochrone {
                                      std::string_view message);
 
 [[nodiscard]] EngineInput parse_engine_input(std::string_view input);
+// Load the existing synthetic graph without adding nodes, edges or facilities.
+// Runtime coordinates are local meters; Python remains responsible for map coordinates.
+[[nodiscard]] EngineInput parse_synthetic_network(
+    std::string_view input, Point origin,
+    std::optional<std::string> origin_edge_id = std::nullopt,
+    bool local_experiment = false);
 [[nodiscard]] std::string serialize_engine_result(const EngineResult& result);
 
 }  // namespace isochrone

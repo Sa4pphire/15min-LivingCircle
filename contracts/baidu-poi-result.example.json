@@ -1,0 +1,65 @@
+{
+  "syntheticContractExample": true,
+  "description": "仅说明分析结果的 POI 增量字段；虚构名称和坐标，不是实际设施清单。",
+  "poiFacilities": {
+    "type": "FeatureCollection",
+    "coordType": "bd09ll",
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [121.51, 31.337]},
+        "properties": {
+          "id": "contract-school-only",
+          "name": "样例学校（非真实 POI）",
+          "address": "字段演示",
+          "category": "education",
+          "categories": ["education"],
+          "categoryLabel": "学校",
+          "source": "baidu",
+          "coordType": "bd09ll",
+          "localPointMeters": [100, 200],
+          "insideDisplayPolygon": true,
+          "nearReachableWalkway": null,
+          "accessStatus": "missing_navigation_point",
+          "accessVerified": false,
+          "modelReachable": null,
+          "modelTravelTimeSeconds": null
+        }
+      }
+    ]
+  },
+  "poiCategories": [
+    {"category": "education", "label": "学校", "queriedCount": 1, "insideDisplayCount": 1, "nearReachableWalkwayCount": 0, "modelReachableCount": 0, "unmappedCount": 1, "inventoryStatus": "incomplete"},
+    {"category": "healthcare", "label": "医院", "queriedCount": 0, "insideDisplayCount": 0, "nearReachableWalkwayCount": 0, "modelReachableCount": 0, "unmappedCount": 0, "inventoryStatus": "incomplete"},
+    {"category": "shopping", "label": "超市", "queriedCount": 0, "insideDisplayCount": 0, "nearReachableWalkwayCount": 0, "modelReachableCount": 0, "unmappedCount": 0, "inventoryStatus": "incomplete"},
+    {"category": "public_service", "label": "公共服务", "queriedCount": 0, "insideDisplayCount": 0, "nearReachableWalkwayCount": 0, "modelReachableCount": 0, "unmappedCount": 0, "inventoryStatus": "incomplete"}
+  ],
+  "metadata": {
+    "poi": {
+      "provider": "baidu_place_v2",
+      "status": "partial",
+      "coordinateSystem": "bd09ll",
+      "queryInputCoordType": "wgs84ll",
+      "queryCenter": [121.5, 31.33],
+      "queryRadiusMeters": 2700,
+      "gridMeters": 500,
+      "maxPagesPerCategory": 2,
+      "cacheBackend": "shared_baidu_json",
+      "cacheTtlHours": 168,
+      "cacheHits": 8,
+      "cacheMisses": 0,
+      "stalePages": 0,
+      "apiRequests": 0,
+      "oldestFetchedAt": 1790568000,
+      "alignment": "approximate_baidu_forward_affine",
+      "networkOrigin": {"lng": 121.5, "lat": 31.33},
+      "candidateCount": 1,
+      "inventoryVerified": false,
+      "accessVerified": false,
+      "categories": [
+        {"category": "education", "paginationComplete": false, "pages": 2, "discardedCount": 0, "error": "字段演示：清单可能不完整"}
+      ]
+    }
+  },
+  "warnings": ["BAIDU_POI_INVENTORY_AND_ACCESSES_UNVERIFIED", "BAIDU_POI_DATA_PARTIAL_OR_UNAVAILABLE"]
+}

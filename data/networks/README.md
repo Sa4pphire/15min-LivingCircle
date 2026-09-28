@@ -1,14 +1,38 @@
-# 实地步行路网
+# 开发演示路网
 
-这里放经人工核对的演示区域路网 JSON。默认预期文件为 `shanghai-new-jiangwan.json`；该文件目前不存在，因此真实区域分析会返回 `UNSUPPORTED_AREA`。
+当前 C++ 演示统一使用已经建模的 `synthetic-preview.json`，本轮不生成或补充其他路网数据。C++ `--demo`、Python 15 分钟合成演示和 3 分钟局部实验默认共用它；可用 `SYNTHETIC_NETWORK_PATH` 指定该文件位置。局部模式仅阈值和严格接入规则不同，不裁剪或添加节点、边、设施。`contracts/` 内的小图是字段示例及单元测试，不是默认运行数据。
+
+该文件设施及类别为空，也没有核实过的裁剪出口；局部接口明确标记 `grayZoneStatus: "data_insufficient"`，只显示可达街段，边界核查状态保持 `incomplete`，不按节点度数猜出口。后续若显式提供局部标注文件，可用 `LOCAL_EXPERIMENT_NETWORK_PATH` 覆盖；当前无需这么做。
+
+真实分析入口仍与合成演示隔离：`shanghai-new-jiangwan.json` 目前不存在，因此真实路网请求返回 `UNSUPPORTED_AREA`，不自动替换成合成数据。下方真实数据标注要求是未来接入的约束，本次并不要求采集它们。
 
 ## 临时合成路网：只用于三端联调
 
 `synthetic-preview.json` 由 `python backend/scripts/export_synthetic_preview.py` 从前端的
-`demoRoadGraph.local.json` 生成。它有 10,432 个节点、10,902 条边：主干道中心线偏移成左右两条
+`demoRoadGraph.local.json` 生成，并应用 `synthetic-preview.annotations.json` 中的人工校对记录。
+它有 10,438 个节点、10,917 条边：主干道中心线偏移成左右两条
 `sidewalk`；其余 `roadLocal`／`roadPath` 暂按 `shared_way` 处理。主干道交点处的共享道路
-分支使用独立端点，不直接从道路一侧免费通到另一侧；两侧都有分支的 41 处位置加了**未经核实**的
-`crossing`，使用默认 20 秒等待。图的推断连接也未经核实；文件中的 `synthetic: true` 不得移除。
+分支使用独立端点，不直接从道路一侧免费通到另一侧；原有 41 处推断过街和人工校对的 8 条过街边
+均为**未经实地核实**的 `crossing`，等待时间为 20 秒。图的推断连接也未经核实；
+文件中的 `synthetic: true` 不得移除。
+
+2026-09-28 的两处蓝点校对位于小环路的节点 `shared:p:54.5:-501.1` 和
+`shared:p:-10.6:-430.4`。这两个节点原本在小环路内部已相连，但未接到旁边的主路。
+每处现在先以 `turn` 接入近侧人行道，再以 `crossing` 到达对侧；人行道在接入位置拆分，
+不依靠几何相交自动连通。`manual-crossing:park-loop-north` 和
+`manual-crossing:park-loop-south` 各自明确设置 `waitSeconds: 20`。
+记录为 `user_marked_unverified`，只表示用户在 SVG 中确认了建模位置，不证明现场有合法人行横道。
+重新运行导出脚本会保留这些修正；`python backend/scripts/render_network_audit.py`
+可更新 `synthetic-preview-audit.svg`，本轮校对的边及节点以蓝色突出。
+
+同日蓝色圈选的十字路口记为 `blue-crossroads-01`，局部中心为 `[-273.15,1347.85]`。
+四个街角增加 4 条 `turn`；四个路口外侧增加 4 条 `crossing`，双向主路原有内侧人行道
+增加 2 条带等待的直行过街连接，共 6 条，每条加 20 秒。12 个接入节点分别从原道路中心
+端点沿各自人行道退开约 18 米，不共用路口中心节点；原中心短 `shared_way`
+`w:226889561:0:0` 及其两条接入边被显式替换，防止免费穿过路口。
+这些都是用户截图校对后的合成几何，不表示核实了具体斑马线或信号灯。
+`python backend/scripts/render_junction_audit.py blue-crossroads-01` 会生成
+`blue-crossroads-01.svg` 局部图：蓝色实线为同侧转弯，蓝色虚线为需等待的过街连接。
 
 此图沿用 OSM SVG 预览的 WGS-84 来源和局部米制几何，但将预览的“Y 向南”转为引擎的“Y 向北”。
 它使用 `originWgs84`，API 请求中心点必须带 `coordType: "wgs84ll"`；不要把它伪装成 BD-09
@@ -19,9 +43,9 @@ MultiPolygon 近似等时圈，再转回与“真实区域”模式共用的 SVG
 从仓库根目录启动联调时，先构建当前 C++ 源码，设置
 `CPP_ENGINE_PATH=cpp-engine/build/isochrone_engine`（Windows 为相应 `.exe`；本机也可指向独立编译的 `cpp-engine/build/isochrone_engine_synthetic.exe`），启动
 `uvicorn app.main:app --app-dir backend --port 8000`，然后运行前端 `npm run dev`。
-合成接口固定加载本文件，与默认真实分析接口的 `WALKING_NETWORK_PATH` 互不影响；
+合成与局部实验接口默认加载本文件，与真实分析接口的 `WALKING_NETWORK_PATH` 互不影响；
 “真实区域”模式仍使用浏览器内固定圆示意，无需后端。
-由于默认区域中心距可用街边较远，C++ 可能返回 `ORIGIN_NOT_ON_WALKWAY`；请选择靠近道路的点。
+15 分钟合成模式允许计时的未核实直线接入；3 分钟局部模式仍会对离步行边过远的点返回 `ORIGIN_NOT_ON_WALKWAY`。可用已有边 `w:154811345:2:0` 的中点（局部米数 `[-54.25,-203.25]`，WGS-84 `121.504429458,31.331174183`）联调。
 整个文件仅证明数据链路可用，**不能用于真实步行可达、过街或设施覆盖判定**。
 
 合成模式向引擎发送 `allowOffNetworkOrigin: true`，将起点到最近可步行边的直线距离按步速计时并从 900 秒内扣除；最大搜索距离为 1,170 米。共享通道原有的 3 米吸附限制只在严格模式保留。接入虚线未核实，可能穿越不可通行地块；真实路网仍严格限制 5 米且要求起点落在已核实公共步行空间内。展示面由扣除接入时间后的可达街段生成 MultiPolygon，不是固定圆。
@@ -39,3 +63,11 @@ MultiPolygon 近似等时圈，再转回与“真实区域”模式共用的 SVG
 在本地开发中可以显式设置 `WALKING_NETWORK_PATH=contracts/engine-input.example.json` 使用合成样例；结果会标记为合成数据。
 
 设施和灰区数据也由 Python 协作者整理成同一 JSON。每个设施设置 `category` 和一个或多个 `entrances`；每个入口要绑定具体 `accessEdgeId` 与街边接入点，非街边入口只有在核实可通行的 `accessPathMeters` 后才纳入严格耗时。按类别声明 `serviceCategories` 的 `dataStatus`：在线核查过的类别用 `reviewed_online`，但报告仍称“疑似灰区”；清单或入口未核齐用 `incomplete`，此类不输出灰区。详见 `contracts/engine-v2.README.md` 和合成输入样例。路网来源可由 Python 自行选择，传给引擎的必须是规范化图而非第三方原始响应。
+
+## 小片真实路网：独立的局部实验
+
+若只实地核实一小段路网，请放在独立文件，并加入 `localExperiment`，不要替换上面的完整 15 分钟路网或伪装为新江湾城整体结果。局部实验默认阈值为 180 秒；即使计算出候选未覆盖街段，也只反映核查范围内的图模型。`contracts/engine-local-experiment.input.example.json` 是**合成教学数据**，不是真实标注文件。
+
+实地标注时，必须将每个因数据裁剪而在图边缘中断的出口节点 ID 写入 `localExperiment.boundaryNodeIds`；真正的道路尽头不要写入。两者不能按节点度数自动区分。只有确认没有漏标出口且路口连接关系已核对时，`topologyStatus` 才设为 `verified`，否则设为 `incomplete`。每类设施入口清单另用 `serviceCategories[*].localInventoryStatus` 标为 `verified` 或 `incomplete`，缺省是后者。未核齐时，已录设施可证实的“已覆盖”仍可显示，但其余街段只能显示“未知”，不能宣称匮乏。
+
+Python 应为此提供与 900 秒主报告加载器相隔离的入口，只加载经指定的局部实验文件。它将起点换算到该文件的局部米制坐标并调用同一 C++ 引擎，但页面只画 `localGrayZones` 的彩色街段，显示裁剪警告，不展示正式灰区面或完整 15 分钟覆盖比例。路网及设施来源、核查范围、裁剪出口应能在实验页面查到；未经核实的局部 JSON 只能作为合成演示。

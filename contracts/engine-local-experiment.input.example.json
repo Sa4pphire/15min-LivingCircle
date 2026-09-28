@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 2,
+  "synthetic": true,
+  "originBd09": { "lng": 121.5, "lat": 31.3 },
+  "demoCenterBd09": { "lng": 121.502102644, "lat": 31.3 },
+  "supportedCenterBoundsMeters": { "minX": 190, "maxX": 210, "minY": -10, "maxY": 10 },
+  "originMeters": { "xMeters": 200, "yMeters": 0 },
+  "originEdgeId": "west_lane",
+  "thresholdSeconds": 180,
+  "walkingSpeedMetersPerSecond": 1.3,
+  "crossingWaitSeconds": 20,
+  "localExperiment": {
+    "boundaryNodeIds": ["cut_east"],
+    "topologyStatus": "verified"
+  },
+  "nodes": [
+    { "id": "true_dead_end", "xMeters": 0, "yMeters": 0 },
+    { "id": "junction", "xMeters": 200, "yMeters": 0 },
+    { "id": "cut_east", "xMeters": 600, "yMeters": 0 }
+  ],
+  "edges": [
+    {
+      "id": "west_lane",
+      "from": "true_dead_end",
+      "to": "junction",
+      "kind": "shared_way",
+      "streetBlockId": "synthetic_west_lane",
+      "sharedWayType": "shared_alley",
+      "widthMeters": 4,
+      "pathMeters": [[0, 0], [200, 0]]
+    },
+    {
+      "id": "east_lane",
+      "from": "junction",
+      "to": "cut_east",
+      "kind": "shared_way",
+      "streetBlockId": "synthetic_east_lane",
+      "sharedWayType": "shared_alley",
+      "widthMeters": 4,
+      "pathMeters": [[200, 0], [600, 0]]
+    }
+  ],
+  "serviceCategories": [
+    { "id": "shopping", "dataStatus": "reviewed_online", "localInventoryStatus": "verified" },
+    { "id": "healthcare", "dataStatus": "incomplete", "localInventoryStatus": "incomplete" }
+  ],
+  "facilities": [
+    {
+      "id": "synthetic_shop",
+      "category": "shopping",
+      "entrances": [
+        { "id": "door", "accessEdgeId": "west_lane", "streetAccessPointMeters": [0, 0] }
+      ]
+    }
+  ]
+}

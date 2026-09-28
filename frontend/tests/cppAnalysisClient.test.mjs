@@ -77,4 +77,38 @@ test("synthetic client posts a WGS-84 centre, polls the API, and returns the map
   const request = JSON.parse(calls[0].options.body);
   assert.equal(request.center.coordType, "wgs84ll");
   assert.equal(request.minutes, 15);
+  assert.equal(request.includePois, true);
+  assert.equal(request.refreshPois, false, "ordinary computations reuse cached POIs");
+});
+
+test("synthetic normalization preserves native POIs and shared cache metadata", () => {
+  const poi = { id: "school", category: "education", categories: ["education"],
+    name: "学校候选", localPointMeters: [10, 20], insideDisplayPolygon: true,
+    modelReachable: null };
+  const categories = [{ category: "education", queriedCount: 10, insideDisplayCount: 1 }];
+  const cache = { status: "ready", apiRequests: 0, cacheHits: 8 };
+  const normalized = normalizeCppReport({ ...report,
+    metadata: { ...report.metadata, poi: cache }, poiCategories: categories,
+    poiFacilities: { type: "FeatureCollection", coordType: "bd09ll", features: [{
+      type: "Feature", geometry: { type: "Point", coordinates: [121.51, 31.34] }, properties: poi,
+    }] } }, origin);
+  assert.deepEqual(normalized.poiFacilities[0].bd09, [121.51, 31.34]);
+  assert.deepEqual(normalized.poiFacilities[0].point, [10, -20]);
+  assert.equal(normalized.poiFacilities[0].modelReachable, null);
+  assert.deepEqual(normalized.poiCategories, categories);
+  assert.deepEqual(normalized.poiInfo, cache);
+});
+
+test("explicit POI refresh is opt-in and is sent to the backend", async () => {
+  let body;
+  const fetchImpl = async (url, options) => {
+    if (options?.method === "POST") {
+      body = JSON.parse(options.body);
+      return { ok: true, json: async () => ({ analysisId: "refresh-1" }) };
+    }
+    return { ok: true, json: async () => ({ status: "completed", result: report }) };
+  };
+  await requestCppMapAnalysis({ origin, refreshPois: true }, { fetchImpl });
+  assert.equal(body.includePois, true);
+  assert.equal(body.refreshPois, true);
 });

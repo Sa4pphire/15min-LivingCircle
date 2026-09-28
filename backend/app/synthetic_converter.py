@@ -9,6 +9,8 @@ from collections import defaultdict
 import math
 from typing import Any
 
+from .junction_annotations import apply_junction_annotations
+
 
 SIDEWALK_OFFSET_METERS = 3.0
 SHARED_WIDTH_METERS = {"roadLocal": 4.0, "roadPath": 2.0}
@@ -27,8 +29,116 @@ def _distance(a: list[float], b: list[float]) -> float:
     return math.hypot(b[0] - a[0], b[1] - a[1])
 
 
-def convert_preview_graph(graph: dict[str, Any], origin_wgs84: list[float]
-                          ) -> dict[str, Any]:
+def _apply_crossing_annotations(
+    nodes: dict[str, dict[str, Any]], edges: list[dict[str, Any]],
+    annotations: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Split explicitly selected sidewalks; never infer crossings by proximity.
+
+    A marked branch joins its near sidewalk with a walk-only turn. A separate
+    charged crossing reaches the far sidewalk. Image annotations are not a
+    field survey, and both new links retain that distinction.
+    """
+    by_id = {edge["id"]: edge for edge in edges}
+    splits: dict[str, list[tuple[float, str]]] = defaultdict(list)
+    links: list[dict[str, Any]] = []
+    records: list[dict[str, Any]] = []
+    annotation_ids: set[str] = set()
+
+    def anchor(edge_id: str, point: list[float], new_id: str) -> str:
+        edge = by_id.get(edge_id)
+        if edge is None or edge["kind"] != "sidewalk":
+            raise ValueError(f"marked crossing needs a known sidewalk edge: {edge_id}")
+        # The preview converter produces straight, two-point edge segments.
+        a, b = edge["pathMeters"]
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        length = math.hypot(dx, dy)
+        if length < 0.05:
+            raise ValueError(f"marked sidewalk is degenerate: {edge_id}")
+        t = max(0.0, min(1.0, ((point[0] - a[0]) * dx +
+                               (point[1] - a[1]) * dy) / length ** 2))
+        projected = [round(a[0] + t * dx, 3), round(a[1] + t * dy, 3)]
+        if _distance(point, projected) > 50.0:
+            raise ValueError(f"marked crossing is too far from sidewalk: {edge_id}")
+        if t * length < 0.05:
+            return edge["from"]
+        if (1.0 - t) * length < 0.05:
+            return edge["to"]
+        for old_t, old_id in splits[edge_id]:
+            if abs(old_t - t) * length < 0.05:
+                return old_id
+        if new_id in nodes:
+            raise ValueError(f"duplicate marked crossing node ID: {new_id}")
+        nodes[new_id] = {"id": new_id, "xMeters": projected[0],
+                         "yMeters": projected[1]}
+        splits[edge_id].append((t, new_id))
+        return new_id
+
+    def location(node_id: str) -> list[float]:
+        node = nodes[node_id]
+        return [node["xMeters"], node["yMeters"]]
+
+    for annotation in annotations:
+        annotation_id = annotation.get("id")
+        if (not isinstance(annotation_id, str) or not annotation_id or
+                annotation_id in annotation_ids):
+            raise ValueError("marked crossing needs a unique, non-empty ID")
+        annotation_ids.add(annotation_id)
+        if annotation.get("verificationStatus") != "user_marked_unverified":
+            raise ValueError("image-marked crossings must remain unverified")
+        if not isinstance(annotation.get("source"), str) or not annotation["source"]:
+            raise ValueError("marked crossing needs annotation source information")
+        wait = annotation.get("waitSeconds", 20.0)
+        if (isinstance(wait, bool) or not isinstance(wait, (int, float)) or
+                not math.isfinite(wait) or wait < 0):
+            raise ValueError("marked crossing waitSeconds must be non-negative")
+        branch = annotation.get("fromNodeId")
+        if branch not in nodes:
+            raise ValueError(f"unknown marked branch node: {branch}")
+        if annotation.get("nearEdgeId") == annotation.get("farEdgeId"):
+            raise ValueError("marked crossing needs different near/far sidewalks")
+        point = location(branch)
+        near = anchor(annotation["nearEdgeId"], point,
+                      f"manual:{annotation_id}:near")
+        far = anchor(annotation["farEdgeId"], point,
+                     f"manual:{annotation_id}:far")
+        turn_id = f"manual-turn:{annotation_id}"
+        crossing_id = f"manual-crossing:{annotation_id}"
+        if turn_id in by_id or crossing_id in by_id:
+            raise ValueError("marked crossing link ID already exists")
+        metadata = {"annotationId": annotation_id,
+                    "verificationStatus": annotation["verificationStatus"],
+                    "annotationSource": annotation["source"]}
+        links.extend((
+            {"id": turn_id, "from": branch, "to": near, "kind": "turn",
+             "pathMeters": [point, location(near)], **metadata},
+            {"id": crossing_id, "from": near, "to": far, "kind": "crossing",
+             "pathMeters": [location(near), location(far)],
+             "waitSeconds": float(wait), **metadata},
+        ))
+        records.append({**annotation, "nearNodeId": near, "farNodeId": far,
+                        "turnEdgeId": turn_id, "crossingEdgeId": crossing_id})
+
+    result = []
+    for edge in edges:
+        if edge["id"] not in splits:
+            result.append(edge)
+            continue
+        ordered = [edge["from"], *(node_id for _, node_id in sorted(splits[edge["id"]])),
+                   edge["to"]]
+        for index, (first, second) in enumerate(zip(ordered, ordered[1:])):
+            result.append({**edge, "id": f"{edge['id']}:manual:{index}",
+                           "from": first, "to": second,
+                           "pathMeters": [location(first), location(second)],
+                           "originalEdgeId": edge["id"]})
+    return result + links, records
+
+
+def convert_preview_graph(
+    graph: dict[str, Any], origin_wgs84: list[float],
+    crossing_annotations: list[dict[str, Any]] | None = None,
+    junction_annotations: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Return a v2 network file loadable by backend/app/network.py.
 
     Major roads get separated, offset left/right sidewalk lines.  Local roads
@@ -206,6 +316,26 @@ def convert_preview_graph(graph: dict[str, Any], origin_wgs84: list[float]
         if kind == "crossing":
             synthetic_crossing_ids.append(edge["id"])
 
+    manual_records: list[dict[str, Any]] = []
+    if crossing_annotations:
+        edges, manual_records = _apply_crossing_annotations(nodes, edges, crossing_annotations)
+        for record in manual_records:
+            synthetic_link_ids.extend((record["turnEdgeId"], record["crossingEdgeId"]))
+            synthetic_crossing_ids.append(record["crossingEdgeId"])
+
+    junction_records: list[dict[str, Any]] = []
+    if junction_annotations:
+        edges, junction_records = apply_junction_annotations(nodes, edges, junction_annotations)
+        for record in junction_records:
+            for connector in record["connectors"]:
+                synthetic_link_ids.append(connector["edgeId"])
+                if connector["kind"] == "crossing":
+                    synthetic_crossing_ids.append(connector["edgeId"])
+        remaining_ids = {edge["id"] for edge in edges}
+        synthetic_link_ids = [edge_id for edge_id in synthetic_link_ids if edge_id in remaining_ids]
+        synthetic_crossing_ids = [edge_id for edge_id in synthetic_crossing_ids
+                                  if edge_id in remaining_ids]
+
     # Discard any offset nodes that could not be referenced by an edge.
     used = {node_id for edge in edges for node_id in (edge["from"], edge["to"])}
     nodes = {node_id: node for node_id, node in nodes.items() if node_id in used}
@@ -233,5 +363,7 @@ def convert_preview_graph(graph: dict[str, Any], origin_wgs84: list[float]
             "unverifiedInferredJunctions": len(graph.get("inferredJunctions", [])),
             "syntheticLinkIds": synthetic_link_ids,
             "syntheticCrossingIds": synthetic_crossing_ids,
+            "manualCrossingAnnotations": manual_records,
+            "manualJunctionAnnotations": junction_records,
         },
     }
