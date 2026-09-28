@@ -40,7 +40,7 @@ class BaiduClient:
             transport=transport,
         )
 
-    # 异步关闭 HTTP 客户端，释放网络连接
+    # 异步关闭 HTTP 客户端，释放网络连接；"async def"用来定义“异步函数”，可以在函数内部使用“await”关键字等待异步操作完成。
     async def aclose(self) -> None:
         await self._http.aclose()
 
