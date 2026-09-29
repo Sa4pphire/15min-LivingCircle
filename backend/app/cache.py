@@ -152,6 +152,12 @@ class SharedBaiduCache(PoiCache):
         entry = _get_cached_entry(key, cache_dir=self.cache_dir, max_age_seconds=max_age)
         if (entry and isinstance(entry[0], dict) and
                 type(entry[0].get("status")) is int and entry[0]["status"] == 0):
+            # Successful empty Place responses are reusable, but less stable
+            # than positive inventories. Never cache an API failure as empty.
+            if (entry[0].get("results") == [] and
+                    (datetime.now(timezone.utc).timestamp() - entry[1]) >
+                    settings.poi_empty_cache_ttl_hours * 3600):
+                return None
             return entry
         return None
 

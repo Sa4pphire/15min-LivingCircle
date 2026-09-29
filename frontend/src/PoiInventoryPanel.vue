@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from "vue";
-import { poiAccessLabel, poiCacheLabel, poiCategoryCounts, poiCategoryStyles, poiEmptyLabel, poiInfo, visiblePois } from "./poiFacilities.js";
+import { poiAccessLabel, poiCacheLabel, poiCategoryCounts, poiCategoryStyles, poiEmptyLabel, poiInfo, poiSearchProgress, visiblePois } from "./poiFacilities.js";
 
 const props = defineProps({ result: { type: Object, default: null },
   compact: { type: Boolean, default: false }, category: { type: String, default: "all" } });
@@ -35,6 +35,7 @@ watch([() => props.result, () => props.category], () => { selected.value = null;
       </button>
     </div>
     <p v-if="!compact" class="poi-status" role="status">{{ status }}</p>
+    <p v-if="poiSearchProgress(result)" class="poi-status" role="status">{{ poiSearchProgress(result) }}</p>
     <p v-if="compact && (!entries.length || info?.status === 'unavailable')" class="poi-empty" role="status">{{ poiEmptyLabel(result, category) }}</p>
     <p v-if="!compact && info" class="poi-cache-status">本次百度请求 {{ info.apiRequests ?? 0 }} 次，缓存命中 {{ info.cacheHits ?? 0 }} 项；缓存有效期 {{ info.cacheTtlHours ?? 168 }} 小时。</p>
     <template v-if="!compact">
@@ -89,5 +90,6 @@ watch([() => props.result, () => props.category], () => { selected.value = null;
 .poi-list small { display: block; margin-top: 3px; font-size: 10px; line-height: 1.5; color: #5a756b; }
 .compact { padding: 7px; background: rgba(251, 253, 251, .96); }
 .compact .poi-empty { max-width: 245px; font-size: 10px; margin: 6px 0 0; }
+.compact .poi-status { max-width: 440px; font-size: 10px; margin: 6px 0 0; }
 @media (max-width: 600px) { .poi-filters button { padding: 6px; font-size: 10px; } }
 </style>

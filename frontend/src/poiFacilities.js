@@ -3,12 +3,15 @@
 export const poiCategoryStyles = {
   education: { label: "学校", glyph: "校", color: "#2f6e91" },
   healthcare: { label: "医院", glyph: "医", color: "#a53e50" },
-  shopping: { label: "超市", glyph: "购", color: "#795d18" },
+  shopping: { label: "商超", glyph: "购", color: "#795d18" },
   public_service: { label: "公共服务", glyph: "公", color: "#68509b" },
+  dining: { label: "餐饮", glyph: "餐", color: "#b45f2f" },
 };
 
 export function poiCandidates(result) {
-  if (Array.isArray(result?.poiFacilities)) return result.poiFacilities;
+  if (Array.isArray(result?.poiFacilities)) {
+    return result.poiFacilities.filter(poi => poi && Object.hasOwn(poiCategoryStyles, poi.category));
+  }
   const collection = result?.poiFacilities;
   if (collection?.coordType !== "bd09ll") return [];
   return (collection.features ?? []).filter((feature) =>
@@ -16,7 +19,7 @@ export function poiCandidates(result) {
     Array.isArray(feature.geometry.coordinates) && feature.geometry.coordinates.length === 2 &&
     feature.geometry.coordinates.every(Number.isFinite) &&
     Math.abs(feature.geometry.coordinates[0]) <= 180 && Math.abs(feature.geometry.coordinates[1]) < 90 &&
-    typeof feature.properties?.id === "string" && poiCategoryStyles[feature.properties.category],
+    typeof feature.properties?.id === "string" && Object.hasOwn(poiCategoryStyles, feature.properties.category),
   ).map((feature) => {
     const point = feature.properties.localPointMeters;
     return { ...feature.properties, bd09: [...feature.geometry.coordinates],
@@ -45,6 +48,17 @@ export function poiCacheLabel(result) {
   if (info.apiRequests > 0) return `API ${info.apiRequests} 次 · 缓存 ${info.cacheHits ?? 0} 项`;
   if (info.cacheHits > 0) return `缓存命中 ${info.cacheHits} 项`;
   return "百度 POI 候选";
+}
+
+export function poiSearchProgress(result) {
+  const info = poiInfo(result);
+  if (!info || !Number.isFinite(info.plannedQueries)) return "";
+  const progress = `检索 ${info.completedQueries ?? 0}/${info.plannedQueries} 个网格关键词`;
+  if (info.status === "ready") return `${progress} · 已完成当前检索计划，非设施普查`;
+  if (info.quotaLimited) return `${progress} · 百度限流／配额限制。待限制恢复后再普通计算补查，缓存已保留；不要强制刷新。`;
+  if (info.authFailed) return `${progress} · 百度鉴权／权限错误，请检查服务端 AK 配置；缓存已保留。`;
+  const reason = info.requestBudgetReached ? "请求预算" : info.timeBudgetReached ? "时间预算" : "分页／数据限制";
+  return `${progress} · 未完整：${reason}。再次普通计算可复用缓存补查，不必强制刷新。`;
 }
 
 // Count POI records, not unique institutions: a school's gates may have their
@@ -79,5 +93,6 @@ export function poiAccessLabel(poi) {
   return ({ missing_navigation_point: "无导航入口，尚未接入路网",
     not_on_modeled_way: "导航点不在已建模步行边上",
     ambiguous_side: "道路侧有歧义，尚未接入路网",
+    coordinate_alignment_outside_grid: "点位超出已校准区域，尚未接入路网",
     coordinate_alignment_unavailable: "坐标校准未完成，尚未接入路网" })[poi.accessStatus] ?? "入口待核实";
 }

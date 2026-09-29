@@ -4,6 +4,7 @@ import asyncio
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import json
+import time
 
 import httpx
 import pytest
@@ -27,7 +28,7 @@ def response():
 def test_collaborator_helper_and_cpp_service_share_a_single_response(monkeypatch, tmp_path):
     monkeypatch.setattr(pois, "settings", replace(
         pois.settings, analysis_cache_dir=tmp_path,
-        poi_cache_path=tmp_path / "baidu-pois.sqlite3"))
+        poi_cache_path=tmp_path / "baidu-pois.sqlite3", poi_max_requests=0))
     requests = []
 
     def handler(request):
@@ -48,6 +49,7 @@ def test_collaborator_helper_and_cpp_service_share_a_single_response(monkeypatch
             assert basic[0]["uid"] == detailed[0]["uid"]
             assert detailed[0]["navigationPoint"] == [121.5001, 31.3001]
             assert info["apiRequests"] == 0 and info["cacheHits"] == 1
+            assert info["cachedSeedCount"] == 1 and info["status"] == "partial"
         finally:
             await python_client.aclose()
             await cpp_client.aclose()
@@ -195,3 +197,44 @@ def test_json_stale_fallback_and_provider_cooldown_never_cache_failure_as_empty(
     assert count == 1
     files = list(tmp_path.glob("*.json"))
     assert len(files) == 1 and json.loads(files[0].read_text(encoding="utf-8"))["payload"]["status"] == 0
+
+
+def test_different_clients_share_pacing_and_warm_cache_needs_no_request_slot(tmp_path):
+    sent = []
+    def handler(request):
+        sent.append(time.monotonic())
+        return httpx.Response(200, json=response())
+    async def run():
+        clients = [BaiduClient(ak="fake", transport=httpx.MockTransport(handler),
+                               cache_dir=tmp_path, cache_enabled=True, max_qps=20) for _ in range(2)]
+        try:
+            await asyncio.gather(*(reader.search_pois(query, (121.5, 31.3))
+                                   for reader, query in zip(clients, ("学校", "医院"))))
+            assert len(sent) == 2 and sent[1] - sent[0] >= 0.04
+            await asyncio.gather(*(reader.search_pois(query, (121.5, 31.3))
+                                   for reader, query in zip(clients, ("学校", "医院"))))
+            assert len(sent) == 2
+        finally:
+            for reader in clients:
+                await reader.aclose()
+    asyncio.run(run())
+
+
+def test_request_budget_is_rechecked_after_waiting_for_shared_slot(tmp_path):
+    sent = []
+    def handler(request):
+        sent.append(request)
+        return httpx.Response(200, json=response())
+    async def run():
+        reader = BaiduClient(ak="fake", transport=httpx.MockTransport(handler),
+                             cache_dir=tmp_path, cache_enabled=True, max_qps=20)
+        reader.limit_requests(1)
+        try:
+            results = await asyncio.gather(reader.search_pois("学校", (121.5, 31.3)),
+                                           reader.search_pois("医院", (121.5, 31.3)),
+                                           return_exceptions=True)
+            assert sum(isinstance(result, Exception) for result in results) == 1
+            assert reader.cache_stats["apiRequests"] == 1 and len(sent) == 1
+        finally:
+            await reader.aclose()
+    asyncio.run(run())

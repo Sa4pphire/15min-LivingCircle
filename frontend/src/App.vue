@@ -18,7 +18,15 @@ const activePage = ref(0);
 // the optional Baidu map (or requiring a browser AK).
 const requestedMode = new URLSearchParams(window.location.search).get("mode");
 const mapMode = ref(["local", "synthetic"].includes(requestedMode) ? requestedMode : "real");
+// Start ?mode=local without Baidu. Once opened, retain the shared base map.
+const sharedMapMounted = ref(mapMode.value !== "local");
+const mapModes = [
+  { id: "real", label: "快速模式", description: "固定圆与临时路线，仅作交互示意" },
+  { id: "synthetic", label: "专家模式", description: "C++ 路网等时圈，当前仍使用合成数据" },
+  { id: "local", label: "局部实验", description: "独立的 3 分钟街段验证，不进入正式报告" },
+];
 const mapZoomTier = ref("medium");
+const mapOverviewRequestId = ref(0);
 const realCandidate = ref(null);
 const realAnalysisResult = ref(null);
 const realAnalysisState = ref("idle");
@@ -101,7 +109,6 @@ async function runCppAnalysis(refreshPois = false) {
       { signal: controller.signal });
     if (controller.signal.aborted) return;
     cppAnalysisResult.value = result;
-    mapZoomTier.value = "result";
     cppAnimationTimer = setTimeout(() => {
       if (!controller.signal.aborted) cppAnalysisState.value = "complete";
     }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 3200);
@@ -116,11 +123,16 @@ async function runCppAnalysis(refreshPois = false) {
 }
 
 function switchMapMode(mode) {
+  if (mapMode.value === mode) return;
+  if (mode !== "local") sharedMapMounted.value = true;
   if (mapZoomTier.value === "result") mapZoomTier.value = "medium";
   mapMode.value = mode;
 }
 
 function setMapZoomTier(tier) {
+  // Refitting a result is an explicit user action, including another click
+  // while already in overview mode. Analysis completion never changes it.
+  if (tier === "result") mapOverviewRequestId.value += 1;
   if (mapZoomTier.value === tier) return;
   mapZoomTier.value = tier;
 }
@@ -323,12 +335,7 @@ onUnmounted(() => {
         <div class="map-frame" :class="{ 'local-experiment-frame': mapMode === 'local' }">
           <div class="map-topline">
             <div class="map-head-left">
-              <span class="map-title"><span class="map-title-mark"></span>{{ mapMode === 'local' ? '3 分钟局部路网实验' : '新江湾城 · 四路围合演示区' }} <small>{{ mapMode === "real" ? "真实区域 · 合成路线" : mapMode === 'local' ? '独立验证 · 非正式报告' : "C++ 合成路网 · 等时圈" }}</small></span>
-              <div class="map-mode-switch" role="group" aria-label="地图展示模式">
-                <button type="button" :aria-pressed="mapMode === 'real'" :class="{ active: mapMode === 'real' }" @click="switchMapMode('real')">真实区域</button>
-                <button type="button" :aria-pressed="mapMode === 'synthetic'" :class="{ active: mapMode === 'synthetic' }" @click="switchMapMode('synthetic')">合成算法</button>
-                <button type="button" :aria-pressed="mapMode === 'local'" :class="{ active: mapMode === 'local' }" @click="switchMapMode('local')">局部实验</button>
-              </div>
+              <span class="map-title"><span class="map-title-mark"></span>{{ mapMode === 'local' ? '3 分钟局部路网实验' : '新江湾城 · 四路围合演示区' }} <small>{{ mapMode === "real" ? "快速模式 · 示意路线" : mapMode === 'local' ? '独立验证 · 非正式报告' : "专家模式 · C++ 等时圈" }}</small></span>
             </div>
             <button v-if="mapMode === 'real'" type="button" class="analyze-button map-analyze-button real-mode-action" :class="{ 'is-running': realAnalysisState === 'running', 'is-complete': realAnalysisState === 'complete' }" :disabled="!realCandidate || realAnalysisState === 'running'" @click="runRealAnalysis">
               <span class="button-label">{{ !realCandidate ? '先在地图选点' : realAnalysisState === 'running' ? '正在绘制路线…' : realAnalysisState === 'complete' ? '重新生成示意' : '生成示意分析' }}</span><span class="button-arrow" aria-hidden="true">{{ realAnalysisState === 'complete' ? '✓' : realAnalysisState === 'running' ? '◌' : '↗' }}</span>
@@ -342,9 +349,28 @@ onUnmounted(() => {
           </div>
 
           <div class="map-canvas">
-            <RealMapStage v-if="mapMode === 'real'" key="real-preview" :candidate="realCandidate" :analysis-result="realAnalysisResult" :zoom-tier="mapZoomTier" @select="chooseRealPoint" />
-            <RealMapStage v-else-if="mapMode === 'synthetic'" key="cpp-preview" analysis-mode="cpp" :candidate="cppCandidate" :analysis-result="cppAnalysisResult" :zoom-tier="mapZoomTier" :selection-disabled="cppAnalysisState === 'running'" @select="chooseCppPoint" />
-            <LocalExperimentStage v-else key="local-experiment" />
+            <Transition name="map-mode">
+              <RealMapStage v-if="sharedMapMounted" v-show="mapMode !== 'local'"
+                :analysis-mode="mapMode === 'synthetic' ? 'cpp' : 'preview'"
+                :candidate="mapMode === 'synthetic' ? cppCandidate : realCandidate"
+                :analysis-result="mapMode === 'synthetic' ? cppAnalysisResult : realAnalysisResult"
+                :zoom-tier="mapZoomTier" :overview-request-id="mapOverviewRequestId"
+                :selection-disabled="mapMode === 'synthetic' && cppAnalysisState === 'running'"
+                @select="mapMode === 'synthetic' ? chooseCppPoint($event) : chooseRealPoint($event)" />
+            </Transition>
+            <Transition name="map-mode">
+              <LocalExperimentStage v-if="mapMode === 'local'" key="local-experiment" />
+            </Transition>
+            <!-- Replay a light reveal without remounting the shared base map. -->
+            <div v-if="mapMode !== 'local'" :key="mapMode" class="map-mode-wash" aria-hidden="true"></div>
+            <div class="map-mode-switch" role="group" aria-label="地图展示模式"
+              :style="{ '--mode-index': mapModes.findIndex(mode => mode.id === mapMode), '--mode-count': mapModes.length }"
+              @pointerdown.stop @click.stop @dblclick.stop>
+              <span class="map-mode-indicator" aria-hidden="true"></span>
+              <button v-for="mode in mapModes" :key="mode.id" type="button" :title="mode.description"
+                :aria-pressed="mapMode === mode.id" :class="{ active: mapMode === mode.id }"
+                @click="switchMapMode(mode.id)">{{ mode.label }}</button>
+            </div>
             <div v-if="mapMode !== 'local'" class="map-compass" aria-hidden="true"><span>北</span><i></i></div>
             <div v-if="mapMode !== 'local'" class="map-zoom-control" role="group" aria-label="地图比例尺">
               <span class="map-zoom-heading" aria-hidden="true">比例尺</span>
@@ -369,7 +395,7 @@ onUnmounted(() => {
 
           <div class="map-bottomline" :class="{ 'real-mode': mapMode !== 'local' }">
             <span v-if="mapMode === 'real'"><span class="line-signal"></span>{{ realAnalysisState === 'error' ? realAnalysisError : realAnalysisState === 'running' ? '正在生成合成路线，请稍候' : realAnalysisResult ? '固定圆与临时路线已显示 · 非真实等时圈' : realCandidate ? '已选起点 · 点击右上角生成示意' : '四路围合范围 · 点击地图选点' }}</span>
-            <span v-else-if="mapMode === 'synthetic'"><span class="line-signal"></span>{{ cppAnalysisState === 'error' ? cppAnalysisError : cppAnalysisState === 'running' ? 'Python → C++ 正在计算 15 分钟路网等时圈' : cppAnalysisResult ? 'C++ 等时圈与可达街段已显示 · 路网仍为合成数据' : cppCandidate ? '已选起点 · 点击右上角计算等时圈' : '合成路网演示 · 点击地图选点' }}</span>
+            <span v-else-if="mapMode === 'synthetic'"><span class="line-signal"></span>{{ cppAnalysisState === 'error' ? cppAnalysisError : cppAnalysisState === 'running' ? 'Python → C++ 正在计算 15 分钟路网等时圈' : cppAnalysisResult ? 'C++ 等时圈与可达街段已显示 · 路网仍为合成数据' : cppCandidate ? '已选起点 · 点击右上角计算等时圈' : '专家模式 · 合成路网，点击地图选点' }}</span>
             <span v-else><span class="line-signal"></span>独立的 180 秒实验 · 不进入 15 分钟生活圈报告</span>
             <span v-if="mapMode !== 'local'"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">边界与 SVG 数据 © OpenStreetMap contributors · ODbL</a></span>
           </div>
@@ -400,14 +426,14 @@ onUnmounted(() => {
       <div class="detail-page-inner">
         <div class="detail-page-heading">
           <div>
-            <p class="section-kicker">{{ mapMode === 'real' ? '新江湾城 · 演示范围' : mapMode === 'local' ? '3 分钟局部路网实验' : '15 分钟生活圈 · C++ 算法演示' }}</p>
+            <p class="section-kicker">{{ mapMode === 'real' ? '快速模式 · 新江湾城演示范围' : mapMode === 'local' ? '3 分钟局部路网实验' : '专家模式 · C++ 算法演示' }}</p>
             <h2>{{ mapMode === 'real' ? '真实范围与选点状态' : mapMode === 'local' ? '辨别缺口，也保留未知' : '从地图走进路网计算' }}</h2>
           </div>
           <button type="button" class="return-map-button" @click="goToPage(0)">返回地图 <span aria-hidden="true">↑</span></button>
         </div>
       <div class="detail-scroll">
 
-      <aside v-if="mapMode === 'real'" class="real-insight-panel" aria-label="真实区域预览信息">
+      <aside v-if="mapMode === 'real'" class="real-insight-panel" aria-label="快速模式预览信息">
         <div class="demo-warning real-data-warning">
           <span class="warning-icon">!</span>
           <span><strong>真实区域上的合成示意，不是分析报告</strong> · 点击分析后展示固定半径圆与临时路线。道路类型、过街和设施入口均未经核查。</span>
@@ -428,12 +454,12 @@ onUnmounted(() => {
           <p v-if="realAnalysisResult" class="section-explain">固定圆半径约 1,170 米；临时路网绘制 {{ realAnalysisResult.summary.routeSegmentCount }} 条可连通线段。圆不是 15 分钟等时圈，路线不用于设施覆盖判定。</p>
           <p v-else class="section-explain">在地图上选点并点击“生成示意分析”，即可预览固定圆和路线动画。未来真实结果会沿用同一显示接口。</p>
           <p class="section-explain">真实路网仍需覆盖选区外可达的外围，不能沿四路边界截断。</p>
-          <button type="button" class="return-map-button real-demo-switch" @click="switchMapMode('synthetic'); goToPage(0)">体验合成算法演示 <span aria-hidden="true">↗</span></button>
+          <button type="button" class="return-map-button real-demo-switch" @click="switchMapMode('synthetic'); goToPage(0)">体验专家模式 <span aria-hidden="true">↗</span></button>
         </section>
         <div class="panel-footer">边界与 SVG 示意数据 © OpenStreetMap contributors（ODbL）；百度底图启用后保留其原生版权标识。</div>
       </aside>
 
-      <aside v-else-if="mapMode === 'synthetic'" class="real-insight-panel" aria-label="C++ 合成路网分析信息">
+      <aside v-else-if="mapMode === 'synthetic'" class="real-insight-panel" aria-label="专家模式 C++ 合成路网分析信息">
         <div class="demo-warning real-data-warning">
           <span class="warning-icon">!</span>
           <span><strong>C++ 算法结果，合成路网数据</strong> · 绿色面来自引擎返回的 MultiPolygon，不是固定半径圆；道路两侧、过街与连接性尚未经现场核实，不能作为真实出行结论。</span>

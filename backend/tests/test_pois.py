@@ -13,6 +13,7 @@ from app.baidu.client import BaiduClient
 from app.baidu.errors import BaiduQuotaError
 from app.poi_cache import PoiCache
 from app.schemas import CenterPoint
+from app.poi_search import plan_tiles
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -97,15 +98,17 @@ def test_search_caps_pages_deduplicates_and_reuses_disk_cache(monkeypatch, tmp_p
     async def once():
         client = BaiduClient(ak="test-key", transport=httpx.MockTransport(handler))
         service = pois.PoiService(client=client)
-        try: return await service.search(CenterPoint(lng=121.5, lat=31.3), 1000, pois.CATEGORIES)
+        try: return await service.search(CenterPoint(lng=121.5, lat=31.3), 1000, pois.CATEGORIES,
+                                        bounds=[121.5, 31.3, 121.5, 31.3])
         finally: await client.aclose()
     records, info = asyncio.run(once())
-    assert len(records) == 20 and len(requests) == 8
-    assert all(len(record["categories"]) == 4 for record in records)
+    planned_pages = sum(len(cat["keywords"]) for cat in pois.CATEGORIES.values()) * 2
+    assert len(records) == 20 and len(requests) == planned_pages
+    assert all(len(record["categories"]) == len(pois.CATEGORIES) for record in records)
     assert info["status"] == "partial" and not info["inventoryVerified"]
     _, second = asyncio.run(once())
-    assert second["apiRequests"] == 0 and second["cacheHits"] == 8
-    assert len(requests) == 8
+    assert second["apiRequests"] == 0 and second["cacheHits"] == planned_pages
+    assert len(requests) == planned_pages
     # The cache contains normalized public data, not the request's AK.
     assert b"test-key" not in pois.settings.poi_cache_path.read_bytes()
 
@@ -118,17 +121,17 @@ def test_neighboring_points_reuse_same_spatial_query(monkeypatch, tmp_path):
         count += 1
         return httpx.Response(200, json={"status": 0, "results": []})
     seed = CenterPoint(lng=121.5, lat=31.3)
-    grid, _ = pois._grid_query(seed, 1000)
+    grid = plan_tiles(seed, 100, pois.settings, [121.5, 31.3, 121.5, 31.3])[0][0]["center"]
     async def run():
         client = BaiduClient(ak="test", transport=httpx.MockTransport(handler))
         service = pois.PoiService(client=client)
         try:
-            await service.search(CenterPoint(lng=grid[0], lat=grid[1]), 1000, ["shopping"])
-            _, info = await service.search(CenterPoint(lng=grid[0] + 0.0001, lat=grid[1]), 1000, ["shopping"])
-            assert info["cacheHits"] == 1
+            await service.search(CenterPoint(lng=grid[0], lat=grid[1]), 100, ["shopping"])
+            _, info = await service.search(CenterPoint(lng=grid[0] + 0.0001, lat=grid[1]), 100, ["shopping"])
+            assert info["cacheHits"] == 2
         finally: await client.aclose()
     asyncio.run(run())
-    assert count == 1
+    assert count == 2
 
 
 def test_alignment_uses_cached_forward_conversion_not_unsupported_gps_reverse(monkeypatch, tmp_path):
@@ -192,17 +195,17 @@ def test_enrichment_does_not_rewrite_graph_and_real_cpp_roundtrip(monkeypatch, t
     factory = pois.PoiService
     monkeypatch.setattr(pois, "PoiService", lambda: factory(client=BaiduClient(ak="test", transport=httpx.MockTransport(handler))))
     asyncio.run(pois.enrich_engine_pois(payload, metadata, CenterPoint(lng=121.502102644, lat=31.3)))
-    assert len(payload["serviceCategories"]) == 4
+    assert len(payload["serviceCategories"]) == len(pois.CATEGORIES)
     assert len(payload["facilities"]) == 2  # Existing annotated shop plus the API navigation point.
     assert all(category["localInventoryStatus"] == "incomplete" for category in payload["serviceCategories"])
     assert fixture.read_bytes() == original
-    assert sum(record["accessStatus"] == "missing_navigation_point" for record in metadata["poiRecords"]) == 3
+    assert sum(record["accessStatus"] == "missing_navigation_point" for record in metadata["poiRecords"]) == 10
     binary = ROOT / "cpp-engine/build/demo-launcher/isochrone_engine.exe"
     if not binary.is_file(): pytest.skip("C++ executable unavailable")
     monkeypatch.setattr(engine, "settings", replace(engine.settings, cpp_engine_path=binary))
     result = asyncio.run(engine.run_engine(payload))
     report = pois.add_poi_result(local_experiment.build_local_experiment_result(result, metadata), result, metadata)
-    assert len(result["localGrayZones"]) == 4
+    assert len(result["localGrayZones"]) == len(pois.CATEGORIES)
     assert all(not item["candidateUncoveredEdges"] for item in result["localGrayZones"])
     assert any(feature["properties"]["modelReachable"] is True for feature in report["poiFacilities"]["features"])
 
@@ -217,4 +220,32 @@ def test_standalone_search_endpoint_and_missing_credentials_are_not_empty_census
     assert result.json()["metadata"]["status"] == "unavailable"
     assert result.json()["metadata"]["apiRequests"] == 0
     assert result.json()["metadata"]["categories"][0]["error"]
-    assert client.post("/api/v1/pois/search", json={"center": {"lng": 121.5, "lat": 31.3}, "categories": ["bad"]}).status_code == 422
+    for unsupported in ("bad", "market", "pharmacy"):
+        assert client.post("/api/v1/pois/search", json={"center": {"lng": 121.5, "lat": 31.3}, "categories": [unsupported]}).status_code == 422
+
+
+def test_standalone_dining_search_uses_food_category_and_warm_cache(monkeypatch, tmp_path):
+    configure(monkeypatch, tmp_path)
+    requested = []
+    def handler(request):
+        requested.append(request.url.params["query"])
+        return httpx.Response(200, json={"status": 0, "total": 1, "results": [
+            {"uid": "test-dining", "name": "测试餐饮店", "location": {"lng": 121.5, "lat": 31.3}}]})
+    factory = pois.PoiService
+    monkeypatch.setattr(main, "PoiService", lambda: factory(client=BaiduClient(
+        ak="test", transport=httpx.MockTransport(handler))))
+    client = TestClient(main.app)
+    request = {"center": {"lng": 121.5, "lat": 31.3}, "radiusMeters": 100, "categories": ["dining"]}
+    first = client.post("/api/v1/pois/search", json=request)
+    assert first.status_code == 200
+    body = first.json()
+    assert body["categoryLabels"] == {"dining": "餐饮"}
+    assert body["items"][0]["category"] == "dining"
+    assert body["items"][0]["matchedKeywords"] == ["美食"]
+    assert requested and set(requested) == {"美食"}
+    calls = len(requested)
+    second = client.post("/api/v1/pois/search", json=request)
+    assert second.status_code == 200
+    assert second.json()["items"] == body["items"]
+    assert second.json()["metadata"]["apiRequests"] == 0
+    assert len(requested) == calls

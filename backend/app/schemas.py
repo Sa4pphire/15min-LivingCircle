@@ -28,9 +28,9 @@ class LocalExperimentRequest(BaseModel):
 class PoiSearchRequest(BaseModel):
     center: CenterPoint
     radiusMeters: int = Field(default=1500, ge=100, le=5000)
-    categories: list[Literal["education", "healthcare", "shopping", "public_service"]] = Field(
-        default_factory=lambda: ["education", "healthcare", "shopping", "public_service"],
-        min_length=1, max_length=4)
+    categories: list[Literal["education", "healthcare", "shopping", "public_service", "dining"]] = Field(
+        default_factory=lambda: ["education", "healthcare", "shopping", "public_service", "dining"],
+        min_length=1, max_length=5)
     refresh: bool = False
 
 
