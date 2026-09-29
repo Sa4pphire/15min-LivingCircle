@@ -1,24 +1,22 @@
-# Contributing
+# 贡献及维护
 
-## Branches
+## 路网数据贡献
 
-- Keep `main` runnable.
-- Use short-lived branches such as `feat/route-matrix-client` or `feat/isochrone-engine`.
-- Open a pull request for review by the other team member.
+待补充
 
-## Contracts
+## python与C++的数据契约
 
-Public request/response shapes and Python-to-C++ messages live in `contracts/`.
-Any contract change must update:
+公共请求/响应结构以及 Python 到 C++ 的消息位于 contracts/ 中。
+任何契约变更都必须更新：
 
-1. The relevant example JSON.
-2. Python schemas and tests.
-3. C++ parser/tests when the engine contract changes.
-4. Frontend fixtures when the public result changes.
+- 相关示例 JSON。
+- Python schema 和测试。
+- 当引擎契约变更时，更新 C++ 解析器/测试。
+- 当公共结果变更时，更新前端测试夹具。
 
 ## Definition of done
 
-- Tests pass locally.
-- No API keys or personal data are committed.
-- Errors are user-visible and do not leave the UI stuck in a loading state.
-- README or docs are updated for changes that affect setup or behavior.
+- 本地测试通过。
+- 不提交 API 密钥或个人数据。
+- 错误对用户可见，并且不会让 UI 卡在加载状态。
+- 对于影响设置或行为的变更，更新 README 或文档。
