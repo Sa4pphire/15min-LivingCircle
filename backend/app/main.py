@@ -10,6 +10,8 @@ from .local_experiment import (build_local_experiment_result,
                                load_local_experiment_request)
 from .network import UnsupportedAreaError, build_analysis_result, load_engine_request
 from .pois import CATEGORIES, PoiService, add_poi_result, enrich_engine_pois
+from .baidu.client import BaiduClient
+from .sampled_service import run_sampled_analysis as build_sampled_result
 from .baidu.errors import BaiduApiError
 from .schemas import (
     AnalysisAccepted,
@@ -31,6 +33,7 @@ app = FastAPI(
 )
 
 _analyses: dict[str, AnalysisState] = {}
+_sampled_analyses: dict[str, AnalysisState] = {}
 _local_experiments: dict[str, AnalysisState] = {}
 
 
@@ -79,6 +82,52 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
         analysis.status = "failed"
         analysis.error = str(exc)
         analysis.progress = Progress(stage="failed", percent=100)
+
+# 后台执行百度采样、IDW 插值和等时圈提取
+async def _run_sampled_task(
+    analysis_id: str,
+    center: CenterPoint,
+) -> None:
+    analysis = _sampled_analyses[analysis_id]
+    analysis.status = "running"
+    analysis.progress = Progress(
+        stage="coordinate-normalization",
+        percent=10,
+    )
+
+    client = BaiduClient()
+
+    try:
+        analysis.progress = Progress(
+            stage="route-matrix",
+            percent=30,
+        )
+
+        result = await build_sampled_result(
+            client,
+            center,
+        )
+
+        analysis.result = result
+        analysis.status = "completed"
+        analysis.progress = Progress(
+            stage="completed",
+            percent=100,
+        )
+    except (
+        BaiduApiError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as exc:
+        analysis.status = "failed"
+        analysis.error = str(exc)
+        analysis.progress = Progress(
+            stage="failed",
+            percent=100,
+        )
+    finally:
+        await client.aclose()
 
 
 async def _run_local_experiment(experiment_id: str, engine_input: dict,
@@ -152,6 +201,37 @@ async def create_analysis(request: AnalysisRequest,
                           background_tasks: BackgroundTasks) -> AnalysisAccepted:
     return _queue_analysis(request, background_tasks)
 
+@app.post(
+    "/api/v1/sampled-analyses",
+    status_code=202,
+    response_model=AnalysisAccepted,
+)
+async def create_sampled_analysis(
+    request: AnalysisRequest,
+    background_tasks: BackgroundTasks,
+) -> AnalysisAccepted:
+    analysis_id = uuid4().hex
+
+    _sampled_analyses[analysis_id] = AnalysisState(
+        analysisId=analysis_id,
+        status="queued",
+        progress=Progress(
+            stage="queued",
+            percent=0,
+        ),
+    )
+
+    background_tasks.add_task(
+        _run_sampled_task,
+        analysis_id,
+        request.center,
+    )
+
+    return AnalysisAccepted(
+        analysisId=analysis_id,
+        status="queued",
+    )
+
 
 @app.post("/api/v1/synthetic-analyses", status_code=202,
           response_model=AnalysisAccepted)
@@ -200,6 +280,23 @@ async def get_analysis(analysis_id: str) -> AnalysisState:
     analysis = _analyses.get(analysis_id)
     if analysis is None:
         raise HTTPException(status_code=404, detail="analysis not found")
+    return analysis
+
+@app.get(
+    "/api/v1/sampled-analyses/{analysis_id}",
+    response_model=AnalysisState,
+)
+async def get_sampled_analysis(
+    analysis_id: str,
+) -> AnalysisState:
+    analysis = _sampled_analyses.get(analysis_id)
+
+    if analysis is None:
+        raise HTTPException(
+            status_code=404,
+            detail="sampled analysis not found",
+        )
+
     return analysis
 
 
