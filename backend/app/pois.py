@@ -14,13 +14,18 @@ from .network import METERS_PER_DEGREE, _contains_point, _to_map_coordinate
 from .cache import SharedBaiduCache
 from .schemas import CenterPoint
 from .settings import settings
+from .poi_search import search_tiles
+from .local_alignment import load_grid_frame
 
 
 CATEGORIES = {
-    "education": {"label": "学校", "query": "学校$幼儿园"},
-    "healthcare": {"label": "医院", "query": "医院$社区卫生服务中心"},
-    "shopping": {"label": "超市", "query": "超市$便利店"},
-    "public_service": {"label": "公共服务", "query": "街道办事处$社区事务受理服务中心$派出所$邮局"},
+    "education": {"label": "学校", "query": "学校$幼儿园", "keywords": ("学校", "幼儿园")},
+    "healthcare": {"label": "医院", "query": "医院$社区卫生服务中心", "keywords": ("医院", "社区卫生服务中心")},
+    "shopping": {"label": "商超", "query": "超市$便利店", "keywords": ("超市", "便利店")},
+    "public_service": {"label": "公共服务", "query": "街道办事处$社区事务受理服务中心$派出所$邮局",
+                       "keywords": ("街道办事处", "社区事务受理服务中心", "派出所", "邮局")},
+    # Baidu's documented broad food category includes venues without 餐厅 in their names.
+    "dining": {"label": "餐饮", "query": "美食", "keywords": ("美食",)},
 }
 GRID_METERS = 500
 
@@ -44,70 +49,32 @@ class PoiService:
         self.client.enable_cache(shared_cache)
         self.stats = self.client.cache_stats
 
-    async def search(self, center: CenterPoint, radius: int, category_ids, *, refresh=False):
+    async def search(self, center: CenterPoint, radius: int, category_ids, *, refresh=False, bounds=None):
+        before = dict(self.stats)
         query_center, query_radius = _grid_query(center, radius)
-        pages = max(1, min(8, settings.poi_max_pages))
-        outcomes = {}
-        records = {}
-
-        async def category_search(category_id):
-            outcome = {"category": category_id, "paginationComplete": False,
-                       "pages": 0, "discardedCount": 0, "error": None}
-            outcomes[category_id] = outcome
-            for number in range(pages):
-                try:
-                    page = await self.client.search_poi_page(
-                        CATEGORIES[category_id]["query"], query_center, query_radius,
-                        page_num=number, coord_type=center.coordType, refresh=refresh)
-                except (BaiduApiError, OSError, TimeoutError, sqlite3.Error) as exc:
-                    outcome["error"] = str(exc)
-                    return
-                outcome["pages"] += 1
-                outcome["discardedCount"] += page["discardedCount"]
-                for item in page["items"]:
-                    existing = records.get(item["uid"])
-                    if existing is None:
-                        records[item["uid"]] = {**item, "category": category_id,
-                                                "categories": [category_id]}
-                    elif category_id not in existing["categories"]:
-                        existing["categories"].append(category_id)
-                if page["rawCount"] < 20 or (page["total"] is not None and
-                                             (number + 1) * 20 >= page["total"]):
-                    # Baidu total is capped; reaching 150 is not an exhaustive census.
-                    outcome["paginationComplete"] = page["total"] is None or page["total"] < 150
-                    return
-
-        tasks = [asyncio.create_task(category_search(key)) for key in dict.fromkeys(category_ids)]
-        try:
-            _, pending = await asyncio.wait(tasks, timeout=settings.poi_budget_seconds)
-        finally:
-            for task in tasks:
-                if not task.done():
-                    task.cancel()
-            completed = await asyncio.gather(*tasks, return_exceptions=True)
-        for key, outcome in zip(dict.fromkeys(category_ids), completed):
-            if isinstance(outcome, Exception):
-                outcomes[key]["error"] = "POI 响应处理失败，数据不足"
-        for outcome in outcomes.values():
-            if not outcome["paginationComplete"] and outcome["error"] is None:
-                outcome["error"] = "检索达到分页或时间上限，清单可能不完整"
-        unavailable = all(outcome["pages"] == 0 for outcome in outcomes.values())
-        partial = any(outcome["error"] for outcome in outcomes.values()) or self.stats["stalePages"] > 0
         order = list(dict.fromkeys(category_ids))
-        for record in records.values():
-            record["categories"].sort(key=order.index)
-            record["category"] = record["categories"][0]
-        return sorted(records.values(), key=lambda item: item["uid"]), {
-            "provider": "baidu_place_v2", "status": "unavailable" if unavailable else "partial" if partial else "ready",
-            "coordinateSystem": "bd09ll", "queryCenter": list(query_center),
-            "queryInputCoordType": center.coordType, "queryRadiusMeters": query_radius,
-            "gridMeters": GRID_METERS, "maxPagesPerCategory": pages,
-            "cacheTtlHours": settings.poi_cache_ttl_hours,
-            "oldestFetchedAt": min(self.client.cache_fetched_times) if self.client.cache_fetched_times else None,
-            "cacheBackend": "shared_baidu_json",
-            "categories": [outcomes[key] for key in dict.fromkeys(category_ids)],
-            "inventoryVerified": False, **self.stats,
-        }
+        # Reuse already paid-for broad-circle responses only as candidates.
+        # They never certify completion of a new tile or single-keyword query.
+        seeds = {}
+        if not refresh:
+            for key in order:
+                for number in range(max(1, min(8, settings.poi_max_pages))):
+                    try:
+                        page = await self.client.search_poi_page(
+                            CATEGORIES[key]["query"], query_center, query_radius,
+                            page_num=number, coord_type=center.coordType, cache_only=True)
+                    except (BaiduApiError, OSError, TimeoutError, sqlite3.Error):
+                        continue
+                    if page is not None:
+                        for item in page["items"]:
+                            record = seeds.setdefault(item["uid"], {**item, "categories": []})
+                            if key not in record["categories"]:
+                                record["categories"].append(key)
+        records, info = await search_tiles(self.client, {key: CATEGORIES[key] for key in order},
+                                          center, radius, settings, bounds=bounds, refresh=refresh,
+                                          seed_records=list(seeds.values()))
+        info.update({key: value - before[key] for key, value in self.stats.items()})
+        return records, info
 
     async def frame(self, metadata):
         """Align BD-09 candidates to the meter graph with cached FORWARD calibration.
@@ -117,6 +84,9 @@ class PoiService:
         """
         coord_type = metadata["coordType"]
         origin = metadata["originWgs84" if coord_type == "wgs84ll" else "originBd09"]
+        grid_frame = load_grid_frame(metadata, settings.poi_map_asset_path)
+        if grid_frame is not None:
+            return grid_frame
         if coord_type == "bd09ll":
             def project(point):
                 return [(point[0] - origin["lng"]) * METERS_PER_DEGREE * math.cos(math.radians(origin["lat"])),
@@ -179,7 +149,8 @@ class AccessIndex:
         return (edge, point if edge["kind"] == "shared_way" else projected, distance), "mapped_unverified"
 
 
-async def enrich_engine_pois(payload: dict, metadata: dict, center: CenterPoint, *, refresh=False):
+async def enrich_engine_pois(payload: dict, metadata: dict, center: CenterPoint, *, refresh=False,
+                             engine_result=None):
     """No graph-file mutation: enrich this request only. Offline mode still works."""
     category_map = {item["id"]: dict(item) for item in payload.get("serviceCategories", [])}
     for key in CATEGORIES:
@@ -190,9 +161,25 @@ async def enrich_engine_pois(payload: dict, metadata: dict, center: CenterPoint,
     records, info = [], {"status": "unavailable", "provider": "baidu_place_v2"}
     try:
         service = PoiService()
+        bounds = None
+        if engine_result is not None:
+            geometry = engine_result.get("displayGeometryMeters", {})
+            points = [point for polygon in geometry.get("coordinates", []) for ring in polygon for point in ring]
+            if not points:
+                points = [point for edge in engine_result.get("reachableEdges", []) for point in edge["pathMeters"]]
+            if not points:
+                point = payload["originMeters"]
+                points = [[point["xMeters"], point["yMeters"]] if isinstance(point, dict) else point]
+            low = [min(point[axis] for point in points) for axis in (0, 1)]
+            high = [max(point[axis] for point in points) for axis in (0, 1)]
+            padding = [max(30, (high[axis] - low[axis]) * 0.12) for axis in (0, 1)]
+            origin = metadata["originWgs84" if metadata["coordType"] == "wgs84ll" else "originBd09"]
+            west, south = _to_map_coordinate([low[0] - padding[0], low[1] - padding[1]], origin)
+            east, north = _to_map_coordinate([high[0] + padding[0], high[1] + padding[1]], origin)
+            bounds = [west, south, east, north]
         records, info = await service.search(center, math.ceil(2 * payload["thresholdSeconds"] *
                                                               payload["walkingSpeedMetersPerSecond"]), CATEGORIES,
-                                             refresh=refresh)
+                                             refresh=refresh, bounds=bounds)
         if records:
             project, alignment = await asyncio.wait_for(service.frame(metadata), timeout=5)
             info["alignment"] = alignment
@@ -202,10 +189,17 @@ async def enrich_engine_pois(payload: dict, metadata: dict, center: CenterPoint,
             for record in records:
                 record["localPointMeters"] = project([record["lng"], record["lat"]])
                 record["engineId"] = "baidu:" + record["uid"]
+                if record["localPointMeters"] is None:
+                    record["accessStatus"] = "coordinate_alignment_outside_grid"
+                    continue
                 if "navigationPoint" not in record:
                     record["accessStatus"] = "missing_navigation_point"
                     continue
-                match, status = index.match(project(record["navigationPoint"]))
+                navigation = project(record["navigationPoint"])
+                if navigation is None:
+                    record["accessStatus"] = "coordinate_alignment_outside_grid"
+                    continue
+                match, status = index.match(navigation)
                 record["accessStatus"] = status
                 if match is not None:
                     edge, point, distance = match
@@ -261,6 +255,8 @@ def add_poi_result(report: dict, engine_result: dict, metadata: dict):
         features.append({"type": "Feature", "geometry": {"type": "Point", "coordinates": [record["lng"], record["lat"]]},
                          "properties": {"id": record["uid"], "name": record["name"], "address": record["address"],
                                         "category": record["category"], "categories": record["categories"],
+                                        "matchedKeywords": record.get("matchedKeywords", []),
+                                        "tag": record.get("tag", ""),
                                         "categoryLabel": CATEGORIES[record["category"]]["label"],
                                         "source": "baidu", "coordType": "bd09ll", "localPointMeters": point,
                                         "insideDisplayPolygon": inside, "nearReachableWalkway": near,

@@ -66,11 +66,13 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
     analysis.status = "running"
     analysis.progress = Progress(stage="walking-graph", percent=30)
     try:
-        if include_pois and center is not None:
-            analysis.progress = Progress(stage="cached-baidu-pois", percent=15)
-            await enrich_engine_pois(engine_input, network_meta, center, refresh=refresh_pois)
-            analysis.progress = Progress(stage="walking-graph", percent=45)
         engine_result = await run_engine(engine_input)
+        if include_pois and center is not None:
+            analysis.progress = Progress(stage="cached-baidu-pois", percent=35)
+            await enrich_engine_pois(engine_input, network_meta, center, refresh=refresh_pois,
+                                     engine_result=engine_result)
+            analysis.progress = Progress(stage="walking-graph", percent=45)
+            engine_result = await run_engine(engine_input)
         analysis.result = add_poi_result(build_analysis_result(engine_result, network_meta),
                                         engine_result, network_meta)
         analysis.status = "completed"
@@ -88,11 +90,13 @@ async def _run_local_experiment(experiment_id: str, engine_input: dict,
     experiment.status = "running"
     experiment.progress = Progress(stage="local-walking-graph", percent=30)
     try:
-        if include_pois and center is not None:
-            experiment.progress = Progress(stage="cached-baidu-pois", percent=15)
-            await enrich_engine_pois(engine_input, network_meta, center, refresh=refresh_pois)
-            experiment.progress = Progress(stage="local-walking-graph", percent=45)
         engine_result = await run_engine(engine_input)
+        if include_pois and center is not None:
+            experiment.progress = Progress(stage="cached-baidu-pois", percent=35)
+            await enrich_engine_pois(engine_input, network_meta, center, refresh=refresh_pois,
+                                     engine_result=engine_result)
+            experiment.progress = Progress(stage="local-walking-graph", percent=45)
+            engine_result = await run_engine(engine_input)
         experiment.result = add_poi_result(build_local_experiment_result(engine_result, network_meta),
                                           engine_result, network_meta)
         experiment.status = "completed"

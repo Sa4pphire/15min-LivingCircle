@@ -25,6 +25,7 @@ class BaiduClient:
         transport: httpx.AsyncBaseTransport | None = None,
         cache_dir: Path | None = None,
         cache_enabled: bool | None = None,
+        max_qps: float | None = None,
     ) -> None:
         self._ak = settings.baidu_server_ak if ak is None else ak
         self._cache_dir = cache_dir
@@ -32,6 +33,11 @@ class BaiduClient:
         self._cache = None
         self._semaphore = asyncio.Semaphore(max(1, min(4, settings.baidu_max_concurrency)))
         self._halt_error = None
+        self._request_limit = None
+        # Mock transports need no real-world pacing unless the test opts in.
+        self._max_qps = (settings.baidu_max_qps if transport is None else 0) if max_qps is None else max_qps
+        self._request_clock = 0.0
+        self._request_lock = asyncio.Lock()
         self.cache_stats = {"cacheHits": 0, "cacheMisses": 0, "stalePages": 0, "apiRequests": 0}
         self.cache_fetched_times = []
         self._http = httpx.AsyncClient(
@@ -53,10 +59,27 @@ class BaiduClient:
         self._cache = cache
         self._cache_enabled = True
 
+    def limit_requests(self, maximum: int | None) -> None:
+        """Limit additional HTTP requests; cache hits never consume this budget."""
+        self._request_limit = (None if maximum is None else
+                               self.cache_stats["apiRequests"] + max(0, maximum))
+
+    async def _wait_for_request_slot(self):
+        if self._max_qps <= 0:
+            return
+        if self._cache is not None:
+            await self._cache.wait_for_request_slot(settings.baidu_api_base_url, self._max_qps)
+        else:
+            async with self._request_lock:
+                loop = asyncio.get_running_loop()
+                await asyncio.sleep(max(0, self._request_clock - loop.time()))
+                self._request_clock = loop.time() + 1 / self._max_qps
+
     @staticmethod
     def _legacy_request(path: str, params: dict):
         """Read the previous demo cache without keeping a second active store."""
-        if path == "/place/v2/search" and not params.get("region"):
+        if (path == "/place/v2/search" and not params.get("region") and
+                params.get("radius_limit", "true") == "true"):
             lat, lng = [float(value) for value in params["location"].split(",")]
             coord_type = {1: "wgs84ll", 2: "gcj02ll", 3: "bd09ll"}[params["coord_type"]]
             legacy = {"endpoint": "place/v2/search", "query": params["query"],
@@ -91,16 +114,30 @@ class BaiduClient:
     # 统一发送百度 API 请求，解析 JSON，并分类处理错误
     async def _get_json(
         self, path: str, params: dict[str, Any], *, refresh: bool = False,
-    ) -> dict[str, Any]:
-        if not self._ak:
-            raise BaiduAuthError("未配置百度服务端 AK")
+        cache_only: bool = False,
+    ) -> dict[str, Any] | None:
         if "ak" in params or "sn" in params:
             raise BaiduApiError("密钥只能通过客户端配置，不能写入缓存参数")
+        if cache_only and refresh:
+            raise BaiduApiError("缓存只读查询不能强制刷新")
 
         async def fetch():
             async with self._semaphore:
+                # An AK is only needed for a real request, never for a warm read.
+                if not self._ak:
+                    raise BaiduAuthError("未配置百度服务端 AK")
                 if self._halt_error is not None:
                     raise self._halt_error
+                if (self._request_limit is not None and
+                        self.cache_stats["apiRequests"] >= self._request_limit):
+                    raise BaiduApiError("已达到本次 POI 请求预算，未继续调用 API")
+                await self._wait_for_request_slot()
+                # Another worker may have hit a quota/budget while we waited.
+                if self._halt_error is not None:
+                    raise self._halt_error
+                if (self._request_limit is not None and
+                        self.cache_stats["apiRequests"] >= self._request_limit):
+                    raise BaiduApiError("已达到本次 POI 请求预算，未继续调用 API")
                 self.cache_stats["apiRequests"] += 1
                 try:
                     return await self._request_json(path, params)
@@ -109,7 +146,7 @@ class BaiduClient:
                     raise
 
         if not self._cache_enabled:
-            return await fetch()
+            return None if cache_only else await fetch()
         if self._cache is None:
             self._cache = SharedBaiduCache(
                 self._cache_dir or settings.analysis_cache_dir,
@@ -123,8 +160,15 @@ class BaiduClient:
             self._cache.migrate_legacy(parameters,
                                       {"provider": settings.baidu_api_base_url, "version": 1, **legacy[0]},
                                       legacy[1], ttl)
-        value, source, fetched = await self._cache.get_or_fetch(parameters, fetch,
-                                                               refresh=refresh, ttl_seconds=ttl)
+        if cache_only:
+            cached = self._cache.peek(parameters, ttl_seconds=ttl)
+            if cached is None:
+                return None
+            value, fetched = cached
+            source = "hit"
+        else:
+            value, source, fetched = await self._cache.get_or_fetch(parameters, fetch,
+                                                                   refresh=refresh, ttl_seconds=ttl)
         self.cache_stats[{"hit": "cacheHits", "miss": "cacheMisses", "stale": "stalePages"}[source]] += 1
         self.cache_fetched_times.append(fetched)
         return value
@@ -328,9 +372,10 @@ class BaiduClient:
     async def search_poi_page(
         self, query: str, center: tuple[float, float], radius_meters: int = 1000,
         *, region: str | None = None, page_num: int = 0, page_size: int = 20,
-        coord_type: str = "bd09ll", refresh: bool = False,
-    ) -> dict[str, Any]:
-        """Detailed, paginated POIs. Input datum does NOT change the BD-09 output."""
+        coord_type: str = "bd09ll", refresh: bool = False, cache_only: bool = False,
+        radius_limit: bool = True,
+    ) -> dict[str, Any] | None:
+        """Paginated BD-09 POIs; cache_only returns None on a fresh-cache miss."""
         if radius_meters <= 0:
             raise BaiduApiError("POI 搜索半径必须大于 0")
         if not 1 <= page_size <= 20 or not 0 <= page_num <= 7:
@@ -350,7 +395,7 @@ class BaiduClient:
             "page_size": page_size,
             "coord_type": coordinate_code,
             "scope": 2,
-            "radius_limit": "true",
+            "radius_limit": "true" if radius_limit else "false",
             "output": "json",
         }
 
@@ -362,7 +407,10 @@ class BaiduClient:
             "/place/v2/search",
             params,
             refresh=refresh,
+            cache_only=cache_only,
         )
+        if payload is None:
+            return None
 
         raw_results = payload.get("results", [])
         if not isinstance(raw_results, list):

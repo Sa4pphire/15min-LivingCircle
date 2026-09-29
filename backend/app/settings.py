@@ -55,6 +55,7 @@ class Settings:
     baidu_max_concurrency: int = int(
     os.getenv("BAIDU_MAX_CONCURRENCY", "2")
     )
+    baidu_max_qps: float = float(os.getenv("BAIDU_MAX_QPS", "1"))
     baidu_max_retries: int = int(
     os.getenv("BAIDU_MAX_RETRIES", "2")
     )
@@ -65,9 +66,15 @@ class Settings:
         "POI_CACHE_PATH", str(REPO_ROOT / "data/cache/baidu-pois.sqlite3")))
     poi_cache_ttl_hours: int = int(os.getenv("POI_CACHE_TTL_HOURS", "168"))
     poi_cache_stale_hours: int = int(os.getenv("POI_CACHE_STALE_HOURS", "720"))
-    poi_max_pages: int = int(os.getenv("POI_MAX_PAGES", "2"))
+    poi_empty_cache_ttl_hours: int = int(os.getenv("POI_EMPTY_CACHE_TTL_HOURS", "24"))
+    poi_max_pages: int = int(os.getenv("POI_MAX_PAGES", "8"))
     poi_budget_seconds: float = float(os.getenv("POI_BUDGET_SECONDS", "12"))
+    poi_tile_meters: int = int(os.getenv("POI_TILE_METERS", "1000"))
+    poi_max_tiles: int = int(os.getenv("POI_MAX_TILES", "64"))
+    poi_max_requests: int = int(os.getenv("POI_MAX_REQUESTS", "96"))
     poi_snap_meters: float = float(os.getenv("POI_SNAP_METERS", "3"))
+    poi_map_asset_path: Path = Path(os.getenv(
+        "POI_MAP_ASSET_PATH", str(REPO_ROOT / "frontend/src/data/demoMap.bd09.json")))
 
 
 settings = Settings()

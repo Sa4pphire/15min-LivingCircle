@@ -2,9 +2,12 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from "vue";
 import BMapLoader from "@baidumap/jsapi-loader";
 import boundaryWgs from "./data/demoBoundary.wgs84.json";
+import preparedMapAsset from "./data/demoMap.bd09.json";
+import { preparedMapCenter, preparedMapGeometry, sampleLocalArea, sampleLocalPath } from "./mapAsset.js";
 import { baiduMapStyle } from "./baiduMapStyle";
 import { baiduZoomForTier, clampMapPan, markerScaleForTier, zoomedFit } from "./mapZoom";
 import {
+  DISPLAY_PADDING_METERS,
   expandedLocalBounds,
   fitLocalPoints,
   geometryToSvgPath,
@@ -21,6 +24,7 @@ const props = defineProps({
   candidate: { type: Object, default: null },
   analysisResult: { type: Object, default: null },
   zoomTier: { type: String, default: "medium" },
+  overviewRequestId: { type: Number, default: 0 },
   analysisMode: { type: String, default: "preview" },
   selectionDisabled: { type: Boolean, default: false },
 });
@@ -40,11 +44,14 @@ const contextEl = ref(null);
 const probeEl = ref(null);
 const mapState = ref(browserAk ? "loading" : "no-key");
 const mapError = ref("");
+const boundaryState = ref("pending");
+const boundaryError = ref("");
 const notice = ref("");
 const context = shallowRef(null);
 const boundaryBd09 = shallowRef(null);
 const displayCornersBd09 = shallowRef(null);
 const regionCenterBd09 = shallowRef(null);
+const mapAlignment = shallowRef(null);
 const viewport = ref({ width: 1, height: 1 });
 const liveBoundaryPath = ref("");
 const projectionVersion = ref(0);
@@ -52,6 +59,9 @@ const hoverInside = ref(true);
 const probeVisible = ref(false);
 const fallbackAnimated = ref(false);
 const fallbackPan = ref({ x: 0, y: 0 });
+// Freeze the camera's overview input until the user explicitly requests a
+// refit. Clearing/replacing analysis layers must not move the map.
+const overviewResult = shallowRef(props.zoomTier === "result" ? props.analysisResult : null);
 const fallbackDragging = ref(false);
 const poiCategory = ref("all");
 const selectedPoi = ref(null);
@@ -67,6 +77,7 @@ let fallbackDrag;
 let suppressFallbackClick = false;
 let lastNativeDragAt = 0;
 let destroyed = false;
+let mapSetupPromise;
 
 const fallbackActive = computed(() => mapState.value !== "ready");
 const candidateMarkerScale = computed(() => markerScaleForTier(props.zoomTier));
@@ -75,7 +86,7 @@ const fallbackFit = computed(() => fitLocalPoints(
 ));
 const fallbackView = computed(() => {
   const overview = props.zoomTier === "result" && props.analysisMode === "cpp"
-    ? cppOverviewFit(props.analysisResult, viewport.value.width, viewport.value.height) : null;
+    ? cppOverviewFit(overviewResult.value, viewport.value.width, viewport.value.height) : null;
   const fitted = overview ?? zoomedFit(
     fallbackFit.value,
     viewport.value.width,
@@ -116,35 +127,15 @@ const liveCandidate = computed(() => {
   return { x: pixel.x, y: pixel.y };
 });
 function localToBd09(point) {
-  const corners = displayCornersBd09.value;
-  if (!corners) return null;
-  const u = (point[0] - displayCornersLocal[0][0]) /
-    (displayCornersLocal[1][0] - displayCornersLocal[0][0]);
-  const v = (point[1] - displayCornersLocal[0][1]) /
-    (displayCornersLocal[3][1] - displayCornersLocal[0][1]);
-  return [corners[0][0] + u * (corners[1][0] - corners[0][0]) +
-    v * (corners[3][0] - corners[0][0]),
-  corners[0][1] + u * (corners[1][1] - corners[0][1]) +
-    v * (corners[3][1] - corners[0][1])];
+  return mapAlignment.value?.toBd09(point) ?? null;
 }
 
 function bd09ToLocal(point) {
-  const corners = displayCornersBd09.value;
-  if (!corners) return null;
-  const x = point[0] - corners[0][0];
-  const y = point[1] - corners[0][1];
-  const dx = [corners[1][0] - corners[0][0], corners[1][1] - corners[0][1]];
-  const dy = [corners[3][0] - corners[0][0], corners[3][1] - corners[0][1]];
-  const determinant = dx[0] * dy[1] - dx[1] * dy[0];
-  if (Math.abs(determinant) < 1e-12) return null;
-  const u = (x * dy[1] - y * dy[0]) / determinant;
-  const v = (dx[0] * y - dx[1] * x) / determinant;
-  return [displayCornersLocal[0][0] + u * (displayCornersLocal[1][0] - displayCornersLocal[0][0]),
-    displayCornersLocal[0][1] + v * (displayCornersLocal[3][1] - displayCornersLocal[0][1])];
+  return mapAlignment.value?.toLocal(point) ?? null;
 }
 
 function linePath(points) {
-  return `M ${points[0][0]} ${points[0][1]} L ${points[1][0]} ${points[1][1]}`;
+  return points.map((point, index) => `${index ? "L" : "M"} ${point[0]} ${point[1]}`).join(" ");
 }
 
 function circlePath(center, radius, project) {
@@ -175,23 +166,25 @@ const liveDemoResult = computed(() => {
   if (mapState.value !== "ready" ||
     !["preview-local-v1", "bd09ll"].includes(result?.coordinateSystem) ||
     !map || !BMap || !displayCornersBd09.value) return null;
-  // The temporary road model and BD-09 map share an affine preview alignment.
-  // A verified backend result must provide its own coordinate transform.
+  // Both directions use the same precomputed official calibration grid.
   const project = (point) => {
     const converted = result.coordinateSystem === "preview-local-v1" ? localToBd09(point) : point;
     const pixel = map.pointToPixel(new BMap.Point(...converted));
     return [pixel.x, pixel.y];
   };
+  const projectPath = points => (result.coordinateSystem === "preview-local-v1"
+    ? sampleLocalPath(points) : points).map(project);
   return {
     area: result.displayArea.type === "circle"
       ? circlePath(result.displayArea.center, result.displayArea.radius, project)
-      : geometryToSvgPath(result.displayArea.geometry, project),
+      : geometryToSvgPath(result.coordinateSystem === "preview-local-v1"
+        ? sampleLocalArea(result.displayArea.geometry) : result.displayArea.geometry, project),
     routes: (result.routeSegments ?? []).map((segment) => ({
       id: segment.id,
-      d: linePath(segment.points.map(project)),
+      d: linePath(projectPath(segment.points)),
       delay: routeDelay(segment, result),
     })),
-    access: result.accessLink ? linePath(result.accessLink.points.map(project)) : "",
+    access: result.accessLink ? linePath(projectPath(result.accessLink.points)) : "",
   };
 });
 const projectedResult = computed(() => {
@@ -223,15 +216,17 @@ const poiMarkers = computed(() => {
   });
 });
 const stateMessage = computed(() => props.analysisMode === "cpp" ? ({
-  loading: "正在载入底图并校准合成路网范围…",
-  "no-key": "共享 SVG 底图 · C++ 合成路网演示",
+  loading: "正在载入百度底图 · 使用本地边界数据…",
+  "no-key": "专家模式 · SVG 底图与 C++ 合成路网",
   error: `百度底图暂不可用 · ${mapError.value || "请检查网络或 AK"}`,
-  ready: "真实底图预览 · 叠加 C++ 合成路网等时圈",
+  ready: boundaryState.value === "ready" ? "专家模式 · C++ 合成路网等时圈，未实地核实"
+    : `底图已载入 · 选区暂不可用：${boundaryError.value}`,
 })[mapState.value] : ({
-  loading: "正在载入百度底图并校准范围…",
-  "no-key": "百度底图待配置 · 当前展示真实道路 SVG 示意",
+  loading: "正在载入百度底图 · 使用本地边界数据…",
+  "no-key": "快速模式 · SVG 底图与临时路线示意",
   error: `百度底图暂不可用 · ${mapError.value || "请检查网络或 AK"}`,
-  ready: "真实底图 · 临时路线仅作交互示意",
+  ready: boundaryState.value === "ready" ? "快速模式 · 临时路线仅作交互示意"
+    : `底图已载入 · 选区暂不可用：${boundaryError.value}`,
 })[mapState.value]);
 
 function showNotice(message) {
@@ -254,35 +249,40 @@ function scheduleProjection() {
   if (frame) cancelAnimationFrame(frame);
   frame = requestAnimationFrame(() => {
     frame = 0;
-    if (!map || !BMap || !boundaryBd09.value) return;
-    liveBoundaryPath.value = geometryToSvgPath(
+    if (!map || !BMap) return;
+    liveBoundaryPath.value = boundaryBd09.value ? geometryToSvgPath(
       { type: "Polygon", coordinates: [boundaryBd09.value] },
       ([lng, lat]) => {
         const pixel = map.pointToPixel(new BMap.Point(lng, lat));
         return [pixel.x, pixel.y];
       },
-    );
+    ) : "";
     projectionVersion.value += 1;
   });
 }
 
-function fitBaiduViewport() {
+function fitBaiduViewport(animate = false) {
   if (!map || !BMap || !displayCornersBd09.value) return;
   const margin = Math.max(16, Math.round(Math.min(viewport.value.width, viewport.value.height) * 0.04));
   const overview = props.zoomTier === "result" && props.analysisMode === "cpp"
-    ? cppOverviewPoints(props.analysisResult) : [];
+    ? cppOverviewPoints(overviewResult.value) : [];
   const points = overview.length ? [
-    ...overview.map(localToBd09), ...visiblePois(props.analysisResult).map(poi => poi.bd09),
+    ...overview.map(localToBd09), ...visiblePois(overviewResult.value).map(poi => poi.bd09),
   ].filter(point => Array.isArray(point) && point.length === 2 && point.every(Number.isFinite))
     : displayCornersBd09.value;
   const inset = cppOverviewInsets(viewport.value.width, viewport.value.height);
-  map.setViewport(points.map(([lng, lat]) => new BMap.Point(lng, lat)), {
+  // Calculate only: setViewport schedules a camera change, so immediately
+  // reading getZoom/getCenter after it captures the previous (already scaled)
+  // view. Reusing that value makes each tier switch multiply the zoom again.
+  const fitted = map.getViewport(points.map(([lng, lat]) => new BMap.Point(lng, lat)), {
     margins: overview.length ? [inset.top, inset.right, inset.bottom, inset.left]
       : [margin, margin, margin, margin],
   });
-  fittedZoom = map.getZoom();
-  fittedCenter = map.getCenter();
-  applyBaiduZoom(false);
+  if (!Number.isFinite(fitted?.zoom) || !fitted.center) return;
+  fittedZoom = fitted.zoom;
+  fittedCenter = fitted.center;
+  // One absolute camera target, with no preceding queued viewport mutation.
+  applyBaiduZoom(animate);
 }
 
 function applyBaiduZoom(animate = true) {
@@ -303,46 +303,33 @@ function applyBaiduZoom(animate = true) {
     try {
       map.flyTo(center, zoom, { duration: 420, callback: scheduleProjection });
     } catch {
-      map.centerAndZoom(center, zoom);
+      map.centerAndZoom(center, zoom, { noAnimation: true, callback: scheduleProjection });
     }
   } else {
-    map.centerAndZoom(center, zoom);
+    map.centerAndZoom(center, zoom, { noAnimation: true, callback: scheduleProjection });
   }
   scheduleProjection();
 }
 
-function convertBatch(convertor, points) {
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error("坐标转换超时")), 12000);
-    convertor.translate(points, 1, 5, (result) => {
-      clearTimeout(timeout);
-      if (result?.status !== 0 || result.points?.length !== points.length) {
-        reject(new Error(`坐标转换失败（${result?.status ?? "无响应"}）`));
-      } else {
-        resolve(result.points.map((point) => [point.lng, point.lat]));
-      }
+function loadPreparedBoundary() {
+  try {
+    const { ring, corners, alignment } = preparedMapGeometry(preparedMapAsset, {
+      ringWgs84: boundaryWgsRing,
+      originWgs84: fallbackOrigin,
+      paddingMeters: DISPLAY_PADDING_METERS,
     });
-  });
-}
-
-async function convertBoundary(namespace) {
-  const convertor = new namespace.Convertor();
-  const converted = [];
-  // JSAPI Convertor accepts up to 10 points per call; this is done once at load.
-  for (let index = 0; index < boundaryWgsRing.length; index += 10) {
-    if (destroyed) return null;
-    const points = boundaryWgsRing.slice(index, index + 10).map(([lng, lat]) =>
-      new namespace.Point(lng, lat));
-    converted.push(...await convertBatch(convertor, points));
+    boundaryBd09.value = ring;
+    displayCornersBd09.value = corners;
+    mapAlignment.value = alignment;
+    boundaryState.value = "ready";
+    boundaryError.value = "";
+  } catch (error) {
+    boundaryBd09.value = null;
+    displayCornersBd09.value = null;
+    mapAlignment.value = null;
+    boundaryState.value = "error";
+    boundaryError.value = error.message;
   }
-  // The first and final WGS84 vertices are identical. Keep the BD-09 ring exact.
-  converted[converted.length - 1] = [...converted[0]];
-  regionCenterBd09.value = (await convertBatch(convertor, [
-    new namespace.Point(...regionCenterWgs),
-  ]))[0];
-  displayCornersBd09.value = await convertBatch(convertor, displayCornersLocal.map((point) =>
-    new namespace.Point(...localToWgs(point, fallbackOrigin))));
-  return converted;
 }
 
 function selectPoint(lng, lat, coordType, localPoint = null) {
@@ -351,6 +338,10 @@ function selectPoint(lng, lat, coordType, localPoint = null) {
     return;
   }
   const ring = coordType === "bd09ll" ? boundaryBd09.value : boundaryWgsRing;
+  if (coordType === "bd09ll" && boundaryState.value !== "ready") {
+    showNotice("选区数据尚未准备好，暂不能在百度底图上选点。");
+    return;
+  }
   if (!ring || !pointInPolygon([lng, lat], [ring])) {
     showNotice("请在国帆路、江湾城路、殷高东路、国权北路围合区内选点。");
     return;
@@ -410,7 +401,7 @@ function moveFallbackDrag(event) {
     fallbackDragging.value = true;
     suppressFallbackClick = true;
     stageEl.value?.setPointerCapture(event.pointerId);
-    probeVisible.value = false;
+    leaveProbe();
   }
   const limit = props.zoomTier === "large" ? 0.8 : 0.26;
   fallbackPan.value = {
@@ -435,7 +426,11 @@ function handlePointerMove(event) {
 }
 
 function selectRegionCenter() {
-  if (mapState.value === "ready" && regionCenterBd09.value) {
+  if (mapState.value === "ready") {
+    if (boundaryState.value !== "ready" || !regionCenterBd09.value) {
+      showNotice("选区数据尚未准备好，暂不能在百度底图上选点。");
+      return;
+    }
     selectPoint(regionCenterBd09.value[0], regionCenterBd09.value[1], "bd09ll");
   } else {
     selectPoint(regionCenterWgs[0], regionCenterWgs[1], "wgs84ll");
@@ -443,8 +438,15 @@ function selectRegionCenter() {
 }
 
 function moveProbe(event) {
-  if (!stageEl.value || !probeEl.value || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+  if (!stageEl.value || !probeEl.value || props.selectionDisabled ||
+    (event.pointerType && event.pointerType !== "mouse") || event.buttons > 0 ||
+    !window.matchMedia("(hover: hover) and (pointer: fine)").matches ||
+    event.target?.closest("button, a, .real-map-actions, .real-map-note, .real-map-toast, .real-poi-marker, .real-poi-panel, .real-poi-popover")) {
+    leaveProbe();
+    return;
+  }
   const bounds = stageEl.value.getBoundingClientRect();
+  // This is the ring's centre, not the top-left of a ring/caption flex row.
   const x = event.clientX - bounds.left;
   const y = event.clientY - bounds.top;
   if (probeFrame) cancelAnimationFrame(probeFrame);
@@ -453,7 +455,11 @@ function moveProbe(event) {
     probeFrame = 0;
   });
   probeVisible.value = true;
-  if (mapState.value === "ready" && map && BMap && boundaryBd09.value) {
+  if (mapState.value === "ready" && map && BMap) {
+    if (!boundaryBd09.value) {
+      hoverInside.value = false;
+      return;
+    }
     const point = map.pixelToPoint(new BMap.Pixel(x, y));
     hoverInside.value = pointInPolygon([point.lng, point.lat], [boundaryBd09.value]);
   } else {
@@ -465,17 +471,34 @@ function moveProbe(event) {
 function leaveProbe() {
   probeVisible.value = false;
   if (probeFrame) cancelAnimationFrame(probeFrame);
+  probeFrame = 0;
 }
 
-async function setupBaidu() {
+function setupBaidu() {
+  // Share an in-flight initialization too, rather than launching another SDK.
+  mapSetupPromise ??= initializeBaidu();
+  return mapSetupPromise;
+}
+
+async function initializeBaidu() {
+  // Overlay validation must not prevent a valid base map from opening.
+  loadPreparedBoundary();
+  regionCenterBd09.value = preparedMapCenter(preparedMapAsset);
+  if (!regionCenterBd09.value) {
+    mapError.value = "本地 BD-09 地图中心缺失，请重新生成地图数据";
+    mapState.value = "error";
+    await loadFallbackContext();
+    return;
+  }
   try {
     BMap = await BMapLoader.load({ ak: browserAk, version: "4.0", timeout: 18000 });
     if (destroyed) return;
-    boundaryBd09.value = await convertBoundary(BMap);
-    if (destroyed || !boundaryBd09.value) return;
     await nextTick();
+    if (destroyed || !baiduEl.value) return;
     map = new BMap.Map(baiduEl.value, { enableMapClick: false });
-    map.centerAndZoom(new BMap.Point(...boundaryBd09.value[0]), 14);
+    map.centerAndZoom(new BMap.Point(...regionCenterBd09.value), 14);
+    fittedZoom = map.getZoom();
+    fittedCenter = map.getCenter();
     map.disableDragging?.();
     map.disableScrollWheelZoom?.();
     map.disableDoubleClickZoom?.();
@@ -483,8 +506,8 @@ async function setupBaidu() {
     map.disablePinchToZoom?.();
     try {
       map.setMapStyle?.({ styleJson: baiduMapStyle });
-    } catch (error) {
-      console.warn("百度底图样式不可用，继续显示默认底图。", error);
+    } catch {
+      console.warn("百度底图样式不可用，继续显示默认底图。");
     }
     map.addEventListener("click", handleMapClick);
     map.addEventListener("dragend", handleNativeDragEnd);
@@ -493,20 +516,23 @@ async function setupBaidu() {
     map.addEventListener("moveend", scheduleProjection);
     map.addEventListener("zoomend", scheduleProjection);
     fitBaiduViewport();
+    if (boundaryState.value !== "ready") applyBaiduZoom(false);
     mapState.value = "ready";
     scheduleProjection();
-  } catch (error) {
+  } catch {
     if (destroyed) return;
-    console.warn("百度地图加载或坐标转换失败，已切换到 SVG 预览。", error);
-    mapError.value = error instanceof Error && error.message.startsWith("坐标转换")
-      ? error.message : "请检查网络、AK 和域名白名单";
+    console.warn("百度底图初始化失败，已切换到 SVG 预览；边界不调用在线转换。");
+    mapError.value = "请检查网络、浏览器 AK、服务权限和域名白名单";
     mapState.value = "error";
     await loadFallbackContext();
   }
 }
 
 function updateSize() {
-  if (!stageEl.value) return;
+  // Do not refit/reload tiles when the retained map is hidden in local mode.
+  if (!stageEl.value?.clientWidth || !stageEl.value.clientHeight) return;
+  if (stageEl.value.clientWidth === viewport.value.width &&
+    stageEl.value.clientHeight === viewport.value.height) return;
   viewport.value = {
     width: Math.max(1, stageEl.value.clientWidth),
     height: Math.max(1, stageEl.value.clientHeight),
@@ -519,9 +545,10 @@ function handleNativeDragEnd() {
   scheduleProjection();
 }
 
-watch(() => props.zoomTier, () => {
+watch([() => props.zoomTier, () => props.overviewRequestId], () => {
+  overviewResult.value = props.zoomTier === "result" ? props.analysisResult : null;
   fallbackPan.value = { x: 0, y: 0 };
-  if (mapState.value === "ready") fitBaiduViewport();
+  if (mapState.value === "ready") fitBaiduViewport(true);
 });
 watch(() => props.candidate, () => {
   selectedPoi.value = null;
@@ -532,7 +559,18 @@ watch(() => props.candidate, () => {
 });
 watch(() => props.analysisResult, () => {
   selectedPoi.value = null;
-  if (props.zoomTier === "result" && mapState.value === "ready") fitBaiduViewport();
+  if (mapState.value === "ready") scheduleProjection();
+});
+watch(() => props.analysisMode, () => {
+  selectedPoi.value = null;
+  poiCategory.value = "all";
+  notice.value = "";
+  leaveProbe();
+  overviewResult.value = props.zoomTier === "result" ? props.analysisResult : null;
+  if (mapState.value === "ready") scheduleProjection();
+});
+watch(() => props.selectionDisabled, (disabled) => {
+  if (disabled) leaveProbe();
 });
 onMounted(() => {
   updateSize();
@@ -671,13 +709,13 @@ onUnmounted(() => {
     </div>
     <div class="real-map-actions">
       <p>虚线内可选起点，外围可显示{{ analysisMode === 'cpp' ? '等时圈和街段' : '示意路线' }}<br /><strong>点击区内位置，记录候选起点</strong></p>
-      <button type="button" @click.stop="selectRegionCenter">选区域中心</button>
+      <button type="button" :disabled="selectionDisabled || (mapState === 'ready' && boundaryState !== 'ready')" @click.stop="selectRegionCenter">选区域中心</button>
     </div>
     <div v-if="analysisResult?.coordinateSystem === 'preview-local-v1'" class="real-demo-legend" aria-label="合成示意图例">
       <span><i :class="cppSyntheticResult ? 'legend-area' : 'legend-circle'"></i>{{ cppSyntheticResult ? 'C++ 路网等时圈 · 近似面' : '固定半径示意' }}</span><span><i class="legend-route"></i>{{ cppSyntheticResult ? 'C++ 可达街段' : '临时路网路线' }}</span><span v-if="analysisResult?.accessLink"><i class="legend-access"></i>估算接入 · 未核实</span>
     </div>
     <div ref="probeEl" class="real-map-probe" :class="{ visible: probeVisible, outside: !hoverInside }" aria-hidden="true">
-      <span></span><small>{{ hoverInside ? "选起点" : "区外" }}</small>
+      <span class="real-probe-ring"></span><small class="real-probe-caption">{{ mapState === 'ready' && boundaryState !== 'ready' ? '选区未就绪' : hoverInside ? '选起点' : '区外' }}</small>
     </div>
     <p v-if="notice" class="real-map-toast" role="status">{{ notice }}</p>
   </div>

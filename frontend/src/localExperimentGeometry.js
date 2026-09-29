@@ -3,6 +3,7 @@ import { fitLocalPoints, geometryToSvgPath } from "./mapGeometry.js";
 export const localCategoryLabels = {
   shopping: "购物", healthcare: "医疗", education: "教育", recreation: "文体",
   transport: "交通", elderly_care: "养老", public_service: "公共服务",
+  dining: "餐饮",
 };
 
 export function localExperimentCategories(result) {

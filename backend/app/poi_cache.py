@@ -21,6 +21,7 @@ class PoiCache:
             db.execute("CREATE TABLE IF NOT EXISTS entries (key TEXT PRIMARY KEY, fetched REAL NOT NULL, value TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS leases (key TEXT PRIMARY KEY, owner TEXT NOT NULL, expires REAL NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS failures (key TEXT PRIMARY KEY, expires REAL NOT NULL, kind TEXT NOT NULL, message TEXT NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS request_slots (provider TEXT PRIMARY KEY, next_allowed REAL NOT NULL)")
             db.execute("DELETE FROM entries WHERE fetched < ?", (time.time() - self.stale,))
 
     @contextmanager
@@ -52,6 +53,32 @@ class PoiCache:
         with self._connection() as db:
             db.execute("INSERT OR REPLACE INTO entries VALUES (?, ?, ?)",
                        (key, fetched, json.dumps(value, ensure_ascii=False, allow_nan=False)))
+
+    def peek(self, parameters: dict, *, ttl_seconds: float | None = None):
+        """Read a fresh entry without fetching, acquiring a lease or refreshing it."""
+        return self._read(self.key(parameters), self.ttl if ttl_seconds is None else ttl_seconds)
+
+    async def wait_for_request_slot(self, provider: str, maximum_qps: float):
+        """Pace different cache misses across clients/processes sharing this DB.
+
+        Reserve only when ready to send, so cancelling a queued search does not
+        leave a long chain of unused reservations. Never hold SQLite while asleep.
+        """
+        if maximum_qps <= 0:
+            return
+        while True:
+            with self._connection() as db:
+                db.execute("BEGIN IMMEDIATE")
+                now = time.time()
+                row = db.execute("SELECT next_allowed FROM request_slots WHERE provider=?",
+                                 (provider,)).fetchone()
+                delay = 0 if row is None else max(0, row[0] - now)
+                if delay == 0:
+                    db.execute("INSERT OR REPLACE INTO request_slots VALUES (?, ?)",
+                               (provider, now + 1 / maximum_qps))
+            if delay == 0:
+                return
+            await asyncio.sleep(min(delay, 1))
 
     async def get_or_fetch(self, parameters: dict, fetch, *, refresh: bool = False,
                            ttl_seconds: float | None = None):
