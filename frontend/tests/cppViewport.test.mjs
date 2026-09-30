@@ -106,7 +106,7 @@ test("the overview button can explicitly refit even when already selected", t =>
 test("mode labels change without changing the API mode identifiers", t => {
   const app = componentState(t, "App.vue");
   assert.deepEqual(app.mapModes.map(({ id, label }) => [id, label]), [
-    ["real", "快速模式"], ["synthetic", "专家模式"], ["local", "局部实验"],
+    ["real", "真实区域"], ["synthetic", "专家模式"], ["local", "局部实验"],
   ]);
 });
 

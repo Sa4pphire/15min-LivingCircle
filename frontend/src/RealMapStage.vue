@@ -355,7 +355,7 @@ function selectPoint(lng, lat, coordType, localPoint = null) {
   emit("select", { lng, lat, coordType, local: { x: local[0], y: local[1] } });
   showNotice(props.analysisMode === "cpp"
     ? "起点已选；点击右上角运行 C++ 路网计算。"
-    : "起点已选；点击右上角生成固定圆与临时路线。");
+    : "起点已选；点击右上角生成百度采样等时圈与代表路线。");
 }
 
 function handleMapClick(event) {
@@ -708,7 +708,7 @@ onUnmounted(() => {
       <span>{{ stateMessage }}</span>
     </div>
     <div class="real-map-actions">
-      <p>虚线内可选起点，外围可显示{{ analysisMode === 'cpp' ? '等时圈和街段' : '示意路线' }}<br /><strong>点击区内位置，记录候选起点</strong></p>
+      <p>虚线内可选起点，外围可显示{{ analysisMode === 'cpp' ? '等时圈和街段' : '等时圈和代表路线' }}<br /><strong>点击区内位置，记录候选起点</strong></p>
       <button type="button" :disabled="selectionDisabled || (mapState === 'ready' && boundaryState !== 'ready')" @click.stop="selectRegionCenter">选区域中心</button>
     </div>
     <div v-if="analysisResult?.coordinateSystem === 'preview-local-v1'" class="real-demo-legend" aria-label="合成示意图例">

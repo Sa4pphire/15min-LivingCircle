@@ -349,6 +349,78 @@ class BaiduClient:
 
         return normalized
 
+    # 获取真实步行路线的 BD-09 折线；每个路段独立保留，避免跨段连线。
+    async def walking_route(
+        self,
+        origin: tuple[float, float],
+        destination: tuple[float, float],
+        *,
+        destination_uid: str | None = None,
+    ) -> dict[str, Any]:
+        coordinates = (*origin, *destination)
+        if (not all(math.isfinite(value) for value in coordinates)
+                or not all(-180 <= longitude <= 180 and -90 <= latitude <= 90
+                           for longitude, latitude in (origin, destination))):
+            raise BaiduApiError("步行路线起终点坐标无效")
+
+        params: dict[str, Any] = {
+            "origin": f"{origin[1]:.6f},{origin[0]:.6f}",
+            "destination": f"{destination[1]:.6f},{destination[0]:.6f}",
+            "coord_type": "bd09ll",
+            "ret_coordtype": "bd09ll",
+            "output": "json",
+        }
+        if destination_uid:
+            params["destination_uid"] = destination_uid
+        payload = await self._get_json("/direction/v2/walking", params)
+        result = payload.get("result")
+        routes = result.get("routes") if isinstance(result, dict) else None
+        if not isinstance(routes, list) or not routes or not isinstance(routes[0], dict):
+            raise BaiduApiError("百度步行路线响应缺少 routes")
+
+        route = routes[0]
+        try:
+            distance_meters = float(route["distance"])
+            duration_seconds = float(route["duration"])
+        except (KeyError, TypeError, ValueError):
+            raise BaiduApiError("百度步行路线缺少距离或耗时") from None
+        if (not math.isfinite(distance_meters) or not math.isfinite(duration_seconds)
+                or distance_meters < 0 or duration_seconds < 0):
+            raise BaiduApiError("百度步行路线距离或耗时无效")
+
+        steps = route.get("steps")
+        if not isinstance(steps, list) or not steps:
+            raise BaiduApiError("百度步行路线缺少路段")
+        segments: list[list[list[float]]] = []
+        for step in steps:
+            if not isinstance(step, dict) or not isinstance(step.get("path"), str):
+                raise BaiduApiError("百度步行路线缺少路段折线")
+            points: list[list[float]] = []
+            for coordinate in step["path"].split(";"):
+                parts = coordinate.split(",")
+                if len(parts) != 2:
+                    raise BaiduApiError("百度步行路线折线坐标无效")
+                try:
+                    longitude, latitude = (float(part) for part in parts)
+                except ValueError:
+                    raise BaiduApiError("百度步行路线折线坐标无效") from None
+                if (not math.isfinite(longitude) or not math.isfinite(latitude)
+                        or not -180 <= longitude <= 180 or not -90 <= latitude <= 90):
+                    raise BaiduApiError("百度步行路线折线坐标无效")
+                point = [longitude, latitude]
+                if not points or point != points[-1]:
+                    points.append(point)
+            if len(points) < 2:
+                raise BaiduApiError("百度步行路线折线点数不足")
+            segments.append(points)
+
+        return {
+            "distanceMeters": distance_meters,
+            "durationSeconds": duration_seconds,
+            "coordType": "bd09ll",
+            "segments": segments,
+        }
+
     # 在指定中心点和半径内查询百度 POI，并统一返回基础字段
     async def search_pois(
         self,

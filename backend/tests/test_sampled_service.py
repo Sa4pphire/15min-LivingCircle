@@ -5,7 +5,7 @@ from app.sampled_service import run_sampled_analysis
 
 
 class FakeBaiduClient:
-    # 模拟坐标转换和 RouteMatrix
+    # 模拟坐标转换、RouteMatrix 和 POI 查询
     async def convert_coordinates(
         self,
         points: list[tuple[float, float]],
@@ -34,6 +34,19 @@ class FakeBaiduClient:
             for _ in destinations
         ]
 
+    async def search_pois(
+        self,
+        query: str,
+        center: tuple[float, float],
+        radius_meters: int = 1000,
+        *,
+        page_num: int = 0,
+        page_size: int = 20,
+        coord_type: str = "bd09ll",
+    ) -> list[dict]:
+        assert coord_type == "bd09ll"
+        return []
+
 
 # 验证 WGS-84 中心点会先转换成 BD-09
 def test_run_sampled_analysis_normalizes_wgs84_center() -> None:
@@ -55,6 +68,8 @@ def test_run_sampled_analysis_normalizes_wgs84_center() -> None:
     assert result["analysisCenter"]["lng"] == 121.5065
     assert result["analysisCenter"]["lat"] == 31.336
     assert len(result["durationSamples"]) == 49
+    assert result["facilities"]["features"] == []
+    assert result["routeSegments"] == []
 
 
 # 验证 BD-09 中心点不会额外调用坐标转换
