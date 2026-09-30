@@ -80,9 +80,10 @@ def test_invalid_annotations_fail_instead_of_silently_linking(change: dict) -> N
 def test_checked_in_markers_attach_both_blue_points_to_main_road() -> None:
     graph = json.loads((ROOT / "data/networks/synthetic-preview.json").read_text("utf-8"))
     by_id = {edge["id"]: edge for edge in graph["edges"]}
-    assert len(graph["nodes"]) == 10438
-    assert len(graph["edges"]) == 10917
-    assert len([e for e in graph["edges"] if e["kind"] == "crossing"]) == 49
+    # Additional reviewed junctions must not invalidate the original markers.
+    # Whole-network reproducibility is covered by test_synthetic_converter.
+    assert {r["id"] for r in graph["sourceGraph"]["manualCrossingAnnotations"]} == {
+        "park-loop-north", "park-loop-south"}
     for name, branch in (("north", "shared:p:54.5:-501.1"),
                          ("south", "shared:p:-10.6:-430.4")):
         turn = by_id[f"manual-turn:park-loop-{name}"]

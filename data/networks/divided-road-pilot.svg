@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="700" viewBox="0 0 1120 700" role="img" aria-labelledby="title description">
+<title id="title">双车道局部试点：内侧人行道与路口连接同步关闭</title>
+<desc id="description">仅优化殷行路南侧双车道局部样例，包含北端路口内侧端口。保留外侧人行道、同角转弯和横穿主路的一次等待；中线过街连接仅在所标注的南侧内端口关闭。</desc>
+<rect width="1120" height="700" fill="#f8fbf9"/>
+<style>text{font-family:"Microsoft YaHei",sans-serif;fill:#173c3a} .label{font-size:14px;fill:#63877a} .edge{fill:none;stroke-linecap:round} .node{stroke:#fbfdfc;stroke-width:1}</style>
+<text x="40" y="45" font-size="27" font-weight="700">双车道，不等于四条人行道</text>
+<text class="label" x="40" y="73">殷行路南侧 · 城投茂庭附近 · 局部试点延伸至北端路口 · 合成路网，未实地核实</text>
+<text x="40" y="112" font-size="21" font-weight="700">修改前：4条 sidewalk</text>
+<defs><clipPath id="clip-0"><rect x="40" y="138" width="510" height="440"/></clipPath></defs>
+<rect x="115" y="233.652" width="360" height="306.087" rx="6" fill="#e6f2e9"/>
+<text class="label" x="48" y="253.652">试点区间</text>
+<g clip-path="url(#clip-0)">
+<path d="M277.974 215.478 L284.287 863.426" fill="none" stroke="#d7dfda" stroke-width="9.565"/>
+<path d="M307.243 569.391 L308.965 217.965" fill="none" stroke="#d7dfda" stroke-width="9.565"/>
+<path class="edge" d="M283.937 238.377 L289.802 840.416" stroke="#d1764e" stroke-width="3"><title>w:132863832:0:0:left</title></path>
+<circle class="node" cx="283.937" cy="238.377" r="3.5" fill="#d1764e"/>
+<circle class="node" cx="289.802" cy="840.416" r="3.5" fill="#d1764e"/>
+<path class="edge" d="M272.459 238.488 L278.324 840.527" stroke="#147d72" stroke-width="3"><title>w:132863832:0:0:right</title></path>
+<circle class="node" cx="272.459" cy="238.488" r="3.5" fill="#147d72"/>
+<circle class="node" cx="278.324" cy="840.527" r="3.5" fill="#147d72"/>
+<path class="edge" d="M301.504 569.363 L303.113 240.893" stroke="#d1764e" stroke-width="3"><title>w:226161205:0:0:left</title></path>
+<circle class="node" cx="301.504" cy="569.363" r="3.5" fill="#d1764e"/>
+<circle class="node" cx="303.113" cy="240.893" r="3.5" fill="#d1764e"/>
+<path class="edge" d="M312.983 569.420 L314.591 240.950" stroke="#147d72" stroke-width="3"><title>w:226161205:0:0:right</title></path>
+<circle class="node" cx="312.983" cy="569.420" r="3.5" fill="#147d72"/>
+<circle class="node" cx="314.591" cy="240.950" r="3.5" fill="#147d72"/>
+<path d="M314.591 240.950 L331.949 223.599" fill="none" stroke="#37786e" stroke-width="2.5" ><title>manual-junction:review-yinxing-guoquan:corner-south-east</title></path>
+<path d="M272.459 238.488 L314.591 240.950" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:cross-south</title></path>
+<path d="M334.418 181.659 L318.115 164.651" fill="none" stroke="#37786e" stroke-width="2.5" ><title>manual-junction:review-yinxing-guoquan:corner-east-north</title></path>
+<path d="M331.949 223.599 L334.418 181.659" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:cross-east</title></path>
+<path d="M276.287 163.707 L257.732 181.288" fill="none" stroke="#37786e" stroke-width="2.5" ><title>manual-junction:review-yinxing-guoquan:corner-north-west</title></path>
+<path d="M318.115 164.651 L276.287 163.707" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:cross-north</title></path>
+<path d="M255.012 221.193 L272.459 238.488" fill="none" stroke="#37786e" stroke-width="2.5" ><title>manual-junction:review-yinxing-guoquan:corner-west-south</title></path>
+<path d="M257.732 181.288 L255.012 221.193" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:cross-west</title></path>
+<path d="M283.937 238.377 L287.713 164.790" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:median-south-north-0</title></path>
+<path d="M303.113 240.893 L306.645 164.188" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:median-south-north-1</title></path>
+<path d="M331.895 212.121 L255.023 209.714" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:median-east-west-0</title></path>
+<path d="M334.399 193.138 L257.659 192.767" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:median-east-west-1</title></path>
+<circle cx="306.645" cy="164.188" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>north-0</title></circle>
+<circle cx="318.115" cy="164.651" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>north-1</title></circle>
+<circle cx="287.713" cy="164.790" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>north-2</title></circle>
+<circle cx="276.287" cy="163.707" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>north-3</title></circle>
+<circle cx="331.895" cy="212.121" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>east-0</title></circle>
+<circle cx="331.949" cy="223.599" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>east-1</title></circle>
+<circle cx="334.399" cy="193.138" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>east-2</title></circle>
+<circle cx="334.418" cy="181.659" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>east-3</title></circle>
+<circle cx="283.937" cy="238.377" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>south-0</title></circle>
+<circle cx="272.459" cy="238.488" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>south-1</title></circle>
+<circle cx="303.113" cy="240.893" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>south-2</title></circle>
+<circle cx="314.591" cy="240.950" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>south-3</title></circle>
+<circle cx="257.659" cy="192.767" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>west-0</title></circle>
+<circle cx="257.732" cy="181.288" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>west-1</title></circle>
+<circle cx="255.023" cy="209.714" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>west-2</title></circle>
+<circle cx="255.012" cy="221.193" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>west-3</title></circle>
+</g>
+<text class="label" x="70" y="608">两条车道各扩两侧，南端口仍接入路口</text>
+<text x="590" y="112" font-size="21" font-weight="700">修改后：2条外侧 sidewalk</text>
+<defs><clipPath id="clip-1"><rect x="590" y="138" width="510" height="440"/></clipPath></defs>
+<rect x="665" y="233.652" width="360" height="306.087" rx="6" fill="#e6f2e9"/>
+<text class="label" x="598" y="253.652">试点区间</text>
+<g clip-path="url(#clip-1)">
+<path d="M827.974 215.478 L834.287 863.426" fill="none" stroke="#d7dfda" stroke-width="9.565"/>
+<path d="M857.243 569.391 L858.965 217.965" fill="none" stroke="#d7dfda" stroke-width="9.565"/>
+<path class="edge" d="M836.873 539.739 L839.802 840.416" stroke="#a2b5ac" stroke-width="3"><title>w:132863832:0:0:left:divided:maoting-divided-road-pilot:after</title></path>
+<circle class="node" cx="836.873" cy="539.739" r="3.5" fill="#a2b5ac"/>
+<circle class="node" cx="839.802" cy="840.416" r="3.5" fill="#a2b5ac"/>
+<path class="edge" d="M822.459 238.488 L828.324 840.527" stroke="#147d72" stroke-width="3"><title>w:132863832:0:0:right</title></path>
+<circle class="node" cx="822.459" cy="238.488" r="3.5" fill="#147d72"/>
+<circle class="node" cx="828.324" cy="840.527" r="3.5" fill="#147d72"/>
+<path class="edge" d="M851.504 569.363 L851.650 539.739" stroke="#a2b5ac" stroke-width="3"><title>w:226161205:0:0:left:divided:maoting-divided-road-pilot:before</title></path>
+<circle class="node" cx="851.504" cy="569.363" r="3.5" fill="#a2b5ac"/>
+<circle class="node" cx="851.650" cy="539.739" r="3.5" fill="#a2b5ac"/>
+<path class="edge" d="M862.983 569.420 L864.591 240.950" stroke="#147d72" stroke-width="3"><title>w:226161205:0:0:right</title></path>
+<circle class="node" cx="862.983" cy="569.420" r="3.5" fill="#147d72"/>
+<circle class="node" cx="864.591" cy="240.950" r="3.5" fill="#147d72"/>
+<path d="M864.591 240.950 L881.949 223.599" fill="none" stroke="#37786e" stroke-width="2.5" ><title>manual-junction:review-yinxing-guoquan:corner-south-east</title></path>
+<path d="M822.459 238.488 L864.591 240.950" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:cross-south</title></path>
+<path d="M884.418 181.659 L868.115 164.651" fill="none" stroke="#37786e" stroke-width="2.5" ><title>manual-junction:review-yinxing-guoquan:corner-east-north</title></path>
+<path d="M881.949 223.599 L884.418 181.659" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:cross-east</title></path>
+<path d="M826.287 163.707 L807.732 181.288" fill="none" stroke="#37786e" stroke-width="2.5" ><title>manual-junction:review-yinxing-guoquan:corner-north-west</title></path>
+<path d="M868.115 164.651 L826.287 163.707" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:cross-north</title></path>
+<path d="M805.012 221.193 L822.459 238.488" fill="none" stroke="#37786e" stroke-width="2.5" ><title>manual-junction:review-yinxing-guoquan:corner-west-south</title></path>
+<path d="M807.732 181.288 L805.012 221.193" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:cross-west</title></path>
+<path d="M881.895 212.121 L805.023 209.714" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:median-east-west-0</title></path>
+<path d="M884.399 193.138 L807.659 192.767" fill="none" stroke="#a45d31" stroke-width="2.5"  stroke-dasharray="6 3"><title>manual-junction:review-yinxing-guoquan:median-east-west-1</title></path>
+<circle cx="856.645" cy="164.188" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>north-0</title></circle>
+<circle cx="868.115" cy="164.651" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>north-1</title></circle>
+<circle cx="837.713" cy="164.790" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>north-2</title></circle>
+<circle cx="826.287" cy="163.707" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>north-3</title></circle>
+<circle cx="881.895" cy="212.121" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>east-0</title></circle>
+<circle cx="881.949" cy="223.599" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>east-1</title></circle>
+<circle cx="884.399" cy="193.138" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>east-2</title></circle>
+<circle cx="884.418" cy="181.659" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>east-3</title></circle>
+<circle cx="822.459" cy="238.488" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>south-1</title></circle>
+<circle cx="864.591" cy="240.950" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>south-3</title></circle>
+<circle cx="807.659" cy="192.767" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>west-0</title></circle>
+<circle cx="807.732" cy="181.288" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>west-1</title></circle>
+<circle cx="805.023" cy="209.714" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>west-2</title></circle>
+<circle cx="805.012" cy="221.193" r="3.5" fill="#fbfdfc" stroke="#173c3a" stroke-width="1.5"><title>west-3</title></circle>
+</g>
+<text class="label" x="620" y="608">内侧端口关闭；外侧转弯及合法过街保留</text>
+<path d="M40 643H66" stroke="#147d72" stroke-width="3"/><text class="label" x="75" y="648">保留的外侧人行道</text>
+<path d="M290 643H316" stroke="#d1764e" stroke-width="3"/><text class="label" x="325" y="648">本次去除的中央纵向人行道</text>
+<text class="label" x="40" y="681">实线为人行道／转弯，虚线为收费过街；仅展示指定车道及其北端路口连接。其他区域不推广修改。</text>
+</svg>

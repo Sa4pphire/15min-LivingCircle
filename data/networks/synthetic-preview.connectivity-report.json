@@ -1,0 +1,6314 @@
+{
+  "schemaVersion": 1,
+  "synthetic": true,
+  "coordinateSystem": "engine-local-meters",
+  "before": {
+    "nodes": 10438,
+    "edges": 10917,
+    "edgeKinds": {
+      "crossing": 49,
+      "shared_way": 6760,
+      "sidewalk": 2882,
+      "turn": 1226
+    },
+    "componentCount": 188,
+    "largestComponentNodes": 8879,
+    "componentSizes": [
+      8879,
+      192,
+      80,
+      48,
+      40,
+      38,
+      38,
+      37,
+      30,
+      27,
+      27,
+      24,
+      24,
+      23,
+      23,
+      23,
+      23,
+      19,
+      18,
+      17,
+      16,
+      16,
+      15,
+      15,
+      13,
+      13,
+      13,
+      12,
+      12,
+      12,
+      12,
+      11,
+      11,
+      10,
+      10,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "terminalNodes": 1253,
+    "isolatedNodes": 0,
+    "structuralErrors": 0
+  },
+  "after": {
+    "nodes": 10614,
+    "edges": 11298,
+    "edgeKinds": {
+      "crossing": 294,
+      "shared_way": 6754,
+      "sidewalk": 2816,
+      "turn": 1434
+    },
+    "componentCount": 158,
+    "largestComponentNodes": 9497,
+    "componentSizes": [
+      9497,
+      80,
+      48,
+      40,
+      38,
+      30,
+      27,
+      27,
+      24,
+      24,
+      23,
+      23,
+      23,
+      19,
+      18,
+      17,
+      16,
+      15,
+      15,
+      13,
+      12,
+      12,
+      12,
+      12,
+      11,
+      11,
+      10,
+      9,
+      9,
+      9,
+      9,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "terminalNodes": 1217,
+    "isolatedNodes": 0,
+    "structuralErrors": 0
+  },
+  "reviewedJunctions": [
+    {
+      "id": "blue-crossroads-01",
+      "name": "blue-crossroads-01",
+      "centerMeters": [
+        -273.15,
+        1347.85
+      ],
+      "verificationStatus": "user_marked_unverified",
+      "ports": 12,
+      "connectors": {
+        "turn": 4,
+        "crossing": 6
+      }
+    },
+    {
+      "id": "review-guofan-guoxiu",
+      "name": "北部四向路口（国帆路沿线）",
+      "centerMeters": [
+        381.5,
+        1048.5
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "review-yinxing-guoquan",
+      "name": "中部双车道十字路口（国权北路／殷行路）",
+      "centerMeters": [
+        -270.125,
+        -243.45
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 14,
+      "connectors": {
+        "turn": 4,
+        "crossing": 6
+      }
+    },
+    {
+      "id": "review-yingao-guoquan",
+      "name": "南部双车道十字路口（国权北路／殷高东路）",
+      "centerMeters": [
+        -273.967,
+        -1144.233
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 16,
+      "connectors": {
+        "turn": 4,
+        "crossing": 8
+      }
+    },
+    {
+      "id": "review-south-central",
+      "name": "南部斜交路口（双车道接共享通道）",
+      "centerMeters": [
+        181.4,
+        -1243.75
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 9,
+      "connectors": {
+        "turn": 4,
+        "crossing": 5
+      }
+    },
+    {
+      "id": "review-southeast-outer",
+      "name": "东南外围斜交路口一",
+      "centerMeters": [
+        556.3,
+        -1490
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "review-southeast-outer-2",
+      "name": "东南外围斜交路口二",
+      "centerMeters": [
+        973.9,
+        -1386.1
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "review-north-outer",
+      "name": "北部外围四向路口",
+      "centerMeters": [
+        454.9,
+        1574.8
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "review-central-shared",
+      "name": "中部共享支路接入路口",
+      "centerMeters": [
+        -27.4,
+        374.9
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 7,
+      "connectors": {
+        "turn": 4,
+        "crossing": 3
+      }
+    },
+    {
+      "id": "crossroad-6258f1ad0044",
+      "name": "十字路口 · ad0044",
+      "centerMeters": [
+        -1213.7,
+        2294.9
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-cbac250bbc1e",
+      "name": "十字路口 · 0bbc1e",
+      "centerMeters": [
+        63.1,
+        1955
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 7,
+      "connectors": {
+        "turn": 4,
+        "crossing": 3
+      }
+    },
+    {
+      "id": "crossroad-edca5b18213c",
+      "name": "十字路口 · 18213c",
+      "centerMeters": [
+        -890.8,
+        1442.1
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-865f12333c8e",
+      "name": "十字路口 · 333c8e",
+      "centerMeters": [
+        -1714.1,
+        1351.5
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-3e31c1232d93",
+      "name": "十字路口 · 232d93",
+      "centerMeters": [
+        -2018.6,
+        1279.3
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-121c6535ff27",
+      "name": "十字路口 · 35ff27",
+      "centerMeters": [
+        -152,
+        1264.7
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 7,
+      "connectors": {
+        "turn": 4,
+        "crossing": 3
+      }
+    },
+    {
+      "id": "crossroad-bb06bd97c1cb",
+      "name": "十字路口 · 97c1cb",
+      "centerMeters": [
+        -2531.9,
+        1077.5
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-17fada56724e",
+      "name": "十字路口 · 56724e",
+      "centerMeters": [
+        773.1,
+        1024.8
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-d1d28493bc6a",
+      "name": "十字路口 · 93bc6a",
+      "centerMeters": [
+        -1824.2,
+        763.6
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-c80c4c30310b",
+      "name": "十字路口 · 30310b",
+      "centerMeters": [
+        -737.3,
+        585.1
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 10,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-8dea03beb5cc",
+      "name": "十字路口 · beb5cc",
+      "centerMeters": [
+        1903.6,
+        560.8
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-826b397500c1",
+      "name": "十字路口 · 7500c1",
+      "centerMeters": [
+        -914,
+        256.7
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-4bbd185ee05f",
+      "name": "十字路口 · 5ee05f",
+      "centerMeters": [
+        -1996.1,
+        174.4
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-b82e29aaea0e",
+      "name": "十字路口 · aaea0e",
+      "centerMeters": [
+        -1730.2,
+        -4.7
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 16,
+      "connectors": {
+        "turn": 4,
+        "crossing": 8
+      }
+    },
+    {
+      "id": "crossroad-eb528813fd7e",
+      "name": "十字路口 · 13fd7e",
+      "centerMeters": [
+        1462.1,
+        -235.4
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-fd57472cfc86",
+      "name": "十字路口 · 2cfc86",
+      "centerMeters": [
+        1654.22,
+        -240.48
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 16,
+      "connectors": {
+        "turn": 4,
+        "crossing": 8
+      }
+    },
+    {
+      "id": "crossroad-1fea47f14eb2",
+      "name": "十字路口 · f14eb2",
+      "centerMeters": [
+        1258.7,
+        -241.55
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 10,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-175c3fd10535",
+      "name": "十字路口 · d10535",
+      "centerMeters": [
+        284.75,
+        -242.2
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 10,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-a8766f98edb5",
+      "name": "十字路口 · 98edb5",
+      "centerMeters": [
+        -1211.5,
+        -242.35
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 16,
+      "connectors": {
+        "turn": 4,
+        "crossing": 8
+      }
+    },
+    {
+      "id": "crossroad-c15ced476946",
+      "name": "十字路口 · 476946",
+      "centerMeters": [
+        2297.6,
+        -278.9
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-d1722eaafad3",
+      "name": "十字路口 · aafad3",
+      "centerMeters": [
+        -269.35,
+        -589.15
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 10,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-752ed540f6b2",
+      "name": "十字路口 · 40f6b2",
+      "centerMeters": [
+        2154.8,
+        -685.1
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 12,
+      "connectors": {
+        "turn": 4,
+        "crossing": 6
+      }
+    },
+    {
+      "id": "crossroad-168c5bb17b98",
+      "name": "十字路口 · b17b98",
+      "centerMeters": [
+        1038.4,
+        -849.9
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 11,
+      "connectors": {
+        "turn": 4,
+        "crossing": 5
+      }
+    },
+    {
+      "id": "crossroad-b421af2908e3",
+      "name": "十字路口 · 2908e3",
+      "centerMeters": [
+        -266.7,
+        -894.8
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-f3e191e35a79",
+      "name": "十字路口 · e35a79",
+      "centerMeters": [
+        1593.7,
+        -1042.6
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-ad1ec05ccbb3",
+      "name": "十字路口 · 5ccbb3",
+      "centerMeters": [
+        2157.35,
+        -1043.6
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 12,
+      "connectors": {
+        "turn": 4,
+        "crossing": 6
+      }
+    },
+    {
+      "id": "crossroad-2df933fadfbd",
+      "name": "十字路口 · fadfbd",
+      "centerMeters": [
+        1145.5,
+        -1054.1
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-77ce98cf45e7",
+      "name": "十字路口 · cf45e7",
+      "centerMeters": [
+        -796.1,
+        -1142.9
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-cb69cd8210dd",
+      "name": "十字路口 · 8210dd",
+      "centerMeters": [
+        1194.4,
+        -1146
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-5b3792cee421",
+      "name": "十字路口 · cee421",
+      "centerMeters": [
+        -1317.2,
+        -1162.067
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 16,
+      "connectors": {
+        "turn": 4,
+        "crossing": 8
+      }
+    },
+    {
+      "id": "crossroad-231946c5d4b2",
+      "name": "十字路口 · c5d4b2",
+      "centerMeters": [
+        2156.75,
+        -1422.45
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 12,
+      "connectors": {
+        "turn": 4,
+        "crossing": 6
+      }
+    },
+    {
+      "id": "crossroad-e634c9b6b647",
+      "name": "十字路口 · b6b647",
+      "centerMeters": [
+        583.5,
+        -1511.1
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-c54da2171cdd",
+      "name": "十字路口 · 171cdd",
+      "centerMeters": [
+        -262.3,
+        -1645.35
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 12,
+      "connectors": {
+        "turn": 4,
+        "crossing": 6
+      }
+    },
+    {
+      "id": "crossroad-cccdd957327f",
+      "name": "十字路口 · 57327f",
+      "centerMeters": [
+        778.85,
+        -1649.7
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 12,
+      "connectors": {
+        "turn": 4,
+        "crossing": 6
+      }
+    },
+    {
+      "id": "crossroad-ac373170b931",
+      "name": "十字路口 · 70b931",
+      "centerMeters": [
+        62.1,
+        -1681.9
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-92f0130a8289",
+      "name": "十字路口 · 0a8289",
+      "centerMeters": [
+        -1552.8,
+        -1703.8
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 7,
+      "connectors": {
+        "turn": 4,
+        "crossing": 3
+      }
+    },
+    {
+      "id": "crossroad-1e06d97822a6",
+      "name": "十字路口 · 7822a6",
+      "centerMeters": [
+        -748.5,
+        -1717.9
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-97c57d291f83",
+      "name": "十字路口 · 291f83",
+      "centerMeters": [
+        -1133.2,
+        -1748
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 7,
+      "connectors": {
+        "turn": 4,
+        "crossing": 3
+      }
+    },
+    {
+      "id": "crossroad-5468bb7a0343",
+      "name": "十字路口 · 7a0343",
+      "centerMeters": [
+        663,
+        -1797
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-dba1420b0dc9",
+      "name": "十字路口 · 0b0dc9",
+      "centerMeters": [
+        1023.45,
+        -1807.1
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 12,
+      "connectors": {
+        "turn": 4,
+        "crossing": 6
+      }
+    },
+    {
+      "id": "crossroad-aa48ad6654f0",
+      "name": "十字路口 · 6654f0",
+      "centerMeters": [
+        2156.4,
+        -1809.45
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 12,
+      "connectors": {
+        "turn": 4,
+        "crossing": 6
+      }
+    },
+    {
+      "id": "crossroad-d57eaf8fe2a8",
+      "name": "十字路口 · 8fe2a8",
+      "centerMeters": [
+        -2315.1,
+        -1813.3
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 10,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-e189d016a561",
+      "name": "十字路口 · 16a561",
+      "centerMeters": [
+        302,
+        -1815.8
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-f7458615b64f",
+      "name": "十字路口 · 15b64f",
+      "centerMeters": [
+        -2269.8,
+        -1828.4
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-c1d32d31b9ef",
+      "name": "十字路口 · 31b9ef",
+      "centerMeters": [
+        -197.1,
+        -1898.3
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-b34c2deb3de2",
+      "name": "十字路口 · eb3de2",
+      "centerMeters": [
+        581.6,
+        -1924.5
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-7a438e7c429e",
+      "name": "十字路口 · 7c429e",
+      "centerMeters": [
+        1383.3,
+        -2053.2
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-75772ead6623",
+      "name": "十字路口 · ad6623",
+      "centerMeters": [
+        -2314.8,
+        -2164.25
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 11,
+      "connectors": {
+        "turn": 4,
+        "crossing": 5
+      }
+    },
+    {
+      "id": "crossroad-501e248fa457",
+      "name": "十字路口 · 8fa457",
+      "centerMeters": [
+        559.3,
+        -2166.3
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-866f58cc3841",
+      "name": "十字路口 · cc3841",
+      "centerMeters": [
+        378.8,
+        -2168.2
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-4d8adda953ec",
+      "name": "十字路口 · a953ec",
+      "centerMeters": [
+        -1103.4,
+        -2171.9
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-2eb33a6e3cef",
+      "name": "十字路口 · 6e3cef",
+      "centerMeters": [
+        -2276.5,
+        -2173.7
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 12,
+      "connectors": {
+        "turn": 4,
+        "crossing": 6
+      }
+    },
+    {
+      "id": "crossroad-b01c9320e723",
+      "name": "十字路口 · 20e723",
+      "centerMeters": [
+        -424.6,
+        -2173.8
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-7c1e61478452",
+      "name": "十字路口 · 478452",
+      "centerMeters": [
+        -1269.75,
+        -2174.1
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 12,
+      "connectors": {
+        "turn": 4,
+        "crossing": 6
+      }
+    },
+    {
+      "id": "crossroad-5630ae5d3859",
+      "name": "十字路口 · 5d3859",
+      "centerMeters": [
+        -678.4,
+        -2174.4
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 7,
+      "connectors": {
+        "turn": 4,
+        "crossing": 3
+      }
+    },
+    {
+      "id": "crossroad-aaf572ef803f",
+      "name": "十字路口 · ef803f",
+      "centerMeters": [
+        -1849.3,
+        -2176.9
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-da6d16c33edd",
+      "name": "十字路口 · c33edd",
+      "centerMeters": [
+        560.2,
+        -2288.1
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 4,
+        "crossing": 2
+      }
+    },
+    {
+      "id": "crossroad-db8fcf0c02d3",
+      "name": "十字路口 · 0c02d3",
+      "centerMeters": [
+        1263.9,
+        -2372.7
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 7,
+      "connectors": {
+        "turn": 4,
+        "crossing": 3
+      }
+    },
+    {
+      "id": "crossroad-a2811c04467a",
+      "name": "十字路口 · 04467a",
+      "centerMeters": [
+        1386.9,
+        -2373.6
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "crossroad-5a3da828db62",
+      "name": "十字路口 · 28db62",
+      "centerMeters": [
+        948.8,
+        -2375.7
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 7,
+      "connectors": {
+        "turn": 4,
+        "crossing": 3
+      }
+    },
+    {
+      "id": "review-south-edge-three-arm",
+      "name": "南部边界三向路口（南向残段退役）",
+      "centerMeters": [
+        148.2,
+        -2556.6
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 6,
+      "connectors": {
+        "turn": 3,
+        "crossing": 3
+      }
+    },
+    {
+      "id": "review-east-offset-crossroad",
+      "name": "东部偏移路口主体（东西干道×南北路）",
+      "centerMeters": [
+        1576.6,
+        -1421.5
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 8,
+      "connectors": {
+        "turn": 4,
+        "crossing": 4
+      }
+    },
+    {
+      "id": "review-east-offset-alley",
+      "name": "东部偏移巷口（东西干道×南侧巷道）",
+      "centerMeters": [
+        1590.0,
+        -1421.5
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "ports": 5,
+      "connectors": {
+        "turn": 3,
+        "crossing": 2
+      }
+    }
+  ],
+  "rawCandidateCount": 303,
+  "rawCandidatesNeedingReview": 197,
+  "junctionCandidates": [
+    {
+      "rawNodeId": "p:-847.8:-2607.0",
+      "centerMeters": [
+        -847.8,
+        2607
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:168481723:2:0",
+        "w:1075641758:0:0",
+        "w:1075641759:0:0",
+        "w:1273001198:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1490.9:-2593.0",
+      "centerMeters": [
+        1490.9,
+        2593
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:904664169:3:0:s0",
+        "w:904664169:3:0:s1",
+        "w:904664170:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-883.0:-2567.9",
+      "centerMeters": [
+        -883,
+        2567.9
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:422945046:0:0",
+        "w:441742694:17:0",
+        "w:441742694:18:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-768.3:-2477.7",
+      "centerMeters": [
+        -768.3,
+        2477.7
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:74444893:2:0",
+        "w:154376791:0:0",
+        "w:441742696:1:0",
+        "w:1326437229:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-806.2:-2475.1",
+      "centerMeters": [
+        -806.2,
+        2475.1
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075641758:1:0",
+        "w:1273001197:0:0",
+        "w:1326437227:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1046.7:-2452.2",
+      "centerMeters": [
+        -1046.7,
+        2452.2
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:441742688:13:0",
+        "w:441742688:14:0",
+        "w:441742693:4:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-788.2:-2447.5",
+      "centerMeters": [
+        -788.2,
+        2447.5
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075641760:0:0",
+        "w:1116719054:0:0",
+        "w:1273001198:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-784.7:-2437.8",
+      "centerMeters": [
+        -784.7,
+        2437.8
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:154376807:0:0",
+        "w:1075641761:0:0",
+        "w:1116719054:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1207.6:-2310.6",
+      "centerMeters": [
+        -1207.6,
+        2310.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:27395635:7:0",
+        "w:422945047:0:0",
+        "w:1326437227:1:0:s1"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1213.7:-2294.9",
+      "centerMeters": [
+        -1213.7,
+        2294.9
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39611710:2:0:s1",
+        "w:422945048:0:0",
+        "w:1326437228:0:0",
+        "w:1326437229:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-6258f1ad0044"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1613.9:-2168.6",
+      "centerMeters": [
+        1613.9,
+        2168.6
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74706319:7:0",
+        "w:74706319:8:0",
+        "w:721792250:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1620.3:-2137.1",
+      "centerMeters": [
+        -1620.3,
+        2137.1
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:422945047:4:0",
+        "w:422945047:5:0",
+        "w:441742692:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1632.5:-2120.2",
+      "centerMeters": [
+        -1632.5,
+        2120.2
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1121213463:0:0",
+        "w:1121213465:0:0",
+        "w:1121213465:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1689.6:-2108.6",
+      "centerMeters": [
+        -1689.6,
+        2108.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:71531762:0:0",
+        "w:422945047:5:0",
+        "w:442908562:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-777.1:-2084.6",
+      "centerMeters": [
+        -777.1,
+        2084.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:27395635:0:0",
+        "w:422945042:0:0",
+        "w:1271904985:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-654.1:-2082.3",
+      "centerMeters": [
+        -654.1,
+        2082.3
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:68740165:0:0",
+        "w:74444893:0:0",
+        "w:441742701:0:0",
+        "w:1271904980:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-682.4:-2082.2",
+      "centerMeters": [
+        -682.4,
+        2082.2
+      ],
+      "majorApproaches": 5,
+      "edgeIds": [
+        "w:68740165:0:0",
+        "w:1075641760:4:0",
+        "w:1075641761:3:0",
+        "w:1075641764:0:0",
+        "w:1271904985:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-653.3:-2069.6",
+      "centerMeters": [
+        -653.3,
+        2069.6
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:71531841:6:0",
+        "w:154255219:0:0",
+        "w:1271904980:0:0",
+        "w:1271904981:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-776.0:-2067.5",
+      "centerMeters": [
+        -776,
+        2067.5
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:422945048:8:0",
+        "w:441742689:1:0",
+        "w:1271904982:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-681.5:-2067.4",
+      "centerMeters": [
+        -681.5,
+        2067.4
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:154255219:0:0",
+        "w:1075641764:0:0",
+        "w:1255624560:0:0",
+        "w:1271904982:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-680.0:-2040.0",
+      "centerMeters": [
+        -680,
+        2040
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075641766:0:0",
+        "w:1150327729:0:0",
+        "w:1255624560:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1854.9:-2035.3",
+      "centerMeters": [
+        -1854.9,
+        2035.3
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075724576:0:0",
+        "w:1075724577:0:0:s1",
+        "w:1302032704:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1852.1:-2024.7",
+      "centerMeters": [
+        -1852.1,
+        2024.7
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:71531781:0:0:s0",
+        "w:1121213462:3:0",
+        "w:1302032704:0:0",
+        "w:1302032705:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-34.9:-2004.6",
+      "centerMeters": [
+        -34.9,
+        2004.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:154376792:0:0",
+        "w:154376809:0:0",
+        "w:1116719083:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-64.1:-1995.9",
+      "centerMeters": [
+        -64.1,
+        1995.9
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:441742703:0:0:s0",
+        "w:441742705:0:0",
+        "w:1116719053:3:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:63.1:-1955.0",
+      "centerMeters": [
+        63.1,
+        1955
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:68998435:0:0",
+        "w:74444895:0:0:s1",
+        "w:479194749:0:0",
+        "w:1116719083:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-cbac250bbc1e"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-2197.3:-1889.8",
+      "centerMeters": [
+        -2197.3,
+        1889.8
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:71531760:1:0",
+        "w:929973070:0:0:s0",
+        "w:1121213462:0:0",
+        "w:1121213470:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2252.4:-1866.3",
+      "centerMeters": [
+        -2252.4,
+        1866.3
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:1078939200:0:0:s1",
+        "w:1121213468:1:0",
+        "w:1121213469:0:0",
+        "w:1121213470:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:19.7:-1857.2",
+      "centerMeters": [
+        19.7,
+        1857.2
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74415467:2:0",
+        "w:154376799:0:0",
+        "w:154618525:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2193.4:-1852.9",
+      "centerMeters": [
+        2193.4,
+        1852.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74384639:0:0",
+        "w:74706319:9:0",
+        "w:966894818:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-732.7:-1789.6",
+      "centerMeters": [
+        -732.7,
+        1789.6
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1075641766:2:0:s0",
+        "w:1075641766:2:0:s1",
+        "w:1375588888:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2451.4:-1788.8",
+      "centerMeters": [
+        -2451.4,
+        1788.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:71531796:1:0",
+        "w:1121213469:1:0",
+        "w:1121213469:2:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2492.1:-1770.8",
+      "centerMeters": [
+        -2492.1,
+        1770.8
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1121213467:0:0:s0",
+        "w:1121213468:0:0",
+        "w:1121213469:2:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-753.7:-1733.0",
+      "centerMeters": [
+        -753.7,
+        1733
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075641765:0:0",
+        "w:1075641766:2:0:s1",
+        "w:1075641766:3:0",
+        "w:1121213461:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2598.2:-1729.8",
+      "centerMeters": [
+        -2598.2,
+        1729.8
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075724574:0:0",
+        "w:1121213467:0:0:s1",
+        "w:1301570652:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:42.2:-1692.6",
+      "centerMeters": [
+        42.2,
+        1692.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1002720925:0:0",
+        "w:1002720926:0:0",
+        "w:1005535213:2:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-109.3:-1627.6",
+      "centerMeters": [
+        -109.3,
+        1627.6
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74411289:0:0",
+        "w:74415469:0:0",
+        "w:154618529:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-98.2:-1621.8",
+      "centerMeters": [
+        -98.2,
+        1621.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74411289:0:0",
+        "w:74415455:1:0",
+        "w:74415467:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-800.8:-1620.7",
+      "centerMeters": [
+        -800.8,
+        1620.7
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075641766:4:0",
+        "w:1150327729:3:0",
+        "w:1234279876:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:454.9:-1574.8",
+      "centerMeters": [
+        454.9,
+        1574.8
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:1002720926:4:0:s1",
+        "w:1002720926:5:0",
+        "w:1003005389:1:0",
+        "w:1444043969:0:0"
+      ],
+      "reviewedBy": [
+        "review-north-outer"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-858.5:-1447.0",
+      "centerMeters": [
+        -858.5,
+        1447
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:71531841:2:0",
+        "w:71531841:3:0",
+        "w:1234279877:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-890.8:-1442.1",
+      "centerMeters": [
+        -890.8,
+        1442.1
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:71531795:0:0",
+        "w:74444894:0:0",
+        "w:1234279876:0:0",
+        "w:1234279877:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-edca5b18213c"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:163.5:-1419.4",
+      "centerMeters": [
+        163.5,
+        1419.4
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1003005394:0:0",
+        "w:1005535212:0:0",
+        "w:1005535212:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1718.2:-1419.2",
+      "centerMeters": [
+        -1718.2,
+        1419.2
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:71531781:2:0:s1",
+        "w:71531781:3:0",
+        "w:929973074:0:0:s0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1609.9:-1363.7",
+      "centerMeters": [
+        -1609.9,
+        1363.7
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1020705231:0:0",
+        "w:1075724570:0:0:s0",
+        "w:1075724570:0:0:s1"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1714.1:-1351.5",
+      "centerMeters": [
+        -1714.1,
+        1351.5
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:71531781:3:0",
+        "w:1075724569:0:0:s0",
+        "w:1075724570:0:0:s0",
+        "w:1078939201:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-865f12333c8e"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-277.5:-1350.8",
+      "centerMeters": [
+        -277.5,
+        1350.8
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:74415456:0:0",
+        "w:226889561:0:0",
+        "w:441758702:3:0:s1",
+        "w:1322655092:0:0"
+      ],
+      "reviewedBy": [
+        "blue-crossroads-01"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-268.8:-1344.9",
+      "centerMeters": [
+        -268.8,
+        1344.9
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:168476055:0:0",
+        "w:225928287:4:0",
+        "w:226889561:0:0",
+        "w:1322655091:0:0"
+      ],
+      "reviewedBy": [
+        "blue-crossroads-01"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1930.7:-1300.5",
+      "centerMeters": [
+        -1930.7,
+        1300.5
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1078939201:0:0",
+        "w:1327168500:0:0",
+        "w:1327168501:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1970.8:-1290.9",
+      "centerMeters": [
+        -1970.8,
+        1290.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1075762278:0:0",
+        "w:1327168500:0:0",
+        "w:1327168502:0:0:s1"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2018.6:-1279.3",
+      "centerMeters": [
+        -2018.6,
+        1279.3
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:71531787:0:0:s1",
+        "w:135807017:0:0:s1",
+        "w:1078939200:0:0:s0",
+        "w:1327168502:0:0:s0"
+      ],
+      "reviewedBy": [
+        "crossroad-3e31c1232d93"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-152.0:-1264.7",
+      "centerMeters": [
+        -152,
+        1264.7
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:74415448:4:0",
+        "w:74415448:5:0",
+        "w:132887680:5:0",
+        "w:1003005393:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-121c6535ff27"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-2303.8:-1167.4",
+      "centerMeters": [
+        -2303.8,
+        1167.4
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:71531787:0:0:s0",
+        "w:71531787:0:0:s1",
+        "w:1020705217:11:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2320.2:-1161.0",
+      "centerMeters": [
+        -2320.2,
+        1161
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:71531787:0:0:s0",
+        "w:1078939198:1:0",
+        "w:1078939199:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2385.2:-1135.6",
+      "centerMeters": [
+        -2385.2,
+        1135.6
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1075762279:0:0",
+        "w:1078939197:0:0",
+        "w:1078939199:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2531.9:-1077.5",
+      "centerMeters": [
+        -2531.9,
+        1077.5
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:71531790:2:0",
+        "w:71531804:0:0",
+        "w:1075724571:0:0",
+        "w:1075724572:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-bb06bd97c1cb"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:381.5:-1048.5",
+      "centerMeters": [
+        381.5,
+        1048.5
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:68998159:3:0",
+        "w:74415448:0:0",
+        "w:1002716295:0:0",
+        "w:1368697070:2:0"
+      ],
+      "reviewedBy": [
+        "review-guofan-guoxiu"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1866.0:-1032.1",
+      "centerMeters": [
+        1866,
+        1032.1
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:70794643:0:0",
+        "w:74444895:0:0:s0",
+        "w:74506379:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1877.9:-1026.8",
+      "centerMeters": [
+        1877.9,
+        1026.8
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:74506379:0:0",
+        "w:154255207:0:0:s1",
+        "w:1327290526:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:773.1:-1024.8",
+      "centerMeters": [
+        773.1,
+        1024.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:68998164:0:0:s1",
+        "w:74415449:0:0:s0",
+        "w:1317092182:0:0",
+        "w:1368697070:0:0:s0"
+      ],
+      "reviewedBy": [
+        "crossroad-17fada56724e"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1865.8:-1004.4",
+      "centerMeters": [
+        1865.8,
+        1004.4
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:70794643:0:0",
+        "w:226153318:0:0:s0",
+        "w:441742703:3:0",
+        "w:1327290525:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1879.8:-997.3",
+      "centerMeters": [
+        1879.8,
+        997.3
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:31554137:0:0",
+        "w:226153317:0:0",
+        "w:1327290525:0:0",
+        "w:1327290526:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1251.7:-986.0",
+      "centerMeters": [
+        1251.7,
+        986
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:132984952:0:0",
+        "w:132984952:1:0",
+        "w:225928295:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1207.7:-908.6",
+      "centerMeters": [
+        -1207.7,
+        908.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:135807028:0:0",
+        "w:135807028:1:0",
+        "w:135807029:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1302.5:-885.9",
+      "centerMeters": [
+        -1302.5,
+        885.9
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:135807016:0:0",
+        "w:135807026:0:0",
+        "w:1075724578:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2229.1:-849.7",
+      "centerMeters": [
+        2229.1,
+        849.7
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1322916768:0:0",
+        "w:1322916769:0:0",
+        "w:1322916770:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1629.3:-810.1",
+      "centerMeters": [
+        -1629.3,
+        810.1
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075724569:0:0:s1",
+        "w:1075724578:0:0",
+        "w:1078939203:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2316.9:-803.6",
+      "centerMeters": [
+        2316.9,
+        803.6
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:46974735:0:0",
+        "w:226014637:1:0",
+        "w:1322916768:0:0",
+        "w:1322916771:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1891.2:-787.1",
+      "centerMeters": [
+        1891.2,
+        787.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:225928286:0:0",
+        "w:1231722472:0:0",
+        "w:1271913698:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1877.5:-786.4",
+      "centerMeters": [
+        1877.5,
+        786.4
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:43925626:0:0",
+        "w:135706147:1:0",
+        "w:225928291:0:0:s0",
+        "w:1231722472:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-642.8:-763.9",
+      "centerMeters": [
+        -642.8,
+        763.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:225928287:1:0",
+        "w:225928287:2:0",
+        "w:1022485704:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1824.2:-763.6",
+      "centerMeters": [
+        -1824.2,
+        763.6
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:71531772:2:0",
+        "w:135807017:0:0:s0",
+        "w:1078939202:0:0",
+        "w:1078939203:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-d1d28493bc6a"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1879.9:-751.9",
+      "centerMeters": [
+        1879.9,
+        751.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:135706149:0:0",
+        "w:225928291:0:0:s0",
+        "w:225928291:0:0:s1"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2346.1:-719.3",
+      "centerMeters": [
+        -2346.1,
+        719.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:71531802:1:0",
+        "w:1075724572:0:0",
+        "w:1078939196:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:221.0:-678.5",
+      "centerMeters": [
+        221,
+        678.5
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:27203773:3:0",
+        "w:74415439:0:0",
+        "w:226889560:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:231.3:-671.5",
+      "centerMeters": [
+        231.3,
+        671.5
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:68998159:0:0",
+        "w:74415435:5:0",
+        "w:132889767:0:0:s1",
+        "w:226889560:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1315.1:-667.6",
+      "centerMeters": [
+        -1315.1,
+        667.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:74444894:1:0",
+        "w:1075641769:0:0",
+        "w:1075641770:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1783.9:-617.1",
+      "centerMeters": [
+        -1783.9,
+        617.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:135807032:0:0",
+        "w:1208982791:7:0",
+        "w:1234279873:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:172.6:-604.3",
+      "centerMeters": [
+        172.6,
+        604.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:132889767:0:0:s0",
+        "w:132889767:0:0:s1",
+        "w:154631653:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1887.4:-594.3",
+      "centerMeters": [
+        1887.4,
+        594.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:135706149:7:0",
+        "w:225928291:1:0:s0",
+        "w:225928291:1:0:s1"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-741.8:-586.3",
+      "centerMeters": [
+        -741.8,
+        586.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74415456:3:0",
+        "w:225808698:0:0",
+        "w:1329381027:0:0",
+        "w:1329381028:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-c80c4c30310b"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-732.8:-583.9",
+      "centerMeters": [
+        -732.8,
+        583.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:132887661:0:0",
+        "w:225928287:0:0",
+        "w:1329381028:0:0",
+        "w:1329381031:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-c80c4c30310b"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-2606.7:-575.8",
+      "centerMeters": [
+        -2606.7,
+        575.8
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:71531802:0:0",
+        "w:441758703:1:0:s1",
+        "w:1075724579:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1903.6:-560.8",
+      "centerMeters": [
+        1903.6,
+        560.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:46974625:0:0",
+        "w:46974625:1:0",
+        "w:133096552:2:0:s1",
+        "w:133096552:3:0"
+      ],
+      "reviewedBy": [
+        "crossroad-8dea03beb5cc"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1727.8:-462.4",
+      "centerMeters": [
+        -1727.8,
+        462.4
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:71531797:3:0",
+        "w:135807021:3:0",
+        "w:1234279873:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1119.4:-452.4",
+      "centerMeters": [
+        1119.4,
+        452.4
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:68998158:0:0",
+        "w:132985308:1:0",
+        "w:133096527:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2370.8:-421.6",
+      "centerMeters": [
+        -2370.8,
+        421.6
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:166550836:0:0:s0",
+        "w:1075724579:1:0:s0",
+        "w:1075724579:1:0:s1"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2331.7:-394.6",
+      "centerMeters": [
+        -2331.7,
+        394.6
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1121644222:0:0:s0",
+        "w:1121644222:0:0:s1",
+        "w:1209006498:0:0:s2"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2317.6:-385.2",
+      "centerMeters": [
+        -2317.6,
+        385.2
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1121644222:0:0:s1",
+        "w:1121644222:0:0:s2",
+        "w:1121894531:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2312.9:-382.0",
+      "centerMeters": [
+        -2312.9,
+        382
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1121644222:0:0:s2",
+        "w:1121644222:0:0:s3",
+        "w:1121894530:0:0:s0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-27.4:-374.9",
+      "centerMeters": [
+        -27.4,
+        374.9
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:68997079:0:0",
+        "w:133097699:0:0:s0",
+        "w:133097700:0:0",
+        "w:133097701:3:0"
+      ],
+      "reviewedBy": [
+        "review-central-shared"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-2281.1:-360.8",
+      "centerMeters": [
+        -2281.1,
+        360.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1121644222:0:0:s3",
+        "w:1121644222:0:0:s4",
+        "w:1209006507:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2267.1:-351.5",
+      "centerMeters": [
+        -2267.1,
+        351.5
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1121644221:0:0",
+        "w:1121644222:0:0:s4",
+        "w:1234279875:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1876.0:-327.2",
+      "centerMeters": [
+        1876,
+        327.2
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:133096552:1:0:s1",
+        "w:133096552:1:0:s2",
+        "w:159250272:0:0:s0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1644.9:-299.8",
+      "centerMeters": [
+        -1644.9,
+        299.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:71531797:0:0:s1",
+        "w:71531797:1:0",
+        "w:1121566797:5:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1607.1:-263.9",
+      "centerMeters": [
+        -1607.1,
+        263.9
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:71531797:0:0:s0",
+        "w:1075641771:1:0",
+        "w:1075641772:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-914.0:-256.7",
+      "centerMeters": [
+        -914,
+        256.7
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:132887660:0:0",
+        "w:135806194:0:0",
+        "w:225928294:0:0",
+        "w:1227641728:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-826b397500c1"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1862.3:-248.8",
+      "centerMeters": [
+        1862.3,
+        248.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:133096552:1:0:s0",
+        "w:133096552:1:0:s1",
+        "w:159250227:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1596.1:-230.6",
+      "centerMeters": [
+        -1596.1,
+        230.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075641770:3:0",
+        "w:1075641772:1:0",
+        "w:1234279867:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1964.1:-218.5",
+      "centerMeters": [
+        -1964.1,
+        218.5
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:135807021:0:0:s0",
+        "w:135807021:0:0:s1",
+        "w:1208982804:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-164.4:-191.1",
+      "centerMeters": [
+        -164.4,
+        191.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:133097701:0:0",
+        "w:226892119:3:0",
+        "w:1225879539:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1996.1:-174.4",
+      "centerMeters": [
+        -1996.1,
+        174.4
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:1208982782:0:0",
+        "w:1234279874:0:0",
+        "w:1234279875:0:0",
+        "w:1301570651:0:0:s1"
+      ],
+      "reviewedBy": [
+        "crossroad-4bbd185ee05f"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-970.3:-171.3",
+      "centerMeters": [
+        -970.3,
+        171.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:226885855:0:0",
+        "w:226885864:0:0",
+        "w:337813516:7:0",
+        "w:1022489162:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-957.3:-163.8",
+      "centerMeters": [
+        -957.3,
+        163.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:68998436:1:0",
+        "w:225928297:0:0",
+        "w:226885864:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:825.8:-150.1",
+      "centerMeters": [
+        825.8,
+        150.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:132985313:1:0",
+        "w:132985313:2:0",
+        "w:226891184:1:0",
+        "w:226891184:2:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:833.5:-145.6",
+      "centerMeters": [
+        833.5,
+        145.6
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:132865842:8:0",
+        "w:133096517:0:0",
+        "w:226891184:2:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:805.0:-122.0",
+      "centerMeters": [
+        805,
+        122
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:132985313:2:0",
+        "w:132985313:3:0",
+        "w:225928299:2:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-199.6:-117.7",
+      "centerMeters": [
+        -199.6,
+        117.7
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:226892119:0:0",
+        "w:1225879539:0:0",
+        "w:1231937665:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1857.7:-90.8",
+      "centerMeters": [
+        1857.7,
+        90.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:39175393:0:0",
+        "w:39175393:9:0",
+        "w:39176202:0:0",
+        "w:39176208:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1816.4:-90.2",
+      "centerMeters": [
+        1816.4,
+        90.2
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:133096545:0:0",
+        "w:144443016:0:0:s0",
+        "w:226153315:0:0",
+        "w:1271913697:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1830.5:-89.6",
+      "centerMeters": [
+        1830.5,
+        89.6
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39176208:0:0",
+        "w:133096545:0:0",
+        "w:133096552:0:0:s0",
+        "w:226153316:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1847.4:-78.0",
+      "centerMeters": [
+        -1847.4,
+        78
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:71531775:0:0:s0",
+        "w:71531775:0:0:s1",
+        "w:1208982810:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1838.2:-71.9",
+      "centerMeters": [
+        -1838.2,
+        71.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:71531775:0:0:s0",
+        "w:1302032706:0:0",
+        "w:1302032709:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1831.6:-67.7",
+      "centerMeters": [
+        -1831.6,
+        67.7
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1302032706:0:0",
+        "w:1302032707:0:0",
+        "w:1302032708:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-233.5:-66.3",
+      "centerMeters": [
+        -233.5,
+        66.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:132887667:0:0",
+        "w:132889770:5:0",
+        "w:1231937664:0:0",
+        "w:1423512915:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-220.6:-62.1",
+      "centerMeters": [
+        -220.6,
+        62.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1231937664:0:0",
+        "w:1231937665:0:0",
+        "w:1423512917:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2447.4:-58.0",
+      "centerMeters": [
+        2447.4,
+        58
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:39176203:0:0",
+        "w:39176252:6:0",
+        "w:39366474:2:0:s1",
+        "w:1330117271:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1680.7:-47.5",
+      "centerMeters": [
+        -1680.7,
+        47.5
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1075724580:0:0:s0",
+        "w:1075724580:0:0:s1",
+        "w:1208982801:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1738.4:-4.7",
+      "centerMeters": [
+        -1738.4,
+        4.7
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:966921096:0:0",
+        "w:966921097:0:0",
+        "w:1234279866:0:0",
+        "w:1302032707:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-b82e29aaea0e"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1742.5:2.2",
+      "centerMeters": [
+        -1742.5,
+        -2.2
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:1075505413:0:0",
+        "w:1121644219:0:0",
+        "w:1121644221:1:0:s1",
+        "w:1234279866:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-b82e29aaea0e"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1717.9:7.2",
+      "centerMeters": [
+        -1717.9,
+        -7.2
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:71534222:1:0",
+        "w:966921096:0:0",
+        "w:1075724580:0:0:s0",
+        "w:1329145471:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-b82e29aaea0e"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1722.0:14.1",
+      "centerMeters": [
+        -1722,
+        -14.1
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:136954567:6:0",
+        "w:337813520:0:0",
+        "w:1121644219:0:0",
+        "w:1329145471:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-b82e29aaea0e"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-248.3:39.9",
+      "centerMeters": [
+        -248.3,
+        -39.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1225879540:0:0",
+        "w:1225879541:0:0",
+        "w:1225879546:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-257.9:149.2",
+      "centerMeters": [
+        -257.9,
+        -149.2
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1225879544:0:0",
+        "w:1225879546:0:0",
+        "w:1225879547:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1165.2:181.3",
+      "centerMeters": [
+        -1165.2,
+        -181.3
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:68998436:0:0",
+        "w:1022489161:3:0",
+        "w:1234279869:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1668.3:232.7",
+      "centerMeters": [
+        1668.3,
+        -232.7
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39176344:0:0:s2",
+        "w:39176345:0:0",
+        "w:226152583:0:0",
+        "w:226153316:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-fd57472cfc86"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1212.9:232.8",
+      "centerMeters": [
+        -1212.9,
+        -232.8
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:966921098:1:0",
+        "w:1234279868:0:0",
+        "w:1368697074:0:0",
+        "w:1388445558:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-a8766f98edb5"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1258.7:232.8",
+      "centerMeters": [
+        1258.7,
+        -232.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74023857:0:0",
+        "w:74023873:0:0",
+        "w:136756612:0:0",
+        "w:1363028129:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-1fea47f14eb2"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1197.4:233.0",
+      "centerMeters": [
+        -1197.4,
+        -233
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:337813519:0:0",
+        "w:966921134:0:0",
+        "w:1234279868:0:0",
+        "w:1234279869:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-a8766f98edb5"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1646.2:233.0",
+      "centerMeters": [
+        1646.2,
+        -233
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39176345:0:0",
+        "w:226152434:0:0",
+        "w:226152622:0:0",
+        "w:226153315:2:0"
+      ],
+      "reviewedBy": [
+        "crossroad-fd57472cfc86"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:285.1:235.1",
+      "centerMeters": [
+        285.1,
+        -235.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:133096536:3:0",
+        "w:226891185:4:0",
+        "w:226891186:0:0",
+        "w:1231722474:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-175c3fd10535"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1462.1:235.4",
+      "centerMeters": [
+        1462.1,
+        -235.4
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:44606544:0:0",
+        "w:154523958:0:0",
+        "w:226152434:0:0",
+        "w:226152434:1:0"
+      ],
+      "reviewedBy": [
+        "crossroad-eb528813fd7e"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-277.5:235.7",
+      "centerMeters": [
+        -277.5,
+        -235.7
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:132863829:0:0",
+        "w:132863834:0:0",
+        "w:225937832:0:0",
+        "w:1231937663:1:0"
+      ],
+      "reviewedBy": [
+        "review-yinxing-guoquan"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-261.4:235.8",
+      "centerMeters": [
+        -261.4,
+        -235.8
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:132863825:0:0",
+        "w:132863829:0:0",
+        "w:1225879547:0:0",
+        "w:1363028132:0:0"
+      ],
+      "reviewedBy": [
+        "review-yinxing-guoquan"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:450.4:235.8",
+      "centerMeters": [
+        450.4,
+        -235.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:133096536:2:0:s0",
+        "w:133096536:2:0:s1",
+        "w:225933176:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1593.5:248.3",
+      "centerMeters": [
+        1593.5,
+        -248.3
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:74023865:0:0",
+        "w:154523981:0:0",
+        "w:226664669:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1636.1:248.3",
+      "centerMeters": [
+        1636.1,
+        -248.3
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:226152622:0:0",
+        "w:226152623:0:0",
+        "w:226664666:0:0",
+        "w:226664669:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-fd57472cfc86"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1656.9:248.4",
+      "centerMeters": [
+        1656.9,
+        -248.4
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39176343:0:0",
+        "w:72145662:0:0",
+        "w:72145669:1:0",
+        "w:226664666:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-fd57472cfc86"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:284.4:249.3",
+      "centerMeters": [
+        284.4,
+        -249.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:132863822:0:0",
+        "w:226891183:0:0",
+        "w:1231722473:0:0",
+        "w:1231722474:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-175c3fd10535"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1258.7:250.3",
+      "centerMeters": [
+        1258.7,
+        -250.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74023873:0:0",
+        "w:132865841:0:0",
+        "w:225924367:4:0",
+        "w:1363028130:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-1fea47f14eb2"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-278.9:250.5",
+      "centerMeters": [
+        -278.9,
+        -250.5
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:132863832:0:0",
+        "w:132863834:0:0",
+        "w:337813521:1:0",
+        "w:1363028131:0:0"
+      ],
+      "reviewedBy": [
+        "review-yinxing-guoquan"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1225.7:251.8",
+      "centerMeters": [
+        -1225.7,
+        -251.8
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:966921129:0:0",
+        "w:1368697074:0:0",
+        "w:1388445559:0:0",
+        "w:1388445561:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-a8766f98edb5"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1210.0:251.8",
+      "centerMeters": [
+        -1210,
+        -251.8
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:966921129:0:0",
+        "w:966921134:0:0",
+        "w:1368697073:0:0",
+        "w:1388445560:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-a8766f98edb5"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-262.7:251.8",
+      "centerMeters": [
+        -262.7,
+        -251.8
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39175390:0:0:s0",
+        "w:226161205:0:0",
+        "w:1363028131:0:0",
+        "w:1363028132:0:0"
+      ],
+      "reviewedBy": [
+        "review-yinxing-guoquan"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:2136.2:254.6",
+      "centerMeters": [
+        2136.2,
+        -254.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:39176250:2:0",
+        "w:39176344:0:0:s0",
+        "w:226152432:0:0",
+        "w:226152435:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1980.9:261.8",
+      "centerMeters": [
+        1980.9,
+        -261.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:154421576:0:0",
+        "w:225949523:0:0:s2",
+        "w:225949523:0:0:s3"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2159.3:263.9",
+      "centerMeters": [
+        2159.3,
+        -263.9
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39410699:0:0",
+        "w:74023884:0:0",
+        "w:74382574:0:0",
+        "w:226152435:0:0",
+        "w:1255195535:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2142.2:269.8",
+      "centerMeters": [
+        2142.2,
+        -269.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:177403197:0:0",
+        "w:225949523:0:0:s4",
+        "w:225949523:0:0:s5"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2146.1:270.0",
+      "centerMeters": [
+        2146.1,
+        -270
+      ],
+      "majorApproaches": 5,
+      "edgeIds": [
+        "w:74023884:0:0",
+        "w:74382578:0:0",
+        "w:154557753:0:0",
+        "w:225949523:0:0:s5",
+        "w:226152432:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2159.5:271.0",
+      "centerMeters": [
+        2159.5,
+        -271
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:72352074:0:0:s1",
+        "w:74382573:0:0:s0",
+        "w:74382574:0:0",
+        "w:74382578:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2297.6:278.9",
+      "centerMeters": [
+        2297.6,
+        -278.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:71859488:3:0",
+        "w:71859488:4:0",
+        "w:74382573:1:0",
+        "w:74382573:2:0:s0"
+      ],
+      "reviewedBy": [
+        "crossroad-c15ced476946"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1605.0:295.0",
+      "centerMeters": [
+        1605,
+        -295
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:154523981:2:0",
+        "w:226152623:0:0",
+        "w:226664665:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1526.9:390.5",
+      "centerMeters": [
+        1526.9,
+        -390.5
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:74506376:0:0",
+        "w:226664665:0:0",
+        "w:1346418433:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1537.7:400.6",
+      "centerMeters": [
+        1537.7,
+        -400.6
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:27042049:1:0",
+        "w:72145669:0:0:s0",
+        "w:74506376:0:0",
+        "w:1268390901:2:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1546.4:417.0",
+      "centerMeters": [
+        1546.4,
+        -417
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:27042049:0:0",
+        "w:27042049:1:0",
+        "w:177232642:0:0:s1",
+        "w:177232642:1:0:s0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-263.6:435.5",
+      "centerMeters": [
+        -263.6,
+        -435.5
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:226155784:2:0",
+        "w:226161205:0:0",
+        "w:1231937651:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1551.5:458.1",
+      "centerMeters": [
+        1551.5,
+        -458.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:27042049:0:0",
+        "w:72145666:0:0",
+        "w:372791801:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2035.8:460.1",
+      "centerMeters": [
+        -2035.8,
+        -460.1
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075505413:0:0",
+        "w:1075641773:0:0",
+        "w:1075724568:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1323.4:500.0",
+      "centerMeters": [
+        -1323.4,
+        -500
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:337813515:7:0",
+        "w:966921100:2:0",
+        "w:966921100:3:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-263.3:506.1",
+      "centerMeters": [
+        -263.3,
+        -506.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:226155784:0:0",
+        "w:1231937651:0:0",
+        "w:1231937652:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1562.1:547.7",
+      "centerMeters": [
+        1562.1,
+        -547.7
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:31554599:0:0",
+        "w:72145666:0:0",
+        "w:72145667:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-263.1:589.1",
+      "centerMeters": [
+        -263.1,
+        -589.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:132865854:2:0",
+        "w:1231937652:0:0",
+        "w:1231937653:0:0",
+        "w:1231937654:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-d1722eaafad3"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-275.6:589.2",
+      "centerMeters": [
+        -275.6,
+        -589.2
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:132863832:0:0",
+        "w:1231722501:0:0",
+        "w:1231722502:0:0",
+        "w:1231937654:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-d1722eaafad3"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1352.9:600.4",
+      "centerMeters": [
+        -1352.9,
+        -600.4
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:71531834:5:0",
+        "w:966921136:3:0",
+        "w:966921136:4:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2038.1:603.8",
+      "centerMeters": [
+        -2038.1,
+        -603.8
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:71531831:0:0",
+        "w:71531831:1:0",
+        "w:1075505397:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-263.9:651.3",
+      "centerMeters": [
+        -263.9,
+        -651.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:132985319:0:0",
+        "w:226161184:1:0",
+        "w:1363028133:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2160.3:685.0",
+      "centerMeters": [
+        2160.3,
+        -685
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:72145663:0:0",
+        "w:72352074:0:0:s0",
+        "w:74029604:0:0:s1",
+        "w:1330708618:0:0:s1"
+      ],
+      "reviewedBy": [
+        "crossroad-752ed540f6b2"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:2149.3:685.2",
+      "centerMeters": [
+        2149.3,
+        -685.2
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:27027943:0:0:s0",
+        "w:72145663:0:0",
+        "w:72145664:0:0",
+        "w:154557753:1:0"
+      ],
+      "reviewedBy": [
+        "crossroad-752ed540f6b2"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1576.0:686.7",
+      "centerMeters": [
+        1576,
+        -686.7
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:72145667:0:0",
+        "w:72145668:1:0:s1",
+        "w:1201643767:0:0:s3"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1069.4:809.3",
+      "centerMeters": [
+        1069.4,
+        -809.3
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:176495621:0:0",
+        "w:1346418433:3:0:s0",
+        "w:1346418433:3:0:s1"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1033.7:842.3",
+      "centerMeters": [
+        1033.7,
+        -842.3
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:39181055:0:0",
+        "w:74506377:0:0:s0",
+        "w:225924365:0:0",
+        "w:1346418433:3:0:s1"
+      ],
+      "reviewedBy": [
+        "crossroad-168c5bb17b98"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1592.7:851.5",
+      "centerMeters": [
+        1592.7,
+        -851.5
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:72145668:0:0:s1",
+        "w:72145668:1:0:s0",
+        "w:177231698:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2286.3:853.9",
+      "centerMeters": [
+        -2286.3,
+        -853.9
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075641773:4:0",
+        "w:1075641776:0:0:s0",
+        "w:1075724568:2:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1043.1:857.5",
+      "centerMeters": [
+        1043.1,
+        -857.5
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:225924365:0:0",
+        "w:226663349:3:0",
+        "w:226905368:0:0",
+        "w:1268390901:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-168c5bb17b98"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:989.6:891.4",
+      "centerMeters": [
+        989.6,
+        -891.4
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:74506377:0:0:s0",
+        "w:74506377:0:0:s1",
+        "w:176495620:3:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-266.7:894.8",
+      "centerMeters": [
+        -266.7,
+        -894.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:68996421:7:0",
+        "w:226015940:1:0",
+        "w:1363028133:0:0",
+        "w:1363028134:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-b421af2908e3"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-2272.7:896.7",
+      "centerMeters": [
+        -2272.7,
+        -896.7
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:136954567:1:0",
+        "w:136954567:2:0",
+        "w:1075724575:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1330.7:914.9",
+      "centerMeters": [
+        -1330.7,
+        -914.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:225928301:0:0",
+        "w:225928301:1:0",
+        "w:1420983609:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2301.1:917.9",
+      "centerMeters": [
+        -2301.1,
+        -917.9
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075641775:0:0",
+        "w:1075641776:0:0:s1",
+        "w:1075641776:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:539.5:928.2",
+      "centerMeters": [
+        539.5,
+        -928.2
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:68996418:0:0",
+        "w:68996422:3:0",
+        "w:1231937655:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1595.8:938.0",
+      "centerMeters": [
+        1595.8,
+        -938
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:27395784:0:0",
+        "w:72145668:0:0:s0",
+        "w:74018688:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2283.2:952.9",
+      "centerMeters": [
+        -2283.2,
+        -952.9
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:136954567:0:0",
+        "w:1075641774:0:0",
+        "w:1075724575:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2305.1:959.1",
+      "centerMeters": [
+        -2305.1,
+        -959.1
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075641775:1:0",
+        "w:1075641776:1:0",
+        "w:1231722497:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1593.7:1042.6",
+      "centerMeters": [
+        1593.7,
+        -1042.6
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:27027944:0:0:s5",
+        "w:74018688:0:0",
+        "w:74018694:0:0:s0",
+        "w:154555201:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-f3e191e35a79"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:2152.2:1043.5",
+      "centerMeters": [
+        2152.2,
+        -1043.5
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:27027944:0:0:s0",
+        "w:72145664:0:0",
+        "w:74018686:0:0",
+        "w:74018690:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-ad1ec05ccbb3"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:2162.5:1043.7",
+      "centerMeters": [
+        2162.5,
+        -1043.7
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:74018690:0:0",
+        "w:74029604:0:0:s0",
+        "w:74029610:0:0:s0",
+        "w:74505146:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-ad1ec05ccbb3"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1145.5:1054.1",
+      "centerMeters": [
+        1145.5,
+        -1054.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:27395784:5:0",
+        "w:74024030:0:0:s0",
+        "w:74024038:0:0",
+        "w:226825437:0:0:s1"
+      ],
+      "reviewedBy": [
+        "crossroad-2df933fadfbd"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1333.6:1062.9",
+      "centerMeters": [
+        1333.6,
+        -1062.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:154555201:1:0",
+        "w:154555201:2:0",
+        "w:1323330381:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-279.0:1131.9",
+      "centerMeters": [
+        -279,
+        -1131.9
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:132985316:5:0",
+        "w:1231722500:0:0",
+        "w:1231937658:0:0",
+        "w:1231937662:0:0"
+      ],
+      "reviewedBy": [
+        "review-yingao-guoquan"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-543.1:1135.0",
+      "centerMeters": [
+        -543.1,
+        -1135
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:135807027:0:0",
+        "w:1231722490:0:0",
+        "w:1231937662:0:0",
+        "w:1363028136:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-796.1:1142.9",
+      "centerMeters": [
+        -796.1,
+        -1142.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:413897979:0:0",
+        "w:1231722499:0:0:s0",
+        "w:1363028135:0:0",
+        "w:1363028136:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-77ce98cf45e7"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1194.4:1146.0",
+      "centerMeters": [
+        1194.4,
+        -1146
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39115230:0:0:s1",
+        "w:226825437:0:0:s0",
+        "w:240014351:0:0:s0",
+        "w:240014352:1:0"
+      ],
+      "reviewedBy": [
+        "crossroad-cb69cd8210dd"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-263.5:1150.1",
+      "centerMeters": [
+        -263.5,
+        -1150.1
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:226015940:0:0",
+        "w:413897980:0:0",
+        "w:1231722487:0:0",
+        "w:1231937659:0:0"
+      ],
+      "reviewedBy": [
+        "review-yingao-guoquan"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-279.4:1150.7",
+      "centerMeters": [
+        -279.4,
+        -1150.7
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:132985298:0:0",
+        "w:1231722488:1:0",
+        "w:1231937658:0:0",
+        "w:1231937659:0:0"
+      ],
+      "reviewedBy": [
+        "review-yingao-guoquan"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1315.0:1151.4",
+      "centerMeters": [
+        -1315,
+        -1151.4
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:966921102:0:0",
+        "w:1170983553:0:0",
+        "w:1271904997:0:0",
+        "w:1271904998:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-5b3792cee421"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-537.4:1154.4",
+      "centerMeters": [
+        -537.4,
+        -1154.4
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:905260345:1:0",
+        "w:1231722488:0:0",
+        "w:1231722489:0:0",
+        "w:1231722490:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1102.9:1164.7",
+      "centerMeters": [
+        -1102.9,
+        -1164.7
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:135807025:0:0",
+        "w:905260349:0:0",
+        "w:1231722489:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1322.0:1167.3",
+      "centerMeters": [
+        -1322,
+        -1167.3
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:136796355:1:0",
+        "w:136796357:0:0",
+        "w:1234279871:0:0",
+        "w:1368697069:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-5b3792cee421"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1314.6:1167.5",
+      "centerMeters": [
+        -1314.6,
+        -1167.5
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:1170983551:0:0",
+        "w:1234279870:0:0",
+        "w:1234279871:0:0",
+        "w:1271904998:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-5b3792cee421"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1744.4:1175.4",
+      "centerMeters": [
+        -1744.4,
+        -1175.4
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1430584487:2:0",
+        "w:1430584488:0:0",
+        "w:1430584491:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2282.3:1178.1",
+      "centerMeters": [
+        -2282.3,
+        -1178.1
+      ],
+      "majorApproaches": 6,
+      "edgeIds": [
+        "w:68741889:2:0",
+        "w:435742325:0:0",
+        "w:1075505398:0:0",
+        "w:1075641774:0:0",
+        "w:1271904996:0:0",
+        "w:1430584493:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2308.1:1178.5",
+      "centerMeters": [
+        -2308.1,
+        -1178.5
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39611545:0:0:s0",
+        "w:1231722497:0:0",
+        "w:1430584493:0:0",
+        "w:1430584494:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1745.4:1184.0",
+      "centerMeters": [
+        -1745.4,
+        -1184
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39657517:0:0",
+        "w:136796355:0:0",
+        "w:1430584488:0:0",
+        "w:1430584489:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2307.9:1186.9",
+      "centerMeters": [
+        -2307.9,
+        -1186.9
+      ],
+      "majorApproaches": 5,
+      "edgeIds": [
+        "w:71531845:0:0",
+        "w:1075505398:0:0",
+        "w:1231722498:0:0",
+        "w:1430584492:0:0",
+        "w:1430584494:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2281.9:1187.7",
+      "centerMeters": [
+        -2281.9,
+        -1187.7
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39611541:0:0",
+        "w:1075505399:3:0",
+        "w:1231722498:0:0",
+        "w:1271904996:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:802.6:1211.6",
+      "centerMeters": [
+        802.6,
+        -1211.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:27395786:0:0",
+        "w:74406180:0:0",
+        "w:226472192:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:183.5:1230.7",
+      "centerMeters": [
+        183.5,
+        -1230.7
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:132865840:6:0",
+        "w:132865840:7:0",
+        "w:132985316:0:0",
+        "w:132985316:1:0"
+      ],
+      "reviewedBy": [
+        "review-south-central"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:179.3:1256.8",
+      "centerMeters": [
+        179.3,
+        -1256.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:68996422:0:0",
+        "w:132865840:7:0",
+        "w:549935555:0:0"
+      ],
+      "reviewedBy": [
+        "review-south-central"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1252.6:1259.3",
+      "centerMeters": [
+        1252.6,
+        -1259.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:39115230:0:0:s0",
+        "w:39115230:0:0:s1",
+        "w:226885860:3:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1320.4:1278.4",
+      "centerMeters": [
+        -1320.4,
+        -1278.4
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:136796357:0:0",
+        "w:136796357:1:0",
+        "w:1418299673:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:905.1:1312.7",
+      "centerMeters": [
+        905.1,
+        -1312.7
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:27395786:0:0",
+        "w:226472189:0:0",
+        "w:226791738:0:0:s1"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2310.7:1337.6",
+      "centerMeters": [
+        -2310.7,
+        -1337.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:71531845:0:0",
+        "w:1075641777:0:0",
+        "w:1075641778:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2282.8:1363.5",
+      "centerMeters": [
+        -2282.8,
+        -1363.5
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075505399:2:0",
+        "w:1075505399:3:0",
+        "w:1075641786:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:973.9:1386.1",
+      "centerMeters": [
+        973.9,
+        -1386.1
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:226472189:0:0",
+        "w:226472191:0:0",
+        "w:240014351:0:0:s3",
+        "w:240014351:1:0:s0"
+      ],
+      "reviewedBy": [
+        "review-southeast-outer-2"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1576.6:1421.5",
+      "centerMeters": [
+        1576.6,
+        -1421.5
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:74018694:0:0:s7",
+        "w:74023981:3:0",
+        "w:74450564:0:0",
+        "w:74450569:0:0"
+      ],
+      "reviewedBy": [
+        "review-east-offset-crossroad"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1590.0:1421.5",
+      "centerMeters": [
+        1590,
+        -1421.5
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74450564:0:0",
+        "w:159104985:0:0:s0",
+        "w:1116719052:0:0"
+      ],
+      "reviewedBy": [
+        "review-east-offset-alley"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:2152.6:1422.0",
+      "centerMeters": [
+        2152.6,
+        -1422
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:74018686:0:0",
+        "w:74450565:0:0",
+        "w:74450566:0:0",
+        "w:159104985:0:0:s4"
+      ],
+      "reviewedBy": [
+        "crossroad-231946c5d4b2"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:2160.9:1422.9",
+      "centerMeters": [
+        2160.9,
+        -1422.9
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39175408:0:0:s0",
+        "w:74450565:0:0",
+        "w:74505146:0:0",
+        "w:226012377:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-231946c5d4b2"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1350.5:1449.9",
+      "centerMeters": [
+        1350.5,
+        -1449.9
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:39115230:0:0:s0",
+        "w:74023981:0:0",
+        "w:144441110:3:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:556.3:1490.0",
+      "centerMeters": [
+        556.3,
+        -1490
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:68996111:0:0",
+        "w:226663349:0:0:s0",
+        "w:226663350:0:0",
+        "w:966921112:1:0"
+      ],
+      "reviewedBy": [
+        "review-southeast-outer"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:583.5:1511.1",
+      "centerMeters": [
+        583.5,
+        -1511.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:226000135:1:0",
+        "w:226000135:2:0",
+        "w:966921112:0:0",
+        "w:966921112:1:0"
+      ],
+      "reviewedBy": [
+        "crossroad-e634c9b6b647"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1573.3:1525.4",
+      "centerMeters": [
+        1573.3,
+        -1525.4
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74450569:0:0",
+        "w:159104987:0:0",
+        "w:159104991:0:0:s0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2309.2:1556.2",
+      "centerMeters": [
+        -2309.2,
+        -1556.2
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1075641778:2:0",
+        "w:1075641781:0:0",
+        "w:1231722496:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:452.1:1628.5",
+      "centerMeters": [
+        452.1,
+        -1628.5
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:176494092:1:0",
+        "w:226663350:0:0",
+        "w:226663354:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:783.0:1643.4",
+      "centerMeters": [
+        783,
+        -1643.4
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:240014351:1:0:s1",
+        "w:966921112:0:0",
+        "w:966921113:0:0",
+        "w:1042001644:2:0"
+      ],
+      "reviewedBy": [
+        "crossroad-cccdd957327f"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-254.4:1644.4",
+      "centerMeters": [
+        -254.4,
+        -1644.4
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:27396067:0:0",
+        "w:154634720:0:0",
+        "w:226662944:3:0",
+        "w:1268390904:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-c54da2171cdd"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-270.2:1646.3",
+      "centerMeters": [
+        -270.2,
+        -1646.3
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:27396067:0:0",
+        "w:70937306:0:0",
+        "w:226015952:0:0",
+        "w:1231937657:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-c54da2171cdd"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:774.7:1656.0",
+      "centerMeters": [
+        774.7,
+        -1656
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:966921110:0:0",
+        "w:966921111:0:0",
+        "w:966921113:0:0",
+        "w:1042001643:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-cccdd957327f"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1804.1:1677.1",
+      "centerMeters": [
+        -1804.1,
+        -1677.1
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:39657517:4:0",
+        "w:136796359:0:0:s0",
+        "w:1234279948:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:62.1:1681.9",
+      "centerMeters": [
+        62.1,
+        -1681.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:154634720:1:0",
+        "w:549935557:4:0",
+        "w:1231937656:0:0",
+        "w:1324895008:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-ac373170b931"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1617.1:1697.3",
+      "centerMeters": [
+        -1617.1,
+        -1697.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1234279947:0:0",
+        "w:1234279948:0:0",
+        "w:1234279949:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1552.8:1703.8",
+      "centerMeters": [
+        -1552.8,
+        -1703.8
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:39791102:0:0",
+        "w:833383684:0:0",
+        "w:1234279947:0:0",
+        "w:1234279950:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-92f0130a8289"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-241.5:1717.8",
+      "centerMeters": [
+        -241.5,
+        -1717.8
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:226662944:2:0",
+        "w:226662944:3:0",
+        "w:1022305924:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-748.5:1717.9",
+      "centerMeters": [
+        -748.5,
+        -1717.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:154634698:0:0",
+        "w:966921118:0:0",
+        "w:966921122:0:0",
+        "w:1170983598:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-1e06d97822a6"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-253.6:1728.3",
+      "centerMeters": [
+        -253.6,
+        -1728.3
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:226015952:0:0",
+        "w:226015952:1:0",
+        "w:1022305929:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1298.0:1733.1",
+      "centerMeters": [
+        -1298,
+        -1733.1
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:39791102:0:0",
+        "w:136796357:1:0",
+        "w:1234279930:0:0",
+        "w:1234279931:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1285.1:1734.1",
+      "centerMeters": [
+        -1285.1,
+        -1734.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1234279870:0:0",
+        "w:1234279930:0:0",
+        "w:1271904999:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1133.2:1748.0",
+      "centerMeters": [
+        -1133.2,
+        -1748
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:154634698:2:0",
+        "w:905260353:3:0",
+        "w:966921116:0:0",
+        "w:966921117:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-97c57d291f83"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1348.5:1761.4",
+      "centerMeters": [
+        1348.5,
+        -1761.4
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:226472191:0:0",
+        "w:966921108:3:0",
+        "w:966921109:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1376.7:1785.9",
+      "centerMeters": [
+        1376.7,
+        -1785.9
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:27395649:0:0",
+        "w:46974590:0:0",
+        "w:966921109:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1243.0:1795.6",
+      "centerMeters": [
+        1243,
+        -1795.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:68996115:2:0",
+        "w:966921108:0:0",
+        "w:1042001645:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:663.0:1797.0",
+      "centerMeters": [
+        663,
+        -1797
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:27496109:3:0",
+        "w:27496109:4:0",
+        "w:966921111:0:0",
+        "w:966921111:1:0"
+      ],
+      "reviewedBy": [
+        "crossroad-5468bb7a0343"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1028.1:1800.5",
+      "centerMeters": [
+        1028.1,
+        -1800.5
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:74023996:0:0:s0",
+        "w:966921107:0:0",
+        "w:1042001644:0:0",
+        "w:1042001645:1:0"
+      ],
+      "reviewedBy": [
+        "crossroad-dba1420b0dc9"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1558.3:1807.7",
+      "centerMeters": [
+        1558.3,
+        -1807.7
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:74505149:0:0:s4",
+        "w:74507316:0:0",
+        "w:159104991:0:0:s3"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1459.3:1808.3",
+      "centerMeters": [
+        1459.3,
+        -1808.3
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:27395789:0:0",
+        "w:74507316:0:0",
+        "w:177320630:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2161.0:1809.4",
+      "centerMeters": [
+        2161,
+        -1809.4
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39175409:0:0:s3",
+        "w:74450567:0:0",
+        "w:74450568:0:0",
+        "w:136796520:0:0:s2"
+      ],
+      "reviewedBy": [
+        "crossroad-aa48ad6654f0"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:2151.8:1809.5",
+      "centerMeters": [
+        2151.8,
+        -1809.5
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:74450568:0:0",
+        "w:74505149:0:0:s0",
+        "w:74505150:0:0",
+        "w:226012378:0:0:s1"
+      ],
+      "reviewedBy": [
+        "crossroad-aa48ad6654f0"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-2311.6:1813.2",
+      "centerMeters": [
+        -2311.6,
+        -1813.2
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1075641781:1:0",
+        "w:1231722493:0:0",
+        "w:1231722494:0:0",
+        "w:1231722495:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-d57eaf8fe2a8"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-2318.6:1813.4",
+      "centerMeters": [
+        -2318.6,
+        -1813.4
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1075641782:0:0",
+        "w:1231722495:0:0",
+        "w:1231722496:1:0",
+        "w:1329381020:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-d57eaf8fe2a8"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1018.8:1813.7",
+      "centerMeters": [
+        1018.8,
+        -1813.7
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:68996115:0:0",
+        "w:966921106:2:0",
+        "w:966921107:0:0",
+        "w:1042001643:1:0"
+      ],
+      "reviewedBy": [
+        "crossroad-dba1420b0dc9"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:302.0:1815.8",
+      "centerMeters": [
+        302,
+        -1815.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:132865249:0:0",
+        "w:226663354:0:0",
+        "w:1268390902:2:0:s2",
+        "w:1268390903:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-e189d016a561"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-2269.8:1828.4",
+      "centerMeters": [
+        -2269.8,
+        -1828.4
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:49204106:0:0",
+        "w:49204106:1:0",
+        "w:1075505399:0:0",
+        "w:1075505399:1:0"
+      ],
+      "reviewedBy": [
+        "crossroad-f7458615b64f"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-197.1:1898.3",
+      "centerMeters": [
+        -197.1,
+        -1898.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:226015952:5:0",
+        "w:226015952:6:0",
+        "w:553665502:0:0",
+        "w:1324895009:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-c1d32d31b9ef"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:581.6:1924.5",
+      "centerMeters": [
+        581.6,
+        -1924.5
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74023958:0:0",
+        "w:74024003:0:0",
+        "w:132865249:2:0",
+        "w:966921111:1:0"
+      ],
+      "reviewedBy": [
+        "crossroad-b34c2deb3de2"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:948.8:1962.4",
+      "centerMeters": [
+        948.8,
+        -1962.4
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:27042110:0:0",
+        "w:74024003:2:0",
+        "w:966921106:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-139.7:1973.5",
+      "centerMeters": [
+        -139.7,
+        -1973.5
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:226662944:0:0",
+        "w:226662945:0:0",
+        "w:226662946:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-125.0:2000.8",
+      "centerMeters": [
+        -125,
+        -2000.8
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:136758549:0:0",
+        "w:177384817:8:0",
+        "w:226662945:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1085.1:2030.7",
+      "centerMeters": [
+        -1085.1,
+        -2030.7
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:905260351:0:0",
+        "w:905260351:1:0",
+        "w:966921121:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1383.3:2053.2",
+      "centerMeters": [
+        1383.3,
+        -2053.2
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:27496088:0:0",
+        "w:177320634:3:0:s1",
+        "w:177320634:4:0:s0",
+        "w:240014353:0:0:s0"
+      ],
+      "reviewedBy": [
+        "crossroad-7a438e7c429e"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-61.8:2121.1",
+      "centerMeters": [
+        -61.8,
+        -2121.1
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:70794570:3:0",
+        "w:136758549:0:0",
+        "w:1268390905:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:48.8:2145.2",
+      "centerMeters": [
+        48.8,
+        -2145.2
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:47104866:1:0",
+        "w:1268390902:0:0",
+        "w:1268390902:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:21.8:2151.0",
+      "centerMeters": [
+        21.8,
+        -2151
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:70794570:0:0",
+        "w:226663355:0:0",
+        "w:226663356:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:34.1:2157.2",
+      "centerMeters": [
+        34.1,
+        -2157.2
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:136758548:0:0",
+        "w:176494102:0:0",
+        "w:1268390902:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2156.2:2163.7",
+      "centerMeters": [
+        2156.2,
+        -2163.7
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:27395793:0:0",
+        "w:136796518:0:0:s0",
+        "w:136796520:0:0:s0",
+        "w:226012375:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2305.0:2163.8",
+      "centerMeters": [
+        -2305,
+        -2163.8
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:966921127:0:0",
+        "w:966921128:0:0",
+        "w:1075641779:0:0",
+        "w:1231722493:1:0"
+      ],
+      "reviewedBy": [
+        "crossroad-75772ead6623"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:2145.1:2164.1",
+      "centerMeters": [
+        2145.1,
+        -2164.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:27395793:0:0",
+        "w:136796519:0:0",
+        "w:226012374:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2324.6:2164.7",
+      "centerMeters": [
+        -2324.6,
+        -2164.7
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:1075641779:0:0",
+        "w:1075641780:0:0",
+        "w:1075641782:3:0",
+        "w:1329381021:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-75772ead6623"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:559.3:2166.3",
+      "centerMeters": [
+        559.3,
+        -2166.3
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:27042089:0:0:s0",
+        "w:74023958:2:0",
+        "w:983954147:0:0",
+        "w:984589839:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-501e248fa457"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:912.0:2166.3",
+      "centerMeters": [
+        912,
+        -2166.3
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:27042089:0:0:s1",
+        "w:27042093:0:0",
+        "w:27042093:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:378.8:2168.2",
+      "centerMeters": [
+        378.8,
+        -2168.2
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74446205:0:0",
+        "w:74446206:0:0",
+        "w:984589840:0:0",
+        "w:1123309043:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-866f58cc3841"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-2283.4:2171.9",
+      "centerMeters": [
+        -2283.4,
+        -2171.9
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:1075641786:0:0:s0",
+        "w:1329381022:0:0",
+        "w:1329381023:1:0",
+        "w:1329381032:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-2eb33a6e3cef"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1103.4:2171.9",
+      "centerMeters": [
+        -1103.4,
+        -2171.9
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:905260351:1:0",
+        "w:905260351:2:0",
+        "w:966921115:0:0",
+        "w:966921115:1:0"
+      ],
+      "reviewedBy": [
+        "crossroad-4d8adda953ec"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:63.7:2172.2",
+      "centerMeters": [
+        63.7,
+        -2172.2
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:47104866:0:0:s0",
+        "w:136758545:0:0",
+        "w:176494096:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-424.6:2173.8",
+      "centerMeters": [
+        -424.6,
+        -2173.8
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:166734689:0:0:s0",
+        "w:770242707:0:0",
+        "w:1231722491:0:0",
+        "w:1231722492:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-b01c9320e723"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1275.8:2174.1",
+      "centerMeters": [
+        -1275.8,
+        -2174.1
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:136796363:0:0:s0",
+        "w:1005459034:0:0",
+        "w:1017121234:0:0",
+        "w:1234279931:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-7c1e61478452"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1263.7:2174.1",
+      "centerMeters": [
+        -1263.7,
+        -2174.1
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:1005459034:0:0",
+        "w:1123309045:0:0",
+        "w:1123309046:0:0",
+        "w:1271904999:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-7c1e61478452"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-678.4:2174.4",
+      "centerMeters": [
+        -678.4,
+        -2174.4
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:966921114:0:0",
+        "w:966921115:1:0",
+        "w:966921120:0:0",
+        "w:1231722492:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-5630ae5d3859"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:17.3:2174.8",
+      "centerMeters": [
+        17.3,
+        -2174.8
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:47104865:0:0",
+        "w:176494096:0:0",
+        "w:176494102:0:0",
+        "w:176494103:3:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-1999.7:2175.1",
+      "centerMeters": [
+        -1999.7,
+        -2175.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:136796353:0:0:s0",
+        "w:136796353:0:0:s1",
+        "w:981597588:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2269.6:2175.5",
+      "centerMeters": [
+        -2269.6,
+        -2175.5
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:68741886:0:0",
+        "w:1075505399:0:0",
+        "w:1329381032:0:0",
+        "w:1329381033:1:0"
+      ],
+      "reviewedBy": [
+        "crossroad-2eb33a6e3cef"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1849.3:2176.9",
+      "centerMeters": [
+        -1849.3,
+        -2176.9
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39791065:0:0:s2",
+        "w:136796353:0:0:s0",
+        "w:136796359:2:0",
+        "w:136796366:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-aaf572ef803f"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:-1380.1:2177.3",
+      "centerMeters": [
+        -1380.1,
+        -2177.3
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:39791065:0:0:s0",
+        "w:39791065:0:0:s1",
+        "w:1417908670:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2.1:2183.4",
+      "centerMeters": [
+        -2.1,
+        -2183.4
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:47104865:0:0",
+        "w:136758547:0:0",
+        "w:136758548:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-39.3:2191.6",
+      "centerMeters": [
+        -39.3,
+        -2191.6
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:144579277:0:0",
+        "w:226015952:7:0",
+        "w:226663355:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-25.1:2197.1",
+      "centerMeters": [
+        -25.1,
+        -2197.1
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39175391:0:0",
+        "w:136758547:0:0",
+        "w:176494094:0:0",
+        "w:1268390905:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-33.8:2202.8",
+      "centerMeters": [
+        -33.8,
+        -2202.8
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:39175391:0:0",
+        "w:144579277:0:0",
+        "w:225926025:0:0:s0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1.7:2237.6",
+      "centerMeters": [
+        1.7,
+        -2237.6
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:166718923:0:0",
+        "w:176494103:0:0:s0",
+        "w:176494103:0:0:s1"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:3.8:2244.5",
+      "centerMeters": [
+        3.8,
+        -2244.5
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:74023922:1:0",
+        "w:176494094:0:0",
+        "w:176494103:0:0:s0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-433.6:2285.7",
+      "centerMeters": [
+        -433.6,
+        -2285.7
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:553665494:0:0:s4",
+        "w:905260343:2:0:s0",
+        "w:905260343:2:0:s1"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:560.2:2288.1",
+      "centerMeters": [
+        560.2,
+        -2288.1
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:27396069:0:0:s0",
+        "w:27496026:0:0:s0",
+        "w:984589838:0:0",
+        "w:984589839:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-da6d16c33edd"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:2153.9:2368.7",
+      "centerMeters": [
+        2153.9,
+        -2368.7
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:72352073:0:0",
+        "w:72352075:0:0",
+        "w:226012376:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:2143.4:2369.1",
+      "centerMeters": [
+        2143.4,
+        -2369.1
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:72352072:0:0",
+        "w:72352073:0:0",
+        "w:74507318:0:0:s4",
+        "w:226012379:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:71.7:2369.9",
+      "centerMeters": [
+        71.7,
+        -2369.9
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74023922:0:0",
+        "w:74023922:1:0",
+        "w:553665492:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:1263.9:2372.7",
+      "centerMeters": [
+        1263.9,
+        -2372.7
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:27395791:0:0",
+        "w:27396062:0:0",
+        "w:144434638:0:0",
+        "w:144436514:0:0"
+      ],
+      "reviewedBy": [
+        "crossroad-db8fcf0c02d3"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:1386.9:2373.6",
+      "centerMeters": [
+        1386.9,
+        -2373.6
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:39408408:1:0",
+        "w:74507318:0:0:s0",
+        "w:144436514:0:0",
+        "w:177320634:4:0:s1"
+      ],
+      "reviewedBy": [
+        "crossroad-a2811c04467a"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:948.8:2375.7",
+      "centerMeters": [
+        948.8,
+        -2375.7
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:27042081:0:0:s1",
+        "w:27203745:0:0",
+        "w:27396062:0:0",
+        "w:72352242:0:0:s0"
+      ],
+      "reviewedBy": [
+        "crossroad-5a3da828db62"
+      ],
+      "status": "reviewed_unverified"
+    },
+    {
+      "rawNodeId": "p:119.1:2471.2",
+      "centerMeters": [
+        119.1,
+        -2471.2
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1022305923:0:0",
+        "w:1022305930:0:0",
+        "w:1022305935:1:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:109.8:2472.1",
+      "centerMeters": [
+        109.8,
+        -2472.1
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1022305932:0:0",
+        "w:1022305933:2:0",
+        "w:1022305934:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-2271.6:2532.2",
+      "centerMeters": [
+        -2271.6,
+        -2532.2
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:1151664236:0:0",
+        "w:1329381023:0:0",
+        "w:1329381033:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-55.3:2554.0",
+      "centerMeters": [
+        -55.3,
+        -2554
+      ],
+      "majorApproaches": 2,
+      "edgeIds": [
+        "w:74023915:0:0",
+        "w:553665497:0:0",
+        "w:553665499:0:0:s0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-619.6:2555.1",
+      "centerMeters": [
+        -619.6,
+        -2555.1
+      ],
+      "majorApproaches": 5,
+      "edgeIds": [
+        "w:136362661:0:0",
+        "w:966921114:0:0",
+        "w:1231937661:0:0",
+        "w:1256479020:0:0",
+        "w:1423491931:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:-433.9:2555.1",
+      "centerMeters": [
+        -433.9,
+        -2555.1
+      ],
+      "majorApproaches": 3,
+      "edgeIds": [
+        "w:553665499:1:0",
+        "w:905260343:2:0:s1",
+        "w:1231937661:0:0"
+      ],
+      "reviewedBy": [],
+      "status": "needs_review"
+    },
+    {
+      "rawNodeId": "p:148.2:2556.6",
+      "centerMeters": [
+        148.2,
+        -2556.6
+      ],
+      "majorApproaches": 4,
+      "edgeIds": [
+        "w:74023915:0:0",
+        "w:225926025:0:0:s2",
+        "w:1076772170:0:0",
+        "w:1272508511:0:0"
+      ],
+      "reviewedBy": [
+        "review-south-edge-three-arm"
+      ],
+      "status": "reviewed_unverified"
+    }
+  ],
+  "limitations": [
+    "Bottom map does not verify legal pedestrian crossings.",
+    "Raw graph lacks bridge/layer/access tags; unresolved junctions are NOT auto-joined.",
+    "Disconnected components and dead ends can be legitimate, not necessarily errors.",
+    "Quick-mode source graph remains unchanged; repairs apply to C++ expert-mode fixture."
+  ]
+}

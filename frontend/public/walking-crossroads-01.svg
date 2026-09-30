@@ -1,0 +1,684 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1380" viewBox="0 0 1600 1380" style="display:block;max-width:100%;height:auto" role="img" aria-labelledby="title desc">
+<title id="title">十字路口专项校对 · 第 1 页 · 合成数据</title>
+<desc id="desc">仅显示道路和节点；蓝色为转弯，橙色虚线为过街。所有推定过街仍待核实。</desc>
+<rect width="100%" height="100%" fill="#fbfdfc"/>
+<style>text{font-family:"Microsoft YaHei",sans-serif;fill:#173c3a}.road{fill:none;stroke:#75a5a0;stroke-width:.65;stroke-linecap:round}.shared{stroke:#245c52}.turn{stroke:#009cd4;stroke-width:1.3}.cross{stroke:#d1764e;stroke-width:1.4;stroke-dasharray:2 1}.node{fill:#54746e}.port{fill:#fff;stroke:#173c3a;stroke-width:.4}.center{fill:none;stroke:#d1764e;stroke-width:.7;stroke-dasharray:2 2}</style>
+<text x="25" y="40" font-size="27" font-weight="700">十字路口专项校对 · 第 1 页</text>
+<text x="25" y="74" font-size="17">蓝线：同角转弯　橙色虚线：过街（等待另计）　空心点：独立端口</text>
+<text x="25" y="101" font-size="15">“规则通过”不等于现实通行已核实；不得据此确认横道、隔离带或闸门。</text>
+<text x="20" y="140" font-size="15" font-weight="700">001 · crossroad-6258f1ad0044</text>
+<text x="20" y="164" font-size="14">显式路口 · 规则通过 · 待核实</text>
+<text x="20" y="186" font-size="12">中心 -1213.7, 2294.9 · 1 原节点 / 4 方向</text>
+<svg x="20" y="196" width="360" height="335" viewBox="-1278.7 -2359.9 130 130">
+<path class="road" d="M-1152.97 -2196.76 L-1183.26 -2242.7"><title>w:27395635:6:0:left | sidewalk</title></path>
+<path class="road" d="M-1148.23 -2200.44 L-1177.94 -2245.5"><title>w:27395635:6:0:right | sidewalk</title></path>
+<path class="road" d="M-1183.26 -2242.7 L-1210.38 -2309.47"><title>w:27395635:7:0:left | sidewalk</title></path>
+<path class="road" d="M-1177.94 -2245.5 L-1204.82 -2311.73"><title>w:27395635:7:0:right | sidewalk</title></path>
+<path class="road" d="M-1300.21 -2263.89 L-1225.96 -2293.27"><title>w:39611710:2:0:s1:left | sidewalk</title></path>
+<path class="road" d="M-1297.99 -2258.31 L-1223.75 -2287.7"><title>w:39611710:2:0:s1:right | sidewalk</title></path>
+<path class="road" d="M-1153.68 -2401.32 L-1254.38 -2317.52"><title>w:422945046:3:0:left | sidewalk</title></path>
+<path class="road" d="M-1157.32 -2406.09 L-1258.02 -2322.28"><title>w:422945046:3:0:right | sidewalk</title></path>
+<path class="road" d="M-1254.38 -2317.52 L-1305.41 -2281.65"><title>w:422945046:4:0:left | sidewalk</title></path>
+<path class="road" d="M-1258.02 -2322.28 L-1308.59 -2286.75"><title>w:422945046:4:0:right | sidewalk</title></path>
+<path class="road" d="M-1206.44 -2307.83 L-1269.33 -2281.4"><title>w:422945047:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1208.76 -2313.37 L-1271.47 -2287"><title>w:422945047:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1269.33 -2281.4 L-1394.35 -2237.99"><title>w:422945047:1:0:left | sidewalk</title></path>
+<path class="road" d="M-1271.47 -2287 L-1396.45 -2243.61"><title>w:422945047:1:0:right | sidewalk</title></path>
+<path class="road" d="M-1206.37 -2284.93 L-1190.99 -2247.39"><title>w:422945048:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1211.92 -2282.66 L-1196.41 -2244.81"><title>w:422945048:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1190.99 -2247.39 L-1175.87 -2219.82"><title>w:422945048:1:0:left | sidewalk</title></path>
+<path class="road" d="M-1196.41 -2244.81 L-1180.93 -2216.58"><title>w:422945048:1:0:right | sidewalk</title></path>
+<path class="road" d="M-1150.12 -2190.83 L-1180.03 -2238.46"><title>w:441742688:5:0:left | sidewalk</title></path>
+<path class="road" d="M-1145.28 -2194.37 L-1174.77 -2241.34"><title>w:441742688:5:0:right | sidewalk</title></path>
+<path class="road" d="M-1180.03 -2238.46 L-1191.95 -2263.96"><title>w:441742688:6:0:left | sidewalk</title></path>
+<path class="road" d="M-1174.77 -2241.34 L-1186.25 -2265.84"><title>w:441742688:6:0:right | sidewalk</title></path>
+<path class="road" d="M-1191.95 -2263.96 L-1195.39 -2281.01"><title>w:441742688:7:0:left | sidewalk</title></path>
+<path class="road" d="M-1186.25 -2265.84 L-1189.41 -2281.39"><title>w:441742688:7:0:right | sidewalk</title></path>
+<path class="road" d="M-1195.39 -2281.01 L-1194.06 -2300.11"><title>w:441742688:8:0:left | sidewalk</title></path>
+<path class="road" d="M-1189.41 -2281.39 L-1188.14 -2299.09"><title>w:441742688:8:0:right | sidewalk</title></path>
+<path class="road" d="M-1194.06 -2300.11 L-1188.61 -2319.76"><title>w:441742688:9:0:left | sidewalk</title></path>
+<path class="road" d="M-1188.14 -2299.09 L-1182.99 -2317.64"><title>w:441742688:9:0:right | sidewalk</title></path>
+<path class="road" d="M-1188.61 -2319.76 L-1174.12 -2349.62"><title>w:441742688:10:0:left | sidewalk</title></path>
+<path class="road" d="M-1182.99 -2317.64 L-1169.08 -2346.38"><title>w:441742688:10:0:right | sidewalk</title></path>
+<path class="road" d="M-1174.12 -2349.62 L-1143 -2387.34"><title>w:441742688:11:0:left | sidewalk</title></path>
+<path class="road" d="M-1169.08 -2346.38 L-1138.8 -2383.06"><title>w:441742688:11:0:right | sidewalk</title></path>
+<path class="road" d="M-1202.85 -2366.43 L-1215.03 -2339.91"><title>w:441742690:4:0:left | sidewalk</title></path>
+<path class="road" d="M-1207.95 -2369.57 L-1220.77 -2341.69"><title>w:441742690:4:0:right | sidewalk</title></path>
+<path class="road" d="M-1215.03 -2339.91 L-1220.2 -2309.58"><title>w:441742690:5:0:left | sidewalk</title></path>
+<path class="road" d="M-1220.77 -2341.69 L-1226.2 -2309.82"><title>w:441742690:5:0:right | sidewalk</title></path>
+<path class="road" d="M-1220.2 -2309.58 L-1218.08 -2286.17"><title>w:441742690:6:0:left | sidewalk</title></path>
+<path class="road" d="M-1226.2 -2309.82 L-1223.92 -2284.83"><title>w:441742690:6:0:right | sidewalk</title></path>
+<path class="road" d="M-1218.08 -2286.17 L-1199.39 -2236.56"><title>w:441742690:7:0:left | sidewalk</title></path>
+<path class="road" d="M-1223.92 -2284.83 L-1205.01 -2234.44"><title>w:441742690:7:0:right | sidewalk</title></path>
+<path class="road" d="M-1199.39 -2236.56 L-1169.47 -2187.26"><title>w:441742691:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1205.01 -2234.44 L-1174.33 -2183.74"><title>w:441742691:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1286.04 -2287.18 L-1258.73 -2304.65"><title>w:441742693:2:0:left | sidewalk</title></path>
+<path class="road" d="M-1282.96 -2282.03 L-1255.27 -2299.75"><title>w:441742693:2:0:right | sidewalk</title></path>
+<path class="road" d="M-1258.73 -2304.65 L-1131.31 -2402.86"><title>w:441742693:3:0:left | sidewalk</title></path>
+<path class="road" d="M-1255.27 -2299.75 L-1127.89 -2397.94"><title>w:441742693:3:0:right | sidewalk</title></path>
+<path class="road" d="M-1114.59 -2344.51 L-1206.44 -2307.83"><title>w:1326437227:1:0:s1:left | sidewalk</title></path>
+<path class="road" d="M-1116.81 -2350.09 L-1208.76 -2313.37"><title>w:1326437227:1:0:s1:right | sidewalk</title></path>
+<path class="road" d="M-1215.1 -2306.79 L-1212.39 -2299.8"><title>w:1326437228:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1220.7 -2304.61 L-1217.95 -2297.56"><title>w:1326437228:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1203.89 -2302.67 L-1166.69 -2319.66"><title>w:1326437229:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1201.68 -2297.09 L-1164.31 -2314.14"><title>w:1326437229:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1166.69 -2319.66 L-769.43 -2480.48"><title>w:1326437229:1:0:left | sidewalk</title></path>
+<path class="road" d="M-1164.31 -2314.14 L-767.17 -2474.92"><title>w:1326437229:1:0:right | sidewalk</title></path>
+<path class="road shared" d="M-1296.6 -2254.7 L-1277.2 -2206.2"><title>w:1121213443:0:0:s1 | shared_way</title></path>
+<path class="road shared" d="M-1223 -2229.4 L-1243.9 -2275.7"><title>w:1121213445:7:0:s1 | shared_way</title></path>
+<path class="road shared" d="M-1243.9 -2275.7 L-1296.6 -2254.7"><title>w:1121213445:8:0 | shared_way</title></path>
+<path class="road shared" d="M-1244.5 -2382.1 L-1223.2 -2323.3"><title>w:1121644205:2:0:s1 | shared_way</title></path>
+<path class="road shared" d="M-1225.8 -2389.1 L-1208.3 -2350"><title>w:1121644207:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1208.3 -2350 L-1196.1 -2340.9"><title>w:1121644207:1:0 | shared_way</title></path>
+<path class="road shared" d="M-1196.1 -2340.9 L-1186.5 -2341.5"><title>w:1121644207:2:0 | shared_way</title></path>
+<path class="road shared" d="M-1186.5 -2341.5 L-1163 -2351.3"><title>w:1121644207:3:0 | shared_way</title></path>
+<path class="road shared" d="M-1163 -2351.3 L-1160.1 -2357"><title>w:1121644207:4:0 | shared_way</title></path>
+<path class="road shared" d="M-1160.1 -2357 L-1138.1 -2365.9"><title>w:1121644207:5:0 | shared_way</title></path>
+<path class="road turn" d="M-1223.75 -2287.7 L-1211.92 -2282.66"><title>manual-junction:crossroad-6258f1ad0044:corner-arm-2-arm-3 | turn</title></path>
+<path class="road cross" d="M-1225.96 -2293.27 L-1223.75 -2287.7"><title>manual-junction:crossroad-6258f1ad0044:cross-arm-2 | crossing</title></path>
+<path class="road turn" d="M-1206.37 -2284.93 L-1201.68 -2297.09"><title>manual-junction:crossroad-6258f1ad0044:corner-arm-3-arm-0 | turn</title></path>
+<path class="road cross" d="M-1211.92 -2282.66 L-1206.37 -2284.93"><title>manual-junction:crossroad-6258f1ad0044:cross-arm-3 | crossing</title></path>
+<path class="road turn" d="M-1203.89 -2302.67 L-1212.39 -2299.8"><title>manual-junction:crossroad-6258f1ad0044:corner-arm-0-arm-1 | turn</title></path>
+<path class="road cross" d="M-1201.68 -2297.09 L-1203.89 -2302.67"><title>manual-junction:crossroad-6258f1ad0044:cross-arm-0 | crossing</title></path>
+<path class="road turn" d="M-1217.95 -2297.56 L-1225.96 -2293.27"><title>manual-junction:crossroad-6258f1ad0044:corner-arm-1-arm-2 | turn</title></path>
+<path class="road cross" d="M-1212.39 -2299.8 L-1217.95 -2297.56"><title>manual-junction:crossroad-6258f1ad0044:cross-arm-1 | crossing</title></path>
+<circle class="node" cx="-1183.255" cy="-2242.703" r="0.45"><title>major:27395635:p:-1180.6:-2244.1:left</title></circle>
+<circle class="node" cx="-1177.945" cy="-2245.497" r="0.45"><title>major:27395635:p:-1180.6:-2244.1:right</title></circle>
+<circle class="node" cx="-1210.38" cy="-2309.471" r="0.45"><title>major:27395635:p:-1207.6:-2310.6:left</title></circle>
+<circle class="node" cx="-1204.82" cy="-2311.729" r="0.45"><title>major:27395635:p:-1207.6:-2310.6:right</title></circle>
+<circle class="node" cx="-1254.377" cy="-2317.518" r="0.45"><title>major:422945046:p:-1256.2:-2319.9:left</title></circle>
+<circle class="node" cx="-1258.023" cy="-2322.282" r="0.45"><title>major:422945046:p:-1256.2:-2319.9:right</title></circle>
+<circle class="node" cx="-1206.437" cy="-2307.834" r="0.45"><title>major:422945047:p:-1207.6:-2310.6:left</title></circle>
+<circle class="node" cx="-1208.763" cy="-2313.366" r="0.45"><title>major:422945047:p:-1207.6:-2310.6:right</title></circle>
+<circle class="node" cx="-1269.326" cy="-2281.399" r="0.45"><title>major:422945047:p:-1270.4:-2284.2:left</title></circle>
+<circle class="node" cx="-1271.474" cy="-2287.001" r="0.45"><title>major:422945047:p:-1270.4:-2284.2:right</title></circle>
+<circle class="node" cx="-1190.993" cy="-2247.392" r="0.45"><title>major:422945048:p:-1193.7:-2246.1:left</title></circle>
+<circle class="node" cx="-1196.407" cy="-2244.808" r="0.45"><title>major:422945048:p:-1193.7:-2246.1:right</title></circle>
+<circle class="node" cx="-1180.034" cy="-2238.464" r="0.45"><title>major:441742688:p:-1177.4:-2239.9:left</title></circle>
+<circle class="node" cx="-1174.766" cy="-2241.336" r="0.45"><title>major:441742688:p:-1177.4:-2239.9:right</title></circle>
+<circle class="node" cx="-1191.949" cy="-2263.96" r="0.45"><title>major:441742688:p:-1189.1:-2264.9:left</title></circle>
+<circle class="node" cx="-1186.251" cy="-2265.84" r="0.45"><title>major:441742688:p:-1189.1:-2264.9:right</title></circle>
+<circle class="node" cx="-1195.394" cy="-2281.006" r="0.45"><title>major:441742688:p:-1192.4:-2281.2:left</title></circle>
+<circle class="node" cx="-1189.406" cy="-2281.394" r="0.45"><title>major:441742688:p:-1192.4:-2281.2:right</title></circle>
+<circle class="node" cx="-1194.056" cy="-2300.109" r="0.45"><title>major:441742688:p:-1191.1:-2299.6:left</title></circle>
+<circle class="node" cx="-1188.144" cy="-2299.091" r="0.45"><title>major:441742688:p:-1191.1:-2299.6:right</title></circle>
+<circle class="node" cx="-1188.607" cy="-2319.76" r="0.45"><title>major:441742688:p:-1185.8:-2318.7:left</title></circle>
+<circle class="node" cx="-1182.993" cy="-2317.64" r="0.45"><title>major:441742688:p:-1185.8:-2318.7:right</title></circle>
+<circle class="node" cx="-1174.125" cy="-2349.62" r="0.45"><title>major:441742688:p:-1171.6:-2348.0:left</title></circle>
+<circle class="node" cx="-1169.075" cy="-2346.38" r="0.45"><title>major:441742688:p:-1171.6:-2348.0:right</title></circle>
+<circle class="node" cx="-1215.034" cy="-2339.914" r="0.45"><title>major:441742690:p:-1217.9:-2340.8:left</title></circle>
+<circle class="node" cx="-1220.766" cy="-2341.686" r="0.45"><title>major:441742690:p:-1217.9:-2340.8:right</title></circle>
+<circle class="node" cx="-1220.202" cy="-2309.583" r="0.45"><title>major:441742690:p:-1223.2:-2309.7:left</title></circle>
+<circle class="node" cx="-1226.198" cy="-2309.817" r="0.45"><title>major:441742690:p:-1223.2:-2309.7:right</title></circle>
+<circle class="node" cx="-1218.076" cy="-2286.17" r="0.45"><title>major:441742690:p:-1221.0:-2285.5:left</title></circle>
+<circle class="node" cx="-1223.924" cy="-2284.83" r="0.45"><title>major:441742690:p:-1221.0:-2285.5:right</title></circle>
+<circle class="node" cx="-1199.392" cy="-2236.556" r="0.45"><title>major:441742690:p:-1202.2:-2235.5:left</title></circle>
+<circle class="node" cx="-1205.008" cy="-2234.444" r="0.45"><title>major:441742690:p:-1202.2:-2235.5:right</title></circle>
+<circle class="node" cx="-1258.726" cy="-2304.654" r="0.45"><title>major:441742693:p:-1257.0:-2302.2:left</title></circle>
+<circle class="node" cx="-1255.274" cy="-2299.746" r="0.45"><title>major:441742693:p:-1257.0:-2302.2:right</title></circle>
+<circle class="node" cx="-1215.104" cy="-2306.787" r="0.45"><title>major:1326437228:p:-1217.9:-2305.7:left</title></circle>
+<circle class="node" cx="-1220.696" cy="-2304.613" r="0.45"><title>major:1326437228:p:-1217.9:-2305.7:right</title></circle>
+<circle class="node" cx="-1166.686" cy="-2319.656" r="0.45"><title>major:1326437229:p:-1165.5:-2316.9:left</title></circle>
+<circle class="node" cx="-1164.314" cy="-2314.144" r="0.45"><title>major:1326437229:p:-1165.5:-2316.9:right</title></circle>
+<circle class="node" cx="-1243.9" cy="-2275.7" r="0.45"><title>shared:p:-1243.9:-2275.7</title></circle>
+<circle class="node" cx="-1223.2" cy="-2323.3" r="0.45"><title>shared:p:-1223.2:-2323.3</title></circle>
+<circle class="node" cx="-1208.3" cy="-2350.0" r="0.45"><title>shared:p:-1208.3:-2350.0</title></circle>
+<circle class="node" cx="-1196.1" cy="-2340.9" r="0.45"><title>shared:p:-1196.1:-2340.9</title></circle>
+<circle class="node" cx="-1186.5" cy="-2341.5" r="0.45"><title>shared:p:-1186.5:-2341.5</title></circle>
+<circle class="node" cx="-1163.0" cy="-2351.3" r="0.45"><title>shared:p:-1163.0:-2351.3</title></circle>
+<circle class="node" cx="-1160.1" cy="-2357.0" r="0.45"><title>shared:p:-1160.1:-2357.0</title></circle>
+<circle class="port" cx="-1203.888" cy="-2302.673" r="1.2"><title>manual-junction:crossroad-6258f1ad0044:port:arm-0-0</title></circle>
+<circle class="port" cx="-1201.679" cy="-2297.093" r="1.2"><title>manual-junction:crossroad-6258f1ad0044:port:arm-0-1</title></circle>
+<circle class="port" cx="-1212.387" cy="-2299.8" r="1.2"><title>manual-junction:crossroad-6258f1ad0044:port:arm-1-0</title></circle>
+<circle class="port" cx="-1217.953" cy="-2297.56" r="1.2"><title>manual-junction:crossroad-6258f1ad0044:port:arm-1-1</title></circle>
+<circle class="port" cx="-1225.962" cy="-2293.273" r="1.2"><title>manual-junction:crossroad-6258f1ad0044:port:arm-2-0</title></circle>
+<circle class="port" cx="-1223.754" cy="-2287.695" r="1.2"><title>manual-junction:crossroad-6258f1ad0044:port:arm-2-1</title></circle>
+<circle class="port" cx="-1206.374" cy="-2284.934" r="1.2"><title>manual-junction:crossroad-6258f1ad0044:port:arm-3-0</title></circle>
+<circle class="port" cx="-1211.924" cy="-2282.659" r="1.2"><title>manual-junction:crossroad-6258f1ad0044:port:arm-3-1</title></circle>
+</svg>
+<text x="420" y="140" font-size="15" font-weight="700">002 · crossroad-cbac250bbc1e</text>
+<text x="420" y="164" font-size="14">显式路口 · 规则通过 · 待核实</text>
+<text x="420" y="186" font-size="12">中心 63.1, 1955 · 1 原节点 / 4 方向</text>
+<svg x="420" y="196" width="360" height="335" viewBox="-1.8999999999999986 -2020.0 130 130">
+<path class="road" d="M59.61 -1943.13 L39.69 -1909.18"><title>w:68998435:0:0:left | sidewalk</title></path>
+<path class="road" d="M54.44 -1946.17 L34.51 -1912.22"><title>w:68998435:0:0:right | sidewalk</title></path>
+<path class="road" d="M401.13 -1778.63 L72.42 -1946.86"><title>w:74444895:0:0:s1:left | sidewalk</title></path>
+<path class="road" d="M403.87 -1783.97 L75.15 -1952.2"><title>w:74444895:0:0:s1:right | sidewalk</title></path>
+<path class="road" d="M17.02 -1858.55 L37.65 -1897.6"><title>w:154618525:0:0:left | sidewalk</title></path>
+<path class="road" d="M22.38 -1855.86 L42.95 -1894.8"><title>w:154618525:0:0:right | sidewalk</title></path>
+<path class="road" d="M-62.73 -1998.57 L740.27 -1585.47"><title>w:441742703:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M-65.47 -1993.23 L737.53 -1580.13"><title>w:441742703:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M51.03 -1957.75 L-36.17 -2001.88"><title>w:1116719083:0:0:left | sidewalk</title></path>
+<path class="road" d="M53.76 -1963.09 L-33.63 -2007.32"><title>w:1116719083:0:0:right | sidewalk</title></path>
+<path class="road" d="M2234.8 -835.45 L-146.33 -2052.16"><title>w:1370822595:25:0:left | sidewalk</title></path>
+<path class="road" d="M2237.6 -840.75 L-143.87 -2057.64"><title>w:1370822595:25:0:right | sidewalk</title></path>
+<path class="road" d="M34.36 -1898.91 L14.3 -1860.59"><title>w:1442820315:0:0:left | sidewalk</title></path>
+<path class="road" d="M29.04 -1901.69 L8.9 -1863.21"><title>w:1442820315:0:0:right | sidewalk</title></path>
+<path class="road" d="M39.69 -1909.18 L34.36 -1898.91"><title>w:1442820316:0:0:left | sidewalk</title></path>
+<path class="road" d="M34.51 -1912.22 L29.04 -1901.69"><title>w:1442820316:0:0:right | sidewalk</title></path>
+<path class="road" d="M43.37 -1908.21 L70.77 -1951.41"><title>w:1442820317:0:0:left | sidewalk</title></path>
+<path class="road" d="M48.43 -1904.99 L75.83 -1948.19"><title>w:1442820317:0:0:right | sidewalk</title></path>
+<path class="road" d="M37.65 -1897.6 L43.37 -1908.21"><title>w:1442820318:0:0:left | sidewalk</title></path>
+<path class="road" d="M42.95 -1894.8 L48.43 -1904.99"><title>w:1442820318:0:0:right | sidewalk</title></path>
+<path class="road shared" d="M101.8 -1987.5 L117.8 -2010.7"><title>w:154618459:0:0 | shared_way</title></path>
+<path class="road shared" d="M125.1 -2022 L134.5 -2015.1"><title>w:154618510:4:0:s2 | shared_way</title></path>
+<path class="road shared" d="M113.9 -2029.3 L106.5 -2018"><title>w:154618523:0:0 | shared_way</title></path>
+<path class="road shared" d="M117.8 -2010.7 L125 -2021.9"><title>w:479194747:0:0 | shared_way</title></path>
+<path class="road shared" d="M73.3 -1949.8 L101.8 -1987.5"><title>w:479194748:0:0 | shared_way</title></path>
+<path class="road" d="M73.3 -1949.8 L75.83 -1948.19"><title>synthetic-turn:w:479194748:0:0:p:73.3:-1949.8 | turn</title></path>
+<path class="road shared" d="M91.8 -1995.5 L70.04 -1964.79"><title>w:479194749:0:0 | shared_way</title></path>
+<path class="road shared" d="M106.5 -2018 L91.8 -1995.5"><title>w:479194750:0:0 | shared_way</title></path>
+<path class="road turn" d="M59.61 -1943.13 L72.42 -1946.86"><title>manual-junction:crossroad-cbac250bbc1e:corner-arm-2-arm-3 | turn</title></path>
+<path class="road cross" d="M54.44 -1946.17 L59.61 -1943.13"><title>manual-junction:crossroad-cbac250bbc1e:cross-arm-2 | crossing</title></path>
+<path class="road turn" d="M75.15 -1952.2 L70.04 -1964.79"><title>manual-junction:crossroad-cbac250bbc1e:corner-arm-3-arm-0 | turn</title></path>
+<path class="road cross" d="M72.42 -1946.86 L75.15 -1952.2"><title>manual-junction:crossroad-cbac250bbc1e:cross-arm-3 | crossing</title></path>
+<path class="road turn" d="M70.04 -1964.79 L53.76 -1963.09"><title>manual-junction:crossroad-cbac250bbc1e:corner-arm-0-arm-1 | turn</title></path>
+<path class="road turn" d="M51.03 -1957.75 L54.44 -1946.17"><title>manual-junction:crossroad-cbac250bbc1e:corner-arm-1-arm-2 | turn</title></path>
+<path class="road cross" d="M53.76 -1963.09 L51.03 -1957.75"><title>manual-junction:crossroad-cbac250bbc1e:cross-arm-1 | crossing</title></path>
+<circle class="node" cx="39.687" cy="-1909.181" r="0.45"><title>major:68998435:p:37.1:-1910.7:left</title></circle>
+<circle class="node" cx="34.513" cy="-1912.219" r="0.45"><title>major:68998435:p:37.1:-1910.7:right</title></circle>
+<circle class="node" cx="37.647" cy="-1897.601" r="0.45"><title>major:154618525:p:40.3:-1896.2:left</title></circle>
+<circle class="node" cx="42.953" cy="-1894.799" r="0.45"><title>major:154618525:p:40.3:-1896.2:right</title></circle>
+<circle class="node" cx="34.358" cy="-1898.909" r="0.45"><title>major:1442820315:p:31.7:-1900.3:left</title></circle>
+<circle class="node" cx="29.042" cy="-1901.691" r="0.45"><title>major:1442820315:p:31.7:-1900.3:right</title></circle>
+<circle class="node" cx="43.367" cy="-1908.207" r="0.45"><title>major:1442820317:p:45.9:-1906.6:left</title></circle>
+<circle class="node" cx="48.433" cy="-1904.993" r="0.45"><title>major:1442820317:p:45.9:-1906.6:right</title></circle>
+<circle class="node" cx="70.767" cy="-1951.407" r="0.45"><title>major:1442820317:p:73.3:-1949.8:left</title></circle>
+<circle class="node" cx="75.833" cy="-1948.193" r="0.45"><title>major:1442820317:p:73.3:-1949.8:right</title></circle>
+<circle class="node" cx="101.8" cy="-1987.5" r="0.45"><title>shared:p:101.8:-1987.5</title></circle>
+<circle class="node" cx="117.8" cy="-2010.7" r="0.45"><title>shared:p:117.8:-2010.7</title></circle>
+<circle class="node" cx="106.5" cy="-2018.0" r="0.45"><title>shared:p:106.5:-2018.0</title></circle>
+<circle class="node" cx="73.3" cy="-1949.8" r="0.45"><title>shared:p:73.3:-1949.8:w:479194748:0:0</title></circle>
+<circle class="node" cx="91.8" cy="-1995.5" r="0.45"><title>shared:p:91.8:-1995.5</title></circle>
+<circle class="port" cx="70.038" cy="-1964.791" r="1.2"><title>manual-junction:crossroad-cbac250bbc1e:port:arm-0-0</title></circle>
+<circle class="port" cx="51.026" cy="-1957.748" r="1.2"><title>manual-junction:crossroad-cbac250bbc1e:port:arm-1-0</title></circle>
+<circle class="port" cx="53.76" cy="-1963.09" r="1.2"><title>manual-junction:crossroad-cbac250bbc1e:port:arm-1-1</title></circle>
+<circle class="port" cx="59.613" cy="-1943.132" r="1.2"><title>manual-junction:crossroad-cbac250bbc1e:port:arm-2-0</title></circle>
+<circle class="port" cx="54.439" cy="-1946.17" r="1.2"><title>manual-junction:crossroad-cbac250bbc1e:port:arm-2-1</title></circle>
+<circle class="port" cx="72.415" cy="-1946.862" r="1.2"><title>manual-junction:crossroad-cbac250bbc1e:port:arm-3-0</title></circle>
+<circle class="port" cx="75.149" cy="-1952.204" r="1.2"><title>manual-junction:crossroad-cbac250bbc1e:port:arm-3-1</title></circle>
+</svg>
+<text x="820" y="140" font-size="15" font-weight="700">003 · crossroad-84b060d24174</text>
+<text x="820" y="164" font-size="14">显式路口 · 规则通过 · 待核实</text>
+<text x="820" y="186" font-size="12">中心 454.9, 1574.8 · 1 原节点 / 4 方向</text>
+<svg x="820" y="196" width="360" height="335" viewBox="389.9 -1639.8 130 130">
+<path class="road" d="M1864.63 -1029.43 L401.13 -1778.63"><title>w:74444895:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M1867.37 -1034.77 L403.87 -1783.97"><title>w:74444895:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M-62.73 -1998.57 L740.27 -1585.47"><title>w:441742703:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M-65.47 -1993.23 L737.53 -1580.13"><title>w:441742703:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M445.95 -1581.41 L389.84 -1451.22"><title>w:1002713693:0:0:left | sidewalk</title></path>
+<path class="road" d="M440.44 -1583.79 L384.16 -1453.18"><title>w:1002713693:0:0:right | sidewalk</title></path>
+<path class="road" d="M330 -1643.76 L445.65 -1583.05"><title>w:1002720926:4:0:s1:left | sidewalk</title></path>
+<path class="road" d="M327.2 -1638.44 L442.9 -1577.71"><title>w:1002720926:4:0:s1:right | sidewalk</title></path>
+<path class="road" d="M466.98 -1572.05 L967.55 -1318.78"><title>w:1002720926:5:0:left | sidewalk</title></path>
+<path class="road" d="M464.23 -1566.71 L964.85 -1313.42"><title>w:1002720926:5:0:right | sidewalk</title></path>
+<path class="road" d="M401.78 -1461.81 L447.31 -1565.03"><title>w:1003005389:1:0:left | sidewalk</title></path>
+<path class="road" d="M407.42 -1459.79 L452.8 -1562.61"><title>w:1003005389:1:0:right | sidewalk</title></path>
+<path class="road" d="M2234.8 -835.45 L-146.33 -2052.16"><title>w:1370822595:25:0:left | sidewalk</title></path>
+<path class="road" d="M2237.6 -840.75 L-143.87 -2057.64"><title>w:1370822595:25:0:right | sidewalk</title></path>
+<path class="road" d="M469.15 -1634.19 L445.95 -1581.41"><title>w:1444043968:0:0:left | sidewalk</title></path>
+<path class="road" d="M463.65 -1636.61 L440.44 -1583.79"><title>w:1444043968:0:0:right | sidewalk</title></path>
+<path class="road" d="M457.01 -1586.99 L476.66 -1631.41"><title>w:1444043969:0:0:left | sidewalk</title></path>
+<path class="road" d="M462.5 -1584.56 L482.14 -1628.99"><title>w:1444043969:0:0:right | sidewalk</title></path>
+<path class="road shared" d="M473.2 -1901.4 L1126.6 -1506.8"><title>w:46974867:0:0 | shared_way</title></path>
+<path class="road turn" d="M452.8 -1562.61 L464.23 -1566.71"><title>manual-junction:review-north-outer:corner-sw-se | turn</title></path>
+<path class="road cross" d="M447.31 -1565.03 L452.8 -1562.61"><title>manual-junction:review-north-outer:cross-sw | crossing</title></path>
+<path class="road turn" d="M466.98 -1572.05 L462.5 -1584.56"><title>manual-junction:review-north-outer:corner-se-ne | turn</title></path>
+<path class="road cross" d="M464.23 -1566.71 L466.98 -1572.05"><title>manual-junction:review-north-outer:cross-se | crossing</title></path>
+<path class="road turn" d="M457.01 -1586.99 L445.65 -1583.05"><title>manual-junction:review-north-outer:corner-ne-nw | turn</title></path>
+<path class="road cross" d="M462.5 -1584.56 L457.01 -1586.99"><title>manual-junction:review-north-outer:cross-ne | crossing</title></path>
+<path class="road turn" d="M442.9 -1577.71 L447.31 -1565.03"><title>manual-junction:review-north-outer:corner-nw-sw | turn</title></path>
+<path class="road cross" d="M445.65 -1583.05 L442.9 -1577.71"><title>manual-junction:review-north-outer:cross-nw | crossing</title></path>
+<circle class="node" cx="445.955" cy="-1581.413" r="0.45"><title>major:1002713693:p:443.2:-1582.6:left</title></circle>
+<circle class="node" cx="440.445" cy="-1583.787" r="0.45"><title>major:1002713693:p:443.2:-1582.6:right</title></circle>
+<circle class="node" cx="469.147" cy="-1634.193" r="0.45"><title>major:1444043968:p:466.4:-1635.4:left</title></circle>
+<circle class="node" cx="463.653" cy="-1636.607" r="0.45"><title>major:1444043968:p:466.4:-1635.4:right</title></circle>
+<circle class="node" cx="476.656" cy="-1631.413" r="0.45"><title>major:1444043969:p:479.4:-1630.2:left</title></circle>
+<circle class="node" cx="482.144" cy="-1628.987" r="0.45"><title>major:1444043969:p:479.4:-1630.2:right</title></circle>
+<circle class="port" cx="457.008" cy="-1586.986" r="1.2"><title>manual-junction:review-north-outer:port:ne-0</title></circle>
+<circle class="port" cx="462.498" cy="-1584.564" r="1.2"><title>manual-junction:review-north-outer:port:ne-1</title></circle>
+<circle class="port" cx="466.981" cy="-1572.049" r="1.2"><title>manual-junction:review-north-outer:port:se-0</title></circle>
+<circle class="port" cx="464.233" cy="-1566.715" r="1.2"><title>manual-junction:review-north-outer:port:se-1</title></circle>
+<circle class="port" cx="447.312" cy="-1565.032" r="1.2"><title>manual-junction:review-north-outer:port:sw-0</title></circle>
+<circle class="port" cx="452.8" cy="-1562.611" r="1.2"><title>manual-junction:review-north-outer:port:sw-1</title></circle>
+<circle class="port" cx="445.649" cy="-1583.045" r="1.2"><title>manual-junction:review-north-outer:port:nw-0</title></circle>
+<circle class="port" cx="442.901" cy="-1577.711" r="1.2"><title>manual-junction:review-north-outer:port:nw-1</title></circle>
+</svg>
+<text x="1220" y="140" font-size="15" font-weight="700">004 · crossroad-edca5b18213c</text>
+<text x="1220" y="164" font-size="14">显式路口 · 规则通过 · 待核实</text>
+<text x="1220" y="186" font-size="12">中心 -890.8, 1442.1 · 1 原节点 / 4 方向</text>
+<svg x="1220" y="196" width="360" height="335" viewBox="-955.8 -1507.1 130 130">
+<path class="road" d="M-1293.64 -1403.68 L-903.04 -1443.86"><title>w:71531795:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1292.95 -1397.72 L-902.43 -1437.89"><title>w:71531795:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1073.94 -1026.62 L-861.19 -1448.33"><title>w:71531841:2:0:left | sidewalk</title></path>
+<path class="road" d="M-1068.66 -1023.78 L-855.81 -1445.67"><title>w:71531841:2:0:right | sidewalk</title></path>
+<path class="road" d="M-861.19 -1448.33 L-722.96 -1731.18"><title>w:71531841:3:0:left | sidewalk</title></path>
+<path class="road" d="M-855.81 -1445.67 L-717.44 -1728.82"><title>w:71531841:3:0:right | sidewalk</title></path>
+<path class="road" d="M-893.66 -1430.07 L-1188 -862.61"><title>w:74444894:0:0:left | sidewalk</title></path>
+<path class="road" d="M-898.99 -1432.83 L-1193.2 -865.6"><title>w:74444894:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1078.05 -1033.81 L-716.78 -1770.13"><title>w:1075505396:3:0:left | sidewalk</title></path>
+<path class="road" d="M-1072.75 -1030.99 L-711.22 -1767.87"><title>w:1075505396:3:0:right | sidewalk</title></path>
+<path class="road" d="M-818.61 -1565.58 L-1024.22 -1165.26"><title>w:1075505414:5:0:left | sidewalk</title></path>
+<path class="road" d="M-823.99 -1568.22 L-1029.58 -1167.94"><title>w:1075505414:5:0:right | sidewalk</title></path>
+<path class="road" d="M-798.11 -1619.37 L-882.74 -1451.43"><title>w:1234279876:0:0:left | sidewalk</title></path>
+<path class="road" d="M-803.49 -1622.03 L-888.06 -1454.2"><title>w:1234279876:0:0:right | sidewalk</title></path>
+<path class="road" d="M-879.85 -1446.79 L-858.95 -1449.97"><title>w:1234279877:0:0:left | sidewalk</title></path>
+<path class="road" d="M-879.14 -1440.84 L-858.05 -1444.03"><title>w:1234279877:0:0:right | sidewalk</title></path>
+<path class="road shared" d="M-853.2 -1451.5 L-842.2 -1471.5"><title>w:1021843939:0:0 | shared_way</title></path>
+<path class="road shared" d="M-842.2 -1471.5 L-783.4 -1455.7"><title>w:1021843939:1:0 | shared_way</title></path>
+<path class="road shared" d="M-902.3 -1458.1 L-853.2 -1451.5"><title>w:1021843940:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1101.1 -1431.6 L-912.9 -1450"><title>w:1170983547:1:0 | shared_way</title></path>
+<path class="road shared" d="M-912.9 -1450 L-902.3 -1458.1"><title>w:1170983547:2:0 | shared_way</title></path>
+<path class="road shared" d="M-902.3 -1458.1 L-799.4 -1652.9"><title>w:1170983547:3:0 | shared_way</title></path>
+<path class="road turn" d="M-902.43 -1437.89 L-898.99 -1432.83"><title>manual-junction:crossroad-edca5b18213c:corner-arm-2-arm-3 | turn</title></path>
+<path class="road cross" d="M-903.04 -1443.86 L-902.43 -1437.89"><title>manual-junction:crossroad-edca5b18213c:cross-arm-2 | crossing</title></path>
+<path class="road turn" d="M-893.66 -1430.07 L-879.14 -1440.84"><title>manual-junction:crossroad-edca5b18213c:corner-arm-3-arm-0 | turn</title></path>
+<path class="road cross" d="M-898.99 -1432.83 L-893.66 -1430.07"><title>manual-junction:crossroad-edca5b18213c:cross-arm-3 | crossing</title></path>
+<path class="road turn" d="M-879.85 -1446.79 L-882.74 -1451.43"><title>manual-junction:crossroad-edca5b18213c:corner-arm-0-arm-1 | turn</title></path>
+<path class="road cross" d="M-879.14 -1440.84 L-879.85 -1446.79"><title>manual-junction:crossroad-edca5b18213c:cross-arm-0 | crossing</title></path>
+<path class="road turn" d="M-888.06 -1454.2 L-903.04 -1443.86"><title>manual-junction:crossroad-edca5b18213c:corner-arm-1-arm-2 | turn</title></path>
+<path class="road cross" d="M-882.74 -1451.43 L-888.06 -1454.2"><title>manual-junction:crossroad-edca5b18213c:cross-arm-1 | crossing</title></path>
+<circle class="node" cx="-861.187" cy="-1448.334" r="0.45"><title>major:71531841:p:-858.5:-1447.0:left</title></circle>
+<circle class="node" cx="-855.813" cy="-1445.666" r="0.45"><title>major:71531841:p:-858.5:-1447.0:right</title></circle>
+<circle class="node" cx="-858.95" cy="-1449.966" r="0.45"><title>major:1234279877:p:-858.5:-1447.0:left</title></circle>
+<circle class="node" cx="-858.05" cy="-1444.034" r="0.45"><title>major:1234279877:p:-858.5:-1447.0:right</title></circle>
+<circle class="node" cx="-853.2" cy="-1451.5" r="0.45"><title>shared:p:-853.2:-1451.5</title></circle>
+<circle class="node" cx="-842.2" cy="-1471.5" r="0.45"><title>shared:p:-842.2:-1471.5</title></circle>
+<circle class="node" cx="-902.3" cy="-1458.1" r="0.45"><title>shared:p:-902.3:-1458.1</title></circle>
+<circle class="node" cx="-912.9" cy="-1450.0" r="0.45"><title>shared:p:-912.9:-1450.0</title></circle>
+<circle class="port" cx="-879.852" cy="-1446.793" r="1.2"><title>manual-junction:crossroad-edca5b18213c:port:arm-0-0</title></circle>
+<circle class="port" cx="-879.138" cy="-1440.837" r="1.2"><title>manual-junction:crossroad-edca5b18213c:port:arm-0-1</title></circle>
+<circle class="port" cx="-882.737" cy="-1451.435" r="1.2"><title>manual-junction:crossroad-edca5b18213c:port:arm-1-0</title></circle>
+<circle class="port" cx="-888.063" cy="-1454.197" r="1.2"><title>manual-junction:crossroad-edca5b18213c:port:arm-1-1</title></circle>
+<circle class="port" cx="-903.044" cy="-1443.856" r="1.2"><title>manual-junction:crossroad-edca5b18213c:port:arm-2-0</title></circle>
+<circle class="port" cx="-902.43" cy="-1437.888" r="1.2"><title>manual-junction:crossroad-edca5b18213c:port:arm-2-1</title></circle>
+<circle class="port" cx="-893.662" cy="-1430.067" r="1.2"><title>manual-junction:crossroad-edca5b18213c:port:arm-3-0</title></circle>
+<circle class="port" cx="-898.988" cy="-1432.829" r="1.2"><title>manual-junction:crossroad-edca5b18213c:port:arm-3-1</title></circle>
+</svg>
+<text x="20" y="555" font-size="15" font-weight="700">005 · crossroad-865f12333c8e</text>
+<text x="20" y="579" font-size="14">显式路口 · 规则通过 · 待核实</text>
+<text x="20" y="601" font-size="12">中心 -1714.1, 1351.5 · 1 原节点 / 4 方向</text>
+<svg x="20" y="611" width="360" height="335" viewBox="-1779.1 -1416.5 130 130">
+<path class="road" d="M-1715.21 -1419.45 L-1711.83 -1363.66"><title>w:71531781:3:0:left | sidewalk</title></path>
+<path class="road" d="M-1721.19 -1418.95 L-1717.82 -1363.3"><title>w:71531781:3:0:right | sidewalk</title></path>
+<path class="road" d="M-1709.24 -1339.83 L-1694.54 -1246.27"><title>w:1075724569:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M-1715.23 -1339.46 L-1700.46 -1245.34"><title>w:1075724569:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M-1702.53 -1355.88 L-1610.25 -1366.68"><title>w:1075724570:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M-1701.83 -1349.91 L-1609.55 -1360.72"><title>w:1075724570:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M-1931.39 -1303.42 L-1726.13 -1351.73"><title>w:1078939201:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1930.01 -1297.58 L-1725.43 -1345.77"><title>w:1078939201:0:0:right | sidewalk</title></path>
+<path class="road shared" d="M-1718.2 -1419.2 L-1797.3 -1400.7"><title>w:929973074:0:0:s0 | shared_way</title></path>
+<path class="road shared" d="M-1704.8 -1338.9 L-1676.5 -1140.4"><title>w:1021843932:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1732.6 -1358.2 L-1731.2 -1336.5"><title>w:1021843933:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1731.2 -1336.5 L-1711.8 -1336.6"><title>w:1021843933:1:0 | shared_way</title></path>
+<path class="road shared" d="M-1711.8 -1336.6 L-1704.8 -1338.9"><title>w:1021843933:2:0 | shared_way</title></path>
+<path class="road shared" d="M-1704.8 -1338.9 L-1699.5 -1344.9"><title>w:1021843933:3:0 | shared_way</title></path>
+<path class="road shared" d="M-1699.5 -1344.9 L-1701.8 -1365.3"><title>w:1021843933:4:0 | shared_way</title></path>
+<path class="road shared" d="M-1724.5 -1363 L-1701.8 -1365.3"><title>w:1021843934:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1748.6 -1598.1 L-1724.5 -1363"><title>w:1021843936:1:0 | shared_way</title></path>
+<path class="road shared" d="M-1724.5 -1363 L-1751.4 -1352.8"><title>w:1021843936:2:0 | shared_way</title></path>
+<path class="road shared" d="M-1751.4 -1352.8 L-2012.5 -1291.4"><title>w:1021843936:3:0 | shared_way</title></path>
+<path class="road shared" d="M-1697.9 -1245.7 L-1453.3 -1288.3"><title>w:1021843937:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1726.4 -1565 L-1707.8 -1376"><title>w:1021843942:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1707.8 -1376 L-1701.8 -1365.3"><title>w:1021843942:1:0 | shared_way</title></path>
+<path class="road shared" d="M-1701.8 -1365.3 L-1681.8 -1364"><title>w:1021843942:2:0 | shared_way</title></path>
+<path class="road shared" d="M-1681.8 -1364 L-1529.8 -1378.3"><title>w:1021843942:3:0 | shared_way</title></path>
+<path class="road turn" d="M-1725.43 -1345.77 L-1715.23 -1339.46"><title>manual-junction:crossroad-865f12333c8e:corner-arm-2-arm-3 | turn</title></path>
+<path class="road cross" d="M-1726.13 -1351.73 L-1725.43 -1345.77"><title>manual-junction:crossroad-865f12333c8e:cross-arm-2 | crossing</title></path>
+<path class="road turn" d="M-1709.24 -1339.83 L-1701.83 -1349.91"><title>manual-junction:crossroad-865f12333c8e:corner-arm-3-arm-0 | turn</title></path>
+<path class="road cross" d="M-1715.23 -1339.46 L-1709.24 -1339.83"><title>manual-junction:crossroad-865f12333c8e:cross-arm-3 | crossing</title></path>
+<path class="road turn" d="M-1702.53 -1355.88 L-1711.83 -1363.66"><title>manual-junction:crossroad-865f12333c8e:corner-arm-0-arm-1 | turn</title></path>
+<path class="road cross" d="M-1701.83 -1349.91 L-1702.53 -1355.88"><title>manual-junction:crossroad-865f12333c8e:cross-arm-0 | crossing</title></path>
+<path class="road turn" d="M-1717.82 -1363.3 L-1726.13 -1351.73"><title>manual-junction:crossroad-865f12333c8e:corner-arm-1-arm-2 | turn</title></path>
+<path class="road cross" d="M-1711.83 -1363.66 L-1717.82 -1363.3"><title>manual-junction:crossroad-865f12333c8e:cross-arm-1 | crossing</title></path>
+<circle class="node" cx="-1704.8" cy="-1338.9" r="0.45"><title>shared:p:-1704.8:-1338.9</title></circle>
+<circle class="node" cx="-1732.6" cy="-1358.2" r="0.45"><title>shared:p:-1732.6:-1358.2</title></circle>
+<circle class="node" cx="-1731.2" cy="-1336.5" r="0.45"><title>shared:p:-1731.2:-1336.5</title></circle>
+<circle class="node" cx="-1711.8" cy="-1336.6" r="0.45"><title>shared:p:-1711.8:-1336.6</title></circle>
+<circle class="node" cx="-1699.5" cy="-1344.9" r="0.45"><title>shared:p:-1699.5:-1344.9</title></circle>
+<circle class="node" cx="-1701.8" cy="-1365.3" r="0.45"><title>shared:p:-1701.8:-1365.3</title></circle>
+<circle class="node" cx="-1724.5" cy="-1363.0" r="0.45"><title>shared:p:-1724.5:-1363.0</title></circle>
+<circle class="node" cx="-1751.4" cy="-1352.8" r="0.45"><title>shared:p:-1751.4:-1352.8</title></circle>
+<circle class="node" cx="-1707.8" cy="-1376.0" r="0.45"><title>shared:p:-1707.8:-1376.0</title></circle>
+<circle class="node" cx="-1681.8" cy="-1364.0" r="0.45"><title>shared:p:-1681.8:-1364.0</title></circle>
+<circle class="port" cx="-1702.53" cy="-1355.875" r="1.2"><title>manual-junction:crossroad-865f12333c8e:port:arm-0-0</title></circle>
+<circle class="port" cx="-1701.832" cy="-1349.915" r="1.2"><title>manual-junction:crossroad-865f12333c8e:port:arm-0-1</title></circle>
+<circle class="port" cx="-1711.831" cy="-1363.659" r="1.2"><title>manual-junction:crossroad-865f12333c8e:port:arm-1-0</title></circle>
+<circle class="port" cx="-1717.82" cy="-1363.297" r="1.2"><title>manual-junction:crossroad-865f12333c8e:port:arm-1-1</title></circle>
+<circle class="port" cx="-1726.13" cy="-1351.731" r="1.2"><title>manual-junction:crossroad-865f12333c8e:port:arm-2-0</title></circle>
+<circle class="port" cx="-1725.431" cy="-1345.769" r="1.2"><title>manual-junction:crossroad-865f12333c8e:port:arm-2-1</title></circle>
+<circle class="port" cx="-1709.242" cy="-1339.827" r="1.2"><title>manual-junction:crossroad-865f12333c8e:port:arm-3-0</title></circle>
+<circle class="port" cx="-1715.235" cy="-1339.464" r="1.2"><title>manual-junction:crossroad-865f12333c8e:port:arm-3-1</title></circle>
+</svg>
+<text x="420" y="555" font-size="15" font-weight="700">006 · crossroad-6499373e619f</text>
+<text x="420" y="579" font-size="14">显式路口 · 规则通过 · 待核实</text>
+<text x="420" y="601" font-size="12">中心 -273.15, 1347.85 · 2 原节点 / 4 方向</text>
+<svg x="420" y="611" width="360" height="335" viewBox="-338.15 -1412.85 130 130">
+<path class="road" d="M-234.94 -1401.8 L-127.6 -1571.8"><title>w:74415455:0:0:left | sidewalk</title></path>
+<path class="road" d="M-229.86 -1398.6 L-122.4 -1568.81"><title>w:74415455:0:0:right | sidewalk</title></path>
+<path class="road" d="M-284.47 -1333.93 L-325.78 -1267.57"><title>w:74415456:0:0:left | sidewalk</title></path>
+<path class="road" d="M-289.56 -1337.11 L-330.82 -1270.83"><title>w:74415456:0:0:right | sidewalk</title></path>
+<path class="road" d="M-206.46 -1300.37 L-235.16 -1321.07"><title>w:168476042:0:0:left | sidewalk</title></path>
+<path class="road" d="M-202.94 -1305.23 L-231.65 -1325.93"><title>w:168476042:0:0:right | sidewalk</title></path>
+<path class="road" d="M-235.16 -1321.07 L-254.95 -1333.03"><title>w:168476055:0:0:left | sidewalk</title></path>
+<path class="road" d="M-231.65 -1325.93 L-251.85 -1338.15"><title>w:168476055:0:0:right | sidewalk</title></path>
+<path class="road" d="M-320.1 -1270.37 L-281.03 -1331.36"><title>w:225928287:4:0:left | sidewalk</title></path>
+<path class="road" d="M-315.11 -1267.04 L-275.98 -1328.12"><title>w:225928287:4:0:right | sidewalk</title></path>
+<path class="road" d="M-408.08 -1430.69 L-291.52 -1362.48"><title>w:441758702:3:0:s1:left | sidewalk</title></path>
+<path class="road" d="M-411.12 -1425.51 L-294.55 -1357.3"><title>w:441758702:3:0:s1:right | sidewalk</title></path>
+<path class="road" d="M-261.43 -1361.55 L-234.94 -1401.8"><title>w:1322655091:0:0:left | sidewalk</title></path>
+<path class="road" d="M-256.38 -1358.32 L-229.86 -1398.6"><title>w:1322655091:0:0:right | sidewalk</title></path>
+<path class="road" d="M-174.97 -1502.05 L-265.1 -1364.28"><title>w:1322655092:0:0:left | sidewalk</title></path>
+<path class="road" d="M-180.23 -1504.95 L-270.19 -1367.45"><title>w:1322655092:0:0:right | sidewalk</title></path>
+<path class="road shared" d="M-315.5 -1360.1 L-326.8 -1346.8"><title>w:1022478447:0:0 | shared_way</title></path>
+<path class="road shared" d="M-326.8 -1346.8 L-339 -1345.2"><title>w:1022478447:1:0 | shared_way</title></path>
+<path class="road shared" d="M-341.3 -1322.3 L-329.7 -1315.3"><title>w:1022478447:5:0 | shared_way</title></path>
+<path class="road shared" d="M-329.7 -1315.3 L-322.8 -1302.5"><title>w:1022478447:6:0 | shared_way</title></path>
+<path class="road shared" d="M-322.8 -1302.5 L-294.1 -1345.2"><title>w:1022478447:7:0 | shared_way</title></path>
+<path class="road shared" d="M-294.1 -1345.2 L-300 -1354.4"><title>w:1022478447:8:0 | shared_way</title></path>
+<path class="road shared" d="M-300 -1354.4 L-315.5 -1360.1"><title>w:1022478447:9:0 | shared_way</title></path>
+<path class="road shared" d="M-486.7 -1458.9 L-302.2 -1352.3"><title>w:1022478448:10:0 | shared_way</title></path>
+<path class="road shared" d="M-302.2 -1352.3 L-299.1 -1345.4"><title>w:1022478448:11:0 | shared_way</title></path>
+<path class="road shared" d="M-299.1 -1345.4 L-287.1 -1334.1"><title>w:1022478448:12:0 | shared_way</title></path>
+<path class="road shared" d="M-287.1 -1334.1 L-266.5 -1320.3"><title>w:1022478448:13:0 | shared_way</title></path>
+<path class="road shared" d="M-299.1 -1345.4 L-344.6 -1326.7"><title>w:1022478450:0:0 | shared_way</title></path>
+<path class="road turn" d="M-270.19 -1367.45 L-291.52 -1362.48"><title>manual-junction:blue-crossroads-01:corner-north | turn</title></path>
+<path class="road turn" d="M-294.55 -1357.3 L-289.56 -1337.11"><title>manual-junction:blue-crossroads-01:corner-west | turn</title></path>
+<path class="road turn" d="M-275.98 -1328.12 L-254.95 -1333.03"><title>manual-junction:blue-crossroads-01:corner-south | turn</title></path>
+<path class="road turn" d="M-251.85 -1338.15 L-256.38 -1358.32"><title>manual-junction:blue-crossroads-01:corner-east | turn</title></path>
+<path class="road cross" d="M-270.19 -1367.45 L-256.38 -1358.32"><title>manual-junction:blue-crossroads-01:cross-ne | crossing</title></path>
+<path class="road cross" d="M-289.56 -1337.11 L-275.98 -1328.12"><title>manual-junction:blue-crossroads-01:cross-sw | crossing</title></path>
+<path class="road cross" d="M-291.52 -1362.48 L-294.55 -1357.3"><title>manual-junction:blue-crossroads-01:cross-nw | crossing</title></path>
+<path class="road cross" d="M-251.85 -1338.15 L-254.95 -1333.03"><title>manual-junction:blue-crossroads-01:cross-se | crossing</title></path>
+<path class="road cross" d="M-265.1 -1364.28 L-284.47 -1333.93"><title>manual-junction:blue-crossroads-01:cross-west-inner | crossing</title></path>
+<path class="road cross" d="M-261.43 -1361.55 L-281.03 -1331.36"><title>manual-junction:blue-crossroads-01:cross-east-inner | crossing</title></path>
+<circle class="node" cx="-234.937" cy="-1401.802" r="0.45"><title>major:74415455:p:-232.4:-1400.2:left</title></circle>
+<circle class="node" cx="-229.863" cy="-1398.598" r="0.45"><title>major:74415455:p:-232.4:-1400.2:right</title></circle>
+<circle class="node" cx="-235.155" cy="-1321.067" r="0.45"><title>major:168476042:p:-233.4:-1323.5:left</title></circle>
+<circle class="node" cx="-231.645" cy="-1325.933" r="0.45"><title>major:168476042:p:-233.4:-1323.5:right</title></circle>
+<circle class="node" cx="-315.5" cy="-1360.1" r="0.45"><title>shared:p:-315.5:-1360.1</title></circle>
+<circle class="node" cx="-326.8" cy="-1346.8" r="0.45"><title>shared:p:-326.8:-1346.8</title></circle>
+<circle class="node" cx="-329.7" cy="-1315.3" r="0.45"><title>shared:p:-329.7:-1315.3</title></circle>
+<circle class="node" cx="-322.8" cy="-1302.5" r="0.45"><title>shared:p:-322.8:-1302.5</title></circle>
+<circle class="node" cx="-294.1" cy="-1345.2" r="0.45"><title>shared:p:-294.1:-1345.2</title></circle>
+<circle class="node" cx="-300.0" cy="-1354.4" r="0.45"><title>shared:p:-300.0:-1354.4</title></circle>
+<circle class="node" cx="-302.2" cy="-1352.3" r="0.45"><title>shared:p:-302.2:-1352.3</title></circle>
+<circle class="node" cx="-299.1" cy="-1345.4" r="0.45"><title>shared:p:-299.1:-1345.4</title></circle>
+<circle class="node" cx="-287.1" cy="-1334.1" r="0.45"><title>shared:p:-287.1:-1334.1</title></circle>
+<circle class="node" cx="-266.5" cy="-1320.3" r="0.45"><title>shared:p:-266.5:-1320.3</title></circle>
+<circle class="port" cx="-270.192" cy="-1367.448" r="1.2"><title>manual-junction:blue-crossroads-01:port:ne-west</title></circle>
+<circle class="port" cx="-265.099" cy="-1364.277" r="1.2"><title>manual-junction:blue-crossroads-01:port:ne-west-inner</title></circle>
+<circle class="port" cx="-261.429" cy="-1361.553" r="1.2"><title>manual-junction:blue-crossroads-01:port:ne-east-inner</title></circle>
+<circle class="port" cx="-256.377" cy="-1358.317" r="1.2"><title>manual-junction:blue-crossroads-01:port:ne-east</title></circle>
+<circle class="port" cx="-289.56" cy="-1337.105" r="1.2"><title>manual-junction:blue-crossroads-01:port:sw-west</title></circle>
+<circle class="port" cx="-284.466" cy="-1333.933" r="1.2"><title>manual-junction:blue-crossroads-01:port:sw-west-inner</title></circle>
+<circle class="port" cx="-281.033" cy="-1331.36" r="1.2"><title>manual-junction:blue-crossroads-01:port:sw-east-inner</title></circle>
+<circle class="port" cx="-275.982" cy="-1328.124" r="1.2"><title>manual-junction:blue-crossroads-01:port:sw-east</title></circle>
+<circle class="port" cx="-291.521" cy="-1362.48" r="1.2"><title>manual-junction:blue-crossroads-01:port:nw-north</title></circle>
+<circle class="port" cx="-294.551" cy="-1357.302" r="1.2"><title>manual-junction:blue-crossroads-01:port:nw-south</title></circle>
+<circle class="port" cx="-251.846" cy="-1338.151" r="1.2"><title>manual-junction:blue-crossroads-01:port:se-north</title></circle>
+<circle class="port" cx="-254.946" cy="-1333.025" r="1.2"><title>manual-junction:blue-crossroads-01:port:se-south</title></circle>
+</svg>
+<text x="820" y="555" font-size="15" font-weight="700">007 · crossroad-3e31c1232d93</text>
+<text x="820" y="579" font-size="14">显式路口 · 规则通过 · 待核实</text>
+<text x="820" y="601" font-size="12">中心 -2018.6, 1279.3 · 1 原节点 / 4 方向</text>
+<svg x="820" y="611" width="360" height="335" viewBox="-2083.6 -1344.3 130 130">
+<path class="road" d="M-2304.89 -1170.19 L-2030.87 -1277.71"><title>w:71531787:0:0:s1:left | sidewalk</title></path>
+<path class="road" d="M-2302.71 -1164.61 L-2028.67 -1272.12"><title>w:71531787:0:0:s1:right | sidewalk</title></path>
+<path class="road" d="M-1831.24 -773.77 L-2002.71 -1228.64"><title>w:135807017:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M-1825.63 -775.89 L-1997.09 -1230.76"><title>w:135807017:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M-2002.71 -1228.64 L-2017.17 -1267.01"><title>w:135807017:0:0:s1:left | sidewalk</title></path>
+<path class="road" d="M-1997.09 -1230.76 L-2011.56 -1269.13"><title>w:135807017:0:0:s1:right | sidewalk</title></path>
+<path class="road" d="M-2025.85 -1289.39 L-2140.39 -1576.99"><title>w:1078939200:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M-2020.23 -1291.51 L-2134.81 -1579.21"><title>w:1078939200:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M-1971.5 -1293.82 L-1931.39 -1303.42"><title>w:1327168500:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1970.1 -1287.98 L-1930.01 -1297.58"><title>w:1327168500:0:0:right | sidewalk</title></path>
+<path class="road" d="M-2016.27 -1282.94 L-2009.91 -1284.52"><title>w:1327168502:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M-2014.35 -1277.27 L-2008.49 -1278.68"><title>w:1327168502:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M-2009.91 -1284.52 L-1971.5 -1293.82"><title>w:1327168502:0:0:s1:left | sidewalk</title></path>
+<path class="road" d="M-2008.49 -1278.68 L-1970.1 -1287.98"><title>w:1327168502:0:0:s1:right | sidewalk</title></path>
+<path class="road shared" d="M-1817.3 -765.2 L-2009.2 -1281.7"><title>w:71531820:1:0 | shared_way</title></path>
+<path class="road shared" d="M-2000.1 -1229.6 L-2020.6 -1223.9"><title>w:1020705217:0:0 | shared_way</title></path>
+<path class="road shared" d="M-2020.6 -1223.9 L-2053.1 -1237.2"><title>w:1020705217:1:0 | shared_way</title></path>
+<path class="road shared" d="M-2053.1 -1237.2 L-2070.6 -1239.1"><title>w:1020705217:2:0 | shared_way</title></path>
+<path class="road shared" d="M-2070.6 -1239.1 L-2093.8 -1230"><title>w:1020705217:3:0 | shared_way</title></path>
+<path class="road shared" d="M-1751.4 -1352.8 L-2012.5 -1291.4"><title>w:1021843936:3:0 | shared_way</title></path>
+<path class="road shared" d="M-2012.5 -1291.4 L-2018.1 -1296.7"><title>w:1021843936:4:0 | shared_way</title></path>
+<path class="road shared" d="M-2018.1 -1296.7 L-2024.6 -1294.1"><title>w:1021843936:5:0 | shared_way</title></path>
+<path class="road shared" d="M-1970.8 -1290.9 L-1963.9 -1274.8"><title>w:1075762278:0:0 | shared_way</title></path>
+<path class="road" d="M-1970.8 -1290.9 L-1970.1 -1287.98"><title>synthetic-turn:w:1075762278:0:0:p:-1970.8:-1290.9 | turn</title></path>
+<path class="road shared" d="M-1963.9 -1274.8 L-1929.4 -1283.4"><title>w:1075762278:1:0 | shared_way</title></path>
+<path class="road" d="M-2000.1 -1229.6 L-2002.71 -1228.64"><title>j:p:-2000.1:-1229.6:w:135807017:0:0 | turn</title></path>
+<path class="road" d="M-2009.2 -1281.7 L-2009.91 -1284.52"><title>j:p:-2009.2:-1281.7:w:1327168502:0:0 | turn</title></path>
+<path class="road turn" d="M-2028.67 -1272.12 L-2017.17 -1267.01"><title>manual-junction:crossroad-3e31c1232d93:corner-arm-2-arm-3 | turn</title></path>
+<path class="road cross" d="M-2030.87 -1277.71 L-2028.67 -1272.12"><title>manual-junction:crossroad-3e31c1232d93:cross-arm-2 | crossing</title></path>
+<path class="road turn" d="M-2011.56 -1269.13 L-2014.35 -1277.27"><title>manual-junction:crossroad-3e31c1232d93:corner-arm-3-arm-0 | turn</title></path>
+<path class="road cross" d="M-2017.17 -1267.01 L-2011.56 -1269.13"><title>manual-junction:crossroad-3e31c1232d93:cross-arm-3 | crossing</title></path>
+<path class="road turn" d="M-2016.27 -1282.94 L-2020.23 -1291.51"><title>manual-junction:crossroad-3e31c1232d93:corner-arm-0-arm-1 | turn</title></path>
+<path class="road cross" d="M-2014.35 -1277.27 L-2016.27 -1282.94"><title>manual-junction:crossroad-3e31c1232d93:cross-arm-0 | crossing</title></path>
+<path class="road turn" d="M-2025.85 -1289.39 L-2030.87 -1277.71"><title>manual-junction:crossroad-3e31c1232d93:corner-arm-1-arm-2 | turn</title></path>
+<path class="road cross" d="M-2020.23 -1291.51 L-2025.85 -1289.39"><title>manual-junction:crossroad-3e31c1232d93:cross-arm-1 | crossing</title></path>
+<circle class="node" cx="-2002.707" cy="-1228.642" r="0.45"><title>major:135807017:p:-1999.9:-1229.7:left</title></circle>
+<circle class="node" cx="-1997.093" cy="-1230.758" r="0.45"><title>major:135807017:p:-1999.9:-1229.7:right</title></circle>
+<circle class="node" cx="-1971.498" cy="-1293.818" r="0.45"><title>major:1327168500:p:-1970.8:-1290.9:left</title></circle>
+<circle class="node" cx="-1970.102" cy="-1287.982" r="0.45"><title>major:1327168500:p:-1970.8:-1290.9:right</title></circle>
+<circle class="node" cx="-2009.91" cy="-1284.515" r="0.45"><title>major:1327168502:p:-2009.2:-1281.6:left</title></circle>
+<circle class="node" cx="-2008.49" cy="-1278.685" r="0.45"><title>major:1327168502:p:-2009.2:-1281.6:right</title></circle>
+<circle class="node" cx="-2009.2" cy="-1281.7" r="0.45"><title>shared:p:-2009.2:-1281.7</title></circle>
+<circle class="node" cx="-2000.1" cy="-1229.6" r="0.45"><title>shared:p:-2000.1:-1229.6</title></circle>
+<circle class="node" cx="-2020.6" cy="-1223.9" r="0.45"><title>shared:p:-2020.6:-1223.9</title></circle>
+<circle class="node" cx="-2053.1" cy="-1237.2" r="0.45"><title>shared:p:-2053.1:-1237.2</title></circle>
+<circle class="node" cx="-2070.6" cy="-1239.1" r="0.45"><title>shared:p:-2070.6:-1239.1</title></circle>
+<circle class="node" cx="-2012.5" cy="-1291.4" r="0.45"><title>shared:p:-2012.5:-1291.4</title></circle>
+<circle class="node" cx="-2018.1" cy="-1296.7" r="0.45"><title>shared:p:-2018.1:-1296.7</title></circle>
+<circle class="node" cx="-2024.6" cy="-1294.1" r="0.45"><title>shared:p:-2024.6:-1294.1</title></circle>
+<circle class="node" cx="-1970.8" cy="-1290.9" r="0.45"><title>shared:p:-1970.8:-1290.9:w:1075762278:0:0</title></circle>
+<circle class="node" cx="-1963.9" cy="-1274.8" r="0.45"><title>shared:p:-1963.9:-1274.8</title></circle>
+<circle class="port" cx="-2016.271" cy="-1282.941" r="1.2"><title>manual-junction:crossroad-3e31c1232d93:port:arm-0-0</title></circle>
+<circle class="port" cx="-2014.349" cy="-1277.269" r="1.2"><title>manual-junction:crossroad-3e31c1232d93:port:arm-0-1</title></circle>
+<circle class="port" cx="-2025.847" cy="-1289.39" r="1.2"><title>manual-junction:crossroad-3e31c1232d93:port:arm-1-0</title></circle>
+<circle class="port" cx="-2020.233" cy="-1291.506" r="1.2"><title>manual-junction:crossroad-3e31c1232d93:port:arm-1-1</title></circle>
+<circle class="port" cx="-2030.867" cy="-1277.71" r="1.2"><title>manual-junction:crossroad-3e31c1232d93:port:arm-2-0</title></circle>
+<circle class="port" cx="-2028.675" cy="-1272.124" r="1.2"><title>manual-junction:crossroad-3e31c1232d93:port:arm-2-1</title></circle>
+<circle class="port" cx="-2017.174" cy="-1267.014" r="1.2"><title>manual-junction:crossroad-3e31c1232d93:port:arm-3-0</title></circle>
+<circle class="port" cx="-2011.56" cy="-1269.13" r="1.2"><title>manual-junction:crossroad-3e31c1232d93:port:arm-3-1</title></circle>
+</svg>
+<text x="1220" y="555" font-size="15" font-weight="700">008 · crossroad-121c6535ff27</text>
+<text x="1220" y="579" font-size="14">显式路口 · 规则通过 · 待核实</text>
+<text x="1220" y="601" font-size="12">中心 -152, 1264.7 · 1 原节点 / 4 方向</text>
+<svg x="1220" y="611" width="360" height="335" viewBox="-217.0 -1329.7 130 130">
+<path class="road" d="M-9.75 -1179.92 L-106.81 -1233.71"><title>w:74415448:3:0:left | sidewalk</title></path>
+<path class="road" d="M-7.05 -1185.28 L-103.79 -1238.89"><title>w:74415448:3:0:right | sidewalk</title></path>
+<path class="road" d="M-106.81 -1233.71 L-143.41 -1255.97"><title>w:74415448:4:0:left | sidewalk</title></path>
+<path class="road" d="M-103.79 -1238.89 L-140.09 -1260.96"><title>w:74415448:4:0:right | sidewalk</title></path>
+<path class="road" d="M-163.38 -1269.23 L-206.46 -1300.37"><title>w:74415448:5:0:left | sidewalk</title></path>
+<path class="road" d="M-160.06 -1274.23 L-202.94 -1305.23"><title>w:74415448:5:0:right | sidewalk</title></path>
+<path class="road" d="M-206.46 -1300.37 L-235.16 -1321.07"><title>w:168476042:0:0:left | sidewalk</title></path>
+<path class="road" d="M-202.94 -1305.23 L-231.65 -1325.93"><title>w:168476042:0:0:right | sidewalk</title></path>
+<path class="road" d="M-134.41 -1296.18 L-112.83 -1334.09"><title>w:1003005392:0:0:left | sidewalk</title></path>
+<path class="road" d="M-129.19 -1293.22 L-107.17 -1332.11"><title>w:1003005392:0:0:right | sidewalk</title></path>
+<path class="road" d="M-147.78 -1276.33 L-134.41 -1296.18"><title>w:1003005393:0:0:left | sidewalk</title></path>
+<path class="road" d="M-142.81 -1272.98 L-129.19 -1293.22"><title>w:1003005393:0:0:right | sidewalk</title></path>
+<path class="road" d="M2234.8 -835.45 L-146.33 -2052.16"><title>w:1370822595:25:0:left | sidewalk</title></path>
+<path class="road" d="M2237.6 -840.75 L-143.87 -2057.64"><title>w:1370822595:25:0:right | sidewalk</title></path>
+<path class="road shared" d="M-169.9 -1134.9 L-168.3 -1220.1"><title>w:132887680:3:0 | shared_way</title></path>
+<path class="road shared" d="M-168.3 -1220.1 L-160.9 -1248.1"><title>w:132887680:4:0 | shared_way</title></path>
+<path class="road shared" d="M-160.9 -1248.1 L-155.12 -1258.89"><title>w:132887680:5:0 | shared_way</title></path>
+<path class="road turn" d="M-155.12 -1258.89 L-143.41 -1255.97"><title>manual-junction:crossroad-121c6535ff27:corner-arm-2-arm-3 | turn</title></path>
+<path class="road turn" d="M-140.09 -1260.96 L-142.81 -1272.98"><title>manual-junction:crossroad-121c6535ff27:corner-arm-3-arm-0 | turn</title></path>
+<path class="road cross" d="M-143.41 -1255.97 L-140.09 -1260.96"><title>manual-junction:crossroad-121c6535ff27:cross-arm-3 | crossing</title></path>
+<path class="road turn" d="M-147.78 -1276.33 L-160.06 -1274.23"><title>manual-junction:crossroad-121c6535ff27:corner-arm-0-arm-1 | turn</title></path>
+<path class="road cross" d="M-142.81 -1272.98 L-147.78 -1276.33"><title>manual-junction:crossroad-121c6535ff27:cross-arm-0 | crossing</title></path>
+<path class="road turn" d="M-163.38 -1269.23 L-155.12 -1258.89"><title>manual-junction:crossroad-121c6535ff27:corner-arm-1-arm-2 | turn</title></path>
+<path class="road cross" d="M-160.06 -1274.23 L-163.38 -1269.23"><title>manual-junction:crossroad-121c6535ff27:cross-arm-1 | crossing</title></path>
+<circle class="node" cx="-106.807" cy="-1233.706" r="0.45"><title>major:74415448:p:-105.3:-1236.3:left</title></circle>
+<circle class="node" cx="-103.793" cy="-1238.894" r="0.45"><title>major:74415448:p:-105.3:-1236.3:right</title></circle>
+<circle class="node" cx="-206.458" cy="-1300.369" r="0.45"><title>major:74415448:p:-204.7:-1302.8:left</title></circle>
+<circle class="node" cx="-202.942" cy="-1305.231" r="0.45"><title>major:74415448:p:-204.7:-1302.8:right</title></circle>
+<circle class="node" cx="-134.409" cy="-1296.181" r="0.45"><title>major:1003005392:p:-131.8:-1294.7:left</title></circle>
+<circle class="node" cx="-129.191" cy="-1293.219" r="0.45"><title>major:1003005392:p:-131.8:-1294.7:right</title></circle>
+<circle class="node" cx="-168.3" cy="-1220.1" r="0.45"><title>shared:p:-168.3:-1220.1</title></circle>
+<circle class="node" cx="-160.9" cy="-1248.1" r="0.45"><title>shared:p:-160.9:-1248.1</title></circle>
+<circle class="port" cx="-147.783" cy="-1276.328" r="1.2"><title>manual-junction:crossroad-121c6535ff27:port:arm-0-0</title></circle>
+<circle class="port" cx="-142.812" cy="-1272.979" r="1.2"><title>manual-junction:crossroad-121c6535ff27:port:arm-0-1</title></circle>
+<circle class="port" cx="-163.385" cy="-1269.231" r="1.2"><title>manual-junction:crossroad-121c6535ff27:port:arm-1-0</title></circle>
+<circle class="port" cx="-160.064" cy="-1274.23" r="1.2"><title>manual-junction:crossroad-121c6535ff27:port:arm-1-1</title></circle>
+<circle class="port" cx="-155.115" cy="-1258.89" r="1.2"><title>manual-junction:crossroad-121c6535ff27:port:arm-2-0</title></circle>
+<circle class="port" cx="-143.407" cy="-1255.966" r="1.2"><title>manual-junction:crossroad-121c6535ff27:port:arm-3-0</title></circle>
+<circle class="port" cx="-140.087" cy="-1260.964" r="1.2"><title>manual-junction:crossroad-121c6535ff27:port:arm-3-1</title></circle>
+</svg>
+<text x="20" y="970" font-size="15" font-weight="700">009 · crossroad-bb06bd97c1cb</text>
+<text x="20" y="994" font-size="14">显式路口 · 规则通过 · 待核实</text>
+<text x="20" y="1016" font-size="12">中心 -2531.9, 1077.5 · 1 原节点 / 4 方向</text>
+<svg x="20" y="1026" width="360" height="335" viewBox="-2596.9 -1142.5 130 130">
+<path class="road" d="M-2652.57 -1018.87 L-2543.94 -1074.68"><title>w:71531790:2:0:left | sidewalk</title></path>
+<path class="road" d="M-2649.83 -1013.53 L-2541.2 -1069.35"><title>w:71531790:2:0:right | sidewalk</title></path>
+<path class="road" d="M-2522.12 -1084.61 L-2425.69 -1123"><title>w:1075724571:0:0:left | sidewalk</title></path>
+<path class="road" d="M-2519.38 -1079.27 L-2423.51 -1117.4"><title>w:1075724571:0:0:right | sidewalk</title></path>
+<path class="road shared" d="M-2537.84 -1087.93 L-2651.2 -1286.9"><title>w:71531804:0:0 | shared_way</title></path>
+<path class="road shared" d="M-2346.1 -719.3 L-2526.38 -1066.85"><title>w:1075724572:0:0 | shared_way</title></path>
+<path class="road turn" d="M-2541.2 -1069.35 L-2526.38 -1066.85"><title>manual-junction:crossroad-bb06bd97c1cb:corner-arm-2-arm-3 | turn</title></path>
+<path class="road cross" d="M-2543.94 -1074.68 L-2541.2 -1069.35"><title>manual-junction:crossroad-bb06bd97c1cb:cross-arm-2 | crossing</title></path>
+<path class="road turn" d="M-2526.38 -1066.85 L-2519.38 -1079.27"><title>manual-junction:crossroad-bb06bd97c1cb:corner-arm-3-arm-0 | turn</title></path>
+<path class="road turn" d="M-2522.12 -1084.61 L-2537.84 -1087.93"><title>manual-junction:crossroad-bb06bd97c1cb:corner-arm-0-arm-1 | turn</title></path>
+<path class="road cross" d="M-2519.38 -1079.27 L-2522.12 -1084.61"><title>manual-junction:crossroad-bb06bd97c1cb:cross-arm-0 | crossing</title></path>
+<path class="road turn" d="M-2537.84 -1087.93 L-2543.94 -1074.68"><title>manual-junction:crossroad-bb06bd97c1cb:corner-arm-1-arm-2 | turn</title></path>
+<circle class="port" cx="-2522.122" cy="-1084.606" r="1.2"><title>manual-junction:crossroad-bb06bd97c1cb:port:arm-0-0</title></circle>
+<circle class="port" cx="-2519.379" cy="-1079.268" r="1.2"><title>manual-junction:crossroad-bb06bd97c1cb:port:arm-0-1</title></circle>
+<circle class="port" cx="-2537.84" cy="-1087.927" r="1.2"><title>manual-junction:crossroad-bb06bd97c1cb:port:arm-1-0</title></circle>
+<circle class="port" cx="-2543.944" cy="-1074.684" r="1.2"><title>manual-junction:crossroad-bb06bd97c1cb:port:arm-2-0</title></circle>
+<circle class="port" cx="-2541.202" cy="-1069.348" r="1.2"><title>manual-junction:crossroad-bb06bd97c1cb:port:arm-2-1</title></circle>
+<circle class="port" cx="-2526.375" cy="-1066.848" r="1.2"><title>manual-junction:crossroad-bb06bd97c1cb:port:arm-3-0</title></circle>
+</svg>
+<text x="420" y="970" font-size="15" font-weight="700">010 · crossroad-1a83dbdaf4f5</text>
+<text x="420" y="994" font-size="14">显式路口 · 规则通过 · 待核实</text>
+<text x="420" y="1016" font-size="12">中心 381.5, 1048.5 · 1 原节点 / 4 方向</text>
+<svg x="420" y="1026" width="360" height="335" viewBox="316.5 -1113.5 130 130">
+<path class="road" d="M371.36 -1050.28 L356.11 -963.39"><title>w:27203773:0:0:left | sidewalk</title></path>
+<path class="road" d="M365.44 -1051.32 L350.29 -964.81"><title>w:27203773:0:0:right | sidewalk</title></path>
+<path class="road" d="M356 -930.65 L376.31 -1037.27"><title>w:68998159:3:0:left | sidewalk</title></path>
+<path class="road" d="M361.81 -929.15 L382.2 -1036.15"><title>w:68998159:3:0:right | sidewalk</title></path>
+<path class="road" d="M369.13 -1048.58 L210.58 -1089.24"><title>w:74415448:0:0:left | sidewalk</title></path>
+<path class="road" d="M370.62 -1054.39 L212.42 -1094.96"><title>w:74415448:0:0:right | sidewalk</title></path>
+<path class="road" d="M1864.63 -1029.43 L401.13 -1778.63"><title>w:74444895:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M1867.37 -1034.77 L403.87 -1783.97"><title>w:74444895:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M371.81 -1078.58 L374.7 -1127.28"><title>w:1002713694:0:0:left | sidewalk</title></path>
+<path class="road" d="M377.8 -1078.22 L380.69 -1126.92"><title>w:1002713694:0:0:right | sidewalk</title></path>
+<path class="road" d="M365.44 -1051.32 L371.81 -1078.58"><title>w:1002713695:0:0:left | sidewalk</title></path>
+<path class="road" d="M371.36 -1050.28 L377.8 -1078.22"><title>w:1002713695:0:0:right | sidewalk</title></path>
+<path class="road" d="M381.05 -1058.96 L385.69 -1077.34"><title>w:1002716295:0:0:left | sidewalk</title></path>
+<path class="road" d="M386.92 -1057.71 L391.51 -1075.87"><title>w:1002716295:0:0:right | sidewalk</title></path>
+<path class="road" d="M385.69 -1077.34 L388.9 -1126.43"><title>w:1002716296:0:0:left | sidewalk</title></path>
+<path class="road" d="M391.51 -1075.87 L394.9 -1126.57"><title>w:1002716296:0:0:right | sidewalk</title></path>
+<path class="road" d="M496.55 -1028.12 L392.62 -1043.8"><title>w:1368697070:2:0:left | sidewalk</title></path>
+<path class="road" d="M497.25 -1034.08 L394.11 -1049.62"><title>w:1368697070:2:0:right | sidewalk</title></path>
+<path class="road" d="M2234.8 -835.45 L-146.33 -2052.16"><title>w:1370822595:25:0:left | sidewalk</title></path>
+<path class="road" d="M2237.6 -840.75 L-143.87 -2057.64"><title>w:1370822595:25:0:right | sidewalk</title></path>
+<path class="road shared" d="M514.3 -975.1 L427.9 -984.6"><title>w:166712569:0:0 | shared_way</title></path>
+<path class="road shared" d="M427.9 -984.6 L423.8 -982.1"><title>w:166712569:1:0 | shared_way</title></path>
+<path class="road shared" d="M306.8 -965.6 L324.8 -1025.4"><title>w:537300822:0:0 | shared_way</title></path>
+<path class="road shared" d="M324.8 -1025.4 L320.6 -1040.5"><title>w:537300822:1:0 | shared_way</title></path>
+<path class="road shared" d="M320.6 -1040.5 L140.8 -1088.8"><title>w:537300822:2:0 | shared_way</title></path>
+<path class="road turn" d="M382.2 -1036.15 L392.62 -1043.8"><title>manual-junction:review-guofan-guoxiu:corner-south-east | turn</title></path>
+<path class="road cross" d="M376.31 -1037.27 L382.2 -1036.15"><title>manual-junction:review-guofan-guoxiu:cross-south | crossing</title></path>
+<path class="road turn" d="M394.11 -1049.62 L386.92 -1057.71"><title>manual-junction:review-guofan-guoxiu:corner-east-north | turn</title></path>
+<path class="road cross" d="M392.62 -1043.8 L394.11 -1049.62"><title>manual-junction:review-guofan-guoxiu:cross-east | crossing</title></path>
+<path class="road turn" d="M381.05 -1058.96 L370.62 -1054.39"><title>manual-junction:review-guofan-guoxiu:corner-north-west | turn</title></path>
+<path class="road cross" d="M386.92 -1057.71 L381.05 -1058.96"><title>manual-junction:review-guofan-guoxiu:cross-north | crossing</title></path>
+<path class="road turn" d="M369.13 -1048.58 L376.31 -1037.27"><title>manual-junction:review-guofan-guoxiu:corner-west-south | turn</title></path>
+<path class="road cross" d="M370.62 -1054.39 L369.13 -1048.58"><title>manual-junction:review-guofan-guoxiu:cross-west | crossing</title></path>
+<circle class="node" cx="371.355" cy="-1050.282" r="0.45"><title>major:27203773:p:368.4:-1050.8:left</title></circle>
+<circle class="node" cx="365.445" cy="-1051.318" r="0.45"><title>major:27203773:p:368.4:-1050.8:right</title></circle>
+<circle class="node" cx="371.805" cy="-1078.578" r="0.45"><title>major:1002713694:p:374.8:-1078.4:left</title></circle>
+<circle class="node" cx="377.795" cy="-1078.222" r="0.45"><title>major:1002713694:p:374.8:-1078.4:right</title></circle>
+<circle class="node" cx="385.691" cy="-1077.335" r="0.45"><title>major:1002716295:p:388.6:-1076.6:left</title></circle>
+<circle class="node" cx="391.509" cy="-1075.865" r="0.45"><title>major:1002716295:p:388.6:-1076.6:right</title></circle>
+<circle class="node" cx="427.9" cy="-984.6" r="0.45"><title>shared:p:427.9:-984.6</title></circle>
+<circle class="node" cx="324.8" cy="-1025.4" r="0.45"><title>shared:p:324.8:-1025.4</title></circle>
+<circle class="node" cx="320.6" cy="-1040.5" r="0.45"><title>shared:p:320.6:-1040.5</title></circle>
+<circle class="port" cx="381.051" cy="-1058.958" r="1.2"><title>manual-junction:review-guofan-guoxiu:port:north-0</title></circle>
+<circle class="port" cx="386.919" cy="-1057.712" r="1.2"><title>manual-junction:review-guofan-guoxiu:port:north-1</title></circle>
+<circle class="port" cx="392.621" cy="-1043.803" r="1.2"><title>manual-junction:review-guofan-guoxiu:port:east-0</title></circle>
+<circle class="port" cx="394.111" cy="-1049.618" r="1.2"><title>manual-junction:review-guofan-guoxiu:port:east-1</title></circle>
+<circle class="port" cx="376.307" cy="-1037.274" r="1.2"><title>manual-junction:review-guofan-guoxiu:port:south-0</title></circle>
+<circle class="port" cx="382.2" cy="-1036.15" r="1.2"><title>manual-junction:review-guofan-guoxiu:port:south-1</title></circle>
+<circle class="port" cx="369.131" cy="-1048.576" r="1.2"><title>manual-junction:review-guofan-guoxiu:port:west-0</title></circle>
+<circle class="port" cx="370.621" cy="-1054.387" r="1.2"><title>manual-junction:review-guofan-guoxiu:port:west-1</title></circle>
+</svg>
+<text x="820" y="970" font-size="15" font-weight="700">011 · crossroad-17fada56724e</text>
+<text x="820" y="994" font-size="14">显式路口 · 规则通过 · 待核实</text>
+<text x="820" y="1016" font-size="12">中心 773.1, 1024.8 · 1 原节点 / 4 方向</text>
+<svg x="820" y="1026" width="360" height="335" viewBox="708.1 -1089.8 130 130">
+<path class="road" d="M1033.74 -1025.2 L785.14 -1021.96"><title>w:68998164:0:0:s1:left | sidewalk</title></path>
+<path class="road" d="M1033.66 -1031.2 L785.06 -1027.96"><title>w:68998164:0:0:s1:right | sidewalk</title></path>
+<path class="road" d="M1864.63 -1029.43 L401.13 -1778.63"><title>w:74444895:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M1867.37 -1034.77 L403.87 -1783.97"><title>w:74444895:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M761.14 -1021.84 L575.5 -1022.4"><title>w:1368697070:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M761.06 -1027.84 L575.5 -1028.4"><title>w:1368697070:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M2234.8 -835.45 L-146.33 -2052.16"><title>w:1370822595:25:0:left | sidewalk</title></path>
+<path class="road" d="M2237.6 -840.75 L-143.87 -2057.64"><title>w:1370822595:25:0:right | sidewalk</title></path>
+<path class="road shared" d="M772.32 -1012.83 L766.1 -917.5"><title>w:74415449:0:0:s0 | shared_way</title></path>
+<path class="road shared" d="M775 -1039.7 L778.6 -1063.3"><title>w:1317092181:0:0 | shared_way</title></path>
+<path class="road shared" d="M778.6 -1063.3 L785.8 -1083.1"><title>w:1317092181:1:0 | shared_way</title></path>
+<path class="road shared" d="M773.76 -1030.02 L775 -1039.7"><title>w:1317092182:0:0 | shared_way</title></path>
+<path class="road shared" d="M785.8 -1083.1 L825.2 -1132.8"><title>w:1317100510:0:0 | shared_way</title></path>
+<path class="road shared" d="M807.2 -972.3 L797.4 -967.1"><title>w:1317303998:0:0 | shared_way</title></path>
+<path class="road shared" d="M797.4 -967.1 L790.7 -967.4"><title>w:1317303998:1:0 | shared_way</title></path>
+<path class="road shared" d="M790.7 -967.4 L783.3 -975.1"><title>w:1317303998:2:0 | shared_way</title></path>
+<path class="road shared" d="M783.3 -975.1 L773.9 -968.1"><title>w:1317303998:3:0 | shared_way</title></path>
+<path class="road shared" d="M773.9 -968.1 L774 -944.2"><title>w:1317303998:4:0 | shared_way</title></path>
+<path class="road shared" d="M842.7 -968.6 L807.2 -972.3"><title>w:1317303999:0:0 | shared_way</title></path>
+<path class="road turn" d="M772.32 -1012.83 L785.14 -1021.96"><title>manual-junction:crossroad-17fada56724e:corner-arm-3-arm-0 | turn</title></path>
+<path class="road turn" d="M785.06 -1027.96 L773.76 -1030.02"><title>manual-junction:crossroad-17fada56724e:corner-arm-0-arm-1 | turn</title></path>
+<path class="road cross" d="M785.14 -1021.96 L785.06 -1027.96"><title>manual-junction:crossroad-17fada56724e:cross-arm-0 | crossing</title></path>
+<path class="road turn" d="M773.76 -1030.02 L761.06 -1027.84"><title>manual-junction:crossroad-17fada56724e:corner-arm-1-arm-2 | turn</title></path>
+<path class="road turn" d="M761.14 -1021.84 L772.32 -1012.83"><title>manual-junction:crossroad-17fada56724e:corner-arm-2-arm-3 | turn</title></path>
+<path class="road cross" d="M761.06 -1027.84 L761.14 -1021.84"><title>manual-junction:crossroad-17fada56724e:cross-arm-2 | crossing</title></path>
+<circle class="node" cx="775.0" cy="-1039.7" r="0.45"><title>shared:p:775.0:-1039.7</title></circle>
+<circle class="node" cx="778.6" cy="-1063.3" r="0.45"><title>shared:p:778.6:-1063.3</title></circle>
+<circle class="node" cx="785.8" cy="-1083.1" r="0.45"><title>shared:p:785.8:-1083.1</title></circle>
+<circle class="node" cx="807.2" cy="-972.3" r="0.45"><title>shared:p:807.2:-972.3</title></circle>
+<circle class="node" cx="797.4" cy="-967.1" r="0.45"><title>shared:p:797.4:-967.1</title></circle>
+<circle class="node" cx="790.7" cy="-967.4" r="0.45"><title>shared:p:790.7:-967.4</title></circle>
+<circle class="node" cx="783.3" cy="-975.1" r="0.45"><title>shared:p:783.3:-975.1</title></circle>
+<circle class="node" cx="773.9" cy="-968.1" r="0.45"><title>shared:p:773.9:-968.1</title></circle>
+<circle class="port" cx="785.138" cy="-1021.957" r="1.2"><title>manual-junction:crossroad-17fada56724e:port:arm-0-0</title></circle>
+<circle class="port" cx="785.06" cy="-1027.957" r="1.2"><title>manual-junction:crossroad-17fada56724e:port:arm-0-1</title></circle>
+<circle class="port" cx="773.765" cy="-1030.015" r="1.2"><title>manual-junction:crossroad-17fada56724e:port:arm-1-0</title></circle>
+<circle class="port" cx="761.139" cy="-1021.836" r="1.2"><title>manual-junction:crossroad-17fada56724e:port:arm-2-0</title></circle>
+<circle class="port" cx="761.061" cy="-1027.836" r="1.2"><title>manual-junction:crossroad-17fada56724e:port:arm-2-1</title></circle>
+<circle class="port" cx="772.319" cy="-1012.825" r="1.2"><title>manual-junction:crossroad-17fada56724e:port:arm-3-0</title></circle>
+</svg>
+<text x="1220" y="970" font-size="15" font-weight="700">012 · crossroad-d1d28493bc6a</text>
+<text x="1220" y="994" font-size="14">显式路口 · 规则通过 · 待核实</text>
+<text x="1220" y="1016" font-size="12">中心 -1824.2, 763.6 · 1 原节点 / 4 方向</text>
+<svg x="1220" y="1026" width="360" height="335" viewBox="-1889.2 -828.6 130 130">
+<path class="road" d="M-2046.01 -778.39 L-1836.02 -767.23"><title>w:71531772:2:0:left | sidewalk</title></path>
+<path class="road" d="M-2046.39 -772.41 L-1836.34 -761.24"><title>w:71531772:2:0:right | sidewalk</title></path>
+<path class="road" d="M-1831.24 -773.77 L-2002.71 -1228.64"><title>w:135807017:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M-1825.63 -775.89 L-1997.09 -1230.76"><title>w:135807017:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M-1797.37 -650.51 L-1823.94 -750.94"><title>w:1078939202:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1791.63 -652.29 L-1818.32 -753.06"><title>w:1078939202:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1813.22 -769.3 L-1629.98 -813.02"><title>w:1078939203:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1811.83 -763.47 L-1628.62 -807.18"><title>w:1078939203:0:0:right | sidewalk</title></path>
+<path class="road shared" d="M-1788.1 -653.7 L-1817.3 -765.2"><title>w:71531820:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1817.3 -765.2 L-2009.2 -1281.7"><title>w:71531820:1:0 | shared_way</title></path>
+<path class="road turn" d="M-1818.32 -753.06 L-1811.83 -763.47"><title>manual-junction:crossroad-d1d28493bc6a:corner-arm-3-arm-0 | turn</title></path>
+<path class="road cross" d="M-1823.94 -750.94 L-1818.32 -753.06"><title>manual-junction:crossroad-d1d28493bc6a:cross-arm-3 | crossing</title></path>
+<path class="road turn" d="M-1813.22 -769.3 L-1825.63 -775.89"><title>manual-junction:crossroad-d1d28493bc6a:corner-arm-0-arm-1 | turn</title></path>
+<path class="road cross" d="M-1811.83 -763.47 L-1813.22 -769.3"><title>manual-junction:crossroad-d1d28493bc6a:cross-arm-0 | crossing</title></path>
+<path class="road turn" d="M-1831.24 -773.77 L-1836.02 -767.23"><title>manual-junction:crossroad-d1d28493bc6a:corner-arm-1-arm-2 | turn</title></path>
+<path class="road cross" d="M-1825.63 -775.89 L-1831.24 -773.77"><title>manual-junction:crossroad-d1d28493bc6a:cross-arm-1 | crossing</title></path>
+<path class="road turn" d="M-1836.34 -761.24 L-1823.94 -750.94"><title>manual-junction:crossroad-d1d28493bc6a:corner-arm-2-arm-3 | turn</title></path>
+<path class="road cross" d="M-1836.02 -767.23 L-1836.34 -761.24"><title>manual-junction:crossroad-d1d28493bc6a:cross-arm-2 | crossing</title></path>
+<circle class="node" cx="-1817.3" cy="-765.2" r="0.45"><title>shared:p:-1817.3:-765.2</title></circle>
+<circle class="port" cx="-1813.224" cy="-769.303" r="1.2"><title>manual-junction:crossroad-d1d28493bc6a:port:arm-0-0</title></circle>
+<circle class="port" cx="-1811.832" cy="-763.467" r="1.2"><title>manual-junction:crossroad-d1d28493bc6a:port:arm-0-1</title></circle>
+<circle class="port" cx="-1831.24" cy="-773.771" r="1.2"><title>manual-junction:crossroad-d1d28493bc6a:port:arm-1-0</title></circle>
+<circle class="port" cx="-1825.626" cy="-775.887" r="1.2"><title>manual-junction:crossroad-d1d28493bc6a:port:arm-1-1</title></circle>
+<circle class="port" cx="-1836.024" cy="-767.233" r="1.2"><title>manual-junction:crossroad-d1d28493bc6a:port:arm-2-0</title></circle>
+<circle class="port" cx="-1836.342" cy="-761.241" r="1.2"><title>manual-junction:crossroad-d1d28493bc6a:port:arm-2-1</title></circle>
+<circle class="port" cx="-1823.938" cy="-750.941" r="1.2"><title>manual-junction:crossroad-d1d28493bc6a:port:arm-3-0</title></circle>
+<circle class="port" cx="-1818.321" cy="-753.058" r="1.2"><title>manual-junction:crossroad-d1d28493bc6a:port:arm-3-1</title></circle>
+</svg>
+</svg>

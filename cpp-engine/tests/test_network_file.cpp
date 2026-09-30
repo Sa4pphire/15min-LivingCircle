@@ -1,6 +1,8 @@
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <stdexcept>
+#include <utility>
 
 #include "isochrone/json_io.hpp"
 #include "test_check.hpp"
@@ -15,11 +17,44 @@ int main() {
     TEST_CHECK(file.good());
     const std::string document = isochrone::read_all(file);
     const auto normal = isochrone::parse_synthetic_network(document, {0, 0});
-    TEST_CHECK(normal.nodes.size() == 10438);
-    TEST_CHECK(normal.edges.size() == 10917);
+    // The fixture grows when reviewed junctions are added. Test its walking
+    // semantics rather than freezing the previous generation's total size.
+    TEST_CHECK(normal.nodes.size() > 8518);
+    TEST_CHECK(normal.edges.size() > 9232);
     std::size_t junction_turns = 0;
     std::size_t junction_crossings = 0;
+    std::map<std::string, std::pair<std::size_t, std::size_t>> reviewed_counts;
+    std::map<std::string, std::pair<std::size_t, std::size_t>> crossroad_counts;
     for (const auto& edge : normal.edges) {
+      const std::string crossroad_prefix = "manual-junction:crossroad-";
+      if (edge.id.rfind(crossroad_prefix, 0) == 0) {
+        const auto end = edge.id.find(':', crossroad_prefix.size());
+        TEST_CHECK(end != std::string::npos);
+        auto& counts = crossroad_counts[edge.id.substr(crossroad_prefix.size(), end-crossroad_prefix.size())];
+        if (edge.kind == isochrone::EdgeKind::turn) {
+          ++counts.first;
+          TEST_CHECK(!edge.wait_seconds);
+        } else {
+          TEST_CHECK(edge.kind == isochrone::EdgeKind::crossing);
+          ++counts.second;
+          TEST_CHECK(edge.wait_seconds && *edge.wait_seconds == 20);
+        }
+      }
+      const std::string prefix = "manual-junction:review-";
+      if (edge.id.rfind(prefix, 0) == 0) {
+        const auto end = edge.id.find(':', prefix.size());
+        TEST_CHECK(end != std::string::npos);
+        const auto name = edge.id.substr(prefix.size(), end - prefix.size());
+        auto& counts = reviewed_counts[name];
+        if (edge.kind == isochrone::EdgeKind::turn) {
+          ++counts.first;
+          TEST_CHECK(!edge.wait_seconds);
+        } else {
+          TEST_CHECK(edge.kind == isochrone::EdgeKind::crossing);
+          ++counts.second;
+          TEST_CHECK(edge.wait_seconds && *edge.wait_seconds == 20);
+        }
+      }
       if (edge.id.rfind("manual-junction:blue-crossroads-01:", 0) != 0) continue;
       if (edge.kind == isochrone::EdgeKind::turn) ++junction_turns;
       if (edge.kind == isochrone::EdgeKind::crossing) {
@@ -29,6 +64,18 @@ int main() {
     }
     TEST_CHECK(junction_turns == 4);
     TEST_CHECK(junction_crossings == 6);
+    const std::map<std::string, std::pair<std::size_t, std::size_t>> expected_reviewed = {
+      {"guofan-guoxiu", {4, 4}}, {"yinxing-guoquan", {4, 8}},
+      {"yingao-guoquan", {4, 8}}, {"south-central", {4, 5}},
+      {"southeast-outer", {4, 4}}, {"southeast-outer-2", {4, 4}},
+      {"north-outer", {4, 4}}, {"central-shared", {4, 3}},
+    };
+    TEST_CHECK(reviewed_counts == expected_reviewed);
+    TEST_CHECK(!crossroad_counts.empty());
+    for (const auto& entry : crossroad_counts) {
+      TEST_CHECK(entry.second.first == 4);
+      TEST_CHECK(entry.second.second >= 2 && entry.second.second <= 8);
+    }
     TEST_CHECK(normal.facilities.empty());
     TEST_CHECK(normal.service_categories.empty());
     TEST_CHECK(normal.threshold_seconds == 900);

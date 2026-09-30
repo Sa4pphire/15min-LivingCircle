@@ -27,6 +27,7 @@ const props = defineProps({
   overviewRequestId: { type: Number, default: 0 },
   analysisMode: { type: String, default: "preview" },
   selectionDisabled: { type: Boolean, default: false },
+  layoutTransitioning: { type: Boolean, default: false },
 });
 const emit = defineEmits(["select"]);
 
@@ -53,6 +54,9 @@ const displayCornersBd09 = shallowRef(null);
 const regionCenterBd09 = shallowRef(null);
 const mapAlignment = shallowRef(null);
 const viewport = ref({ width: 1, height: 1 });
+// A resize changes the visible area, not pixels per metre. Refresh this fit
+// reference only on initial layout or an explicit zoom / overview action.
+const fallbackFitViewport = shallowRef(null);
 const liveBoundaryPath = ref("");
 const projectionVersion = ref(0);
 const hoverInside = ref(true);
@@ -81,24 +85,26 @@ let mapSetupPromise;
 
 const fallbackActive = computed(() => mapState.value !== "ready");
 const candidateMarkerScale = computed(() => markerScaleForTier(props.zoomTier));
-const fallbackFit = computed(() => fitLocalPoints(
-  displayCornersLocal, viewport.value.width, viewport.value.height, 0.04,
-));
+const fallbackFit = computed(() => {
+  const { width, height } = fallbackFitViewport.value ?? viewport.value;
+  return fitLocalPoints(displayCornersLocal, width, height, 0.04);
+});
 const fallbackView = computed(() => {
+  const fitViewport = fallbackFitViewport.value ?? viewport.value;
   const overview = props.zoomTier === "result" && props.analysisMode === "cpp"
-    ? cppOverviewFit(overviewResult.value, viewport.value.width, viewport.value.height) : null;
+    ? cppOverviewFit(overviewResult.value, fitViewport.width, fitViewport.height) : null;
   const fitted = overview ?? zoomedFit(
     fallbackFit.value,
-    viewport.value.width,
-    viewport.value.height,
+    fitViewport.width,
+    fitViewport.height,
     props.zoomTier,
     props.candidate?.coordType === "wgs84ll"
       ? wgsToLocal([props.candidate.lng, props.candidate.lat], fallbackOrigin) : null,
   );
   return {
     ...fitted,
-    translateX: fitted.translateX + fallbackPan.value.x,
-    translateY: fitted.translateY + fallbackPan.value.y,
+    translateX: fitted.translateX + (viewport.value.width - fitViewport.width) / 2 + fallbackPan.value.x,
+    translateY: fitted.translateY + (viewport.value.height - fitViewport.height) / 2 + fallbackPan.value.y,
   };
 });
 const fallbackTransform = computed(() => {
@@ -529,15 +535,19 @@ async function initializeBaidu() {
 }
 
 function updateSize() {
-  // Do not refit/reload tiles when the retained map is hidden in local mode.
-  if (!stageEl.value?.clientWidth || !stageEl.value.clientHeight) return;
+  // Never change the camera for a layout resize (including reduced-motion
+  // footer toggles). The SDK retains its zoom/centre; SVG only gains viewport.
+  if (!stageEl.value?.clientWidth || !stageEl.value.clientHeight) return false;
   if (stageEl.value.clientWidth === viewport.value.width &&
-    stageEl.value.clientHeight === viewport.value.height) return;
-  viewport.value = {
+    stageEl.value.clientHeight === viewport.value.height) return false;
+  const size = {
     width: Math.max(1, stageEl.value.clientWidth),
     height: Math.max(1, stageEl.value.clientHeight),
   };
-  if (mapState.value === "ready") fitBaiduViewport();
+  if (!fallbackFitViewport.value) fallbackFitViewport.value = size;
+  viewport.value = size;
+  if (mapState.value === "ready") scheduleProjection();
+  return true;
 }
 
 function handleNativeDragEnd() {
@@ -547,6 +557,7 @@ function handleNativeDragEnd() {
 
 watch([() => props.zoomTier, () => props.overviewRequestId], () => {
   overviewResult.value = props.zoomTier === "result" ? props.analysisResult : null;
+  fallbackFitViewport.value = { ...viewport.value };
   fallbackPan.value = { x: 0, y: 0 };
   if (mapState.value === "ready") fitBaiduViewport(true);
 });
@@ -571,6 +582,17 @@ watch(() => props.analysisMode, () => {
 });
 watch(() => props.selectionDisabled, (disabled) => {
   if (disabled) leaveProbe();
+});
+watch(() => props.layoutTransitioning, (transitioning, previous) => {
+  if (transitioning) {
+    leaveProbe();
+    return;
+  }
+  if (!previous) return;
+  // Read final dimensions even if ResizeObserver delivery is still pending;
+  // ending a fold must not fit, recenter or undo the user's pan/zoom.
+  updateSize();
+  if (mapState.value === "ready") scheduleProjection();
 });
 onMounted(() => {
   updateSize();

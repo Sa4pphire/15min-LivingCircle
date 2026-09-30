@@ -26,12 +26,12 @@ const readJson = name => JSON.parse(readFileSync(new URL(`../src/data/${name}`, 
 const prepared = readJson("demoMap.bd09.json");
 
 function stage(t, asset = prepared, loadError = null) {
-  const stats = { sdkLoads: 0, maps: 0, fits: 0, selections: 0 };
+  const stats = { sdkLoads: 0, maps: 0, fits: 0, cameraChanges: 0, selections: 0 };
   const namespace = {
     Point: class { constructor(lng, lat) { this.lng = lng; this.lat = lat; } },
     Map: class {
       constructor() { stats.maps += 1; }
-      centerAndZoom(center, zoom) { this.center = center; this.zoom = zoom; }
+      centerAndZoom(center, zoom) { stats.cameraChanges += 1; this.center = center; this.zoom = zoom; }
       getZoom() { return this.zoom; }
       getCenter() { return this.center; }
       getViewport() { stats.fits += 1; return { center: this.center, zoom: 13 }; }
@@ -64,7 +64,7 @@ function stage(t, asset = prepared, loadError = null) {
   const component = new Function(...Object.keys(bindings), script)(...Object.values(bindings));
   const scope = effectScope();
   const props = reactive({ analysisMode: "preview", candidate: null, analysisResult: null,
-    zoomTier: "medium", overviewRequestId: 0, selectionDisabled: false });
+    zoomTier: "medium", overviewRequestId: 0, selectionDisabled: false, layoutTransitioning: false });
   const state = scope.run(() => component.setup(props, { expose() {}, emit(event, point) {
     stats.selections += 1;
     stats.lastSelection = point;
@@ -149,16 +149,130 @@ test("hidden map does not refit its viewport or request replacement tiles", asyn
   assert.equal(stats.fits, fits);
   state.stageEl.value = { clientWidth: 320, clientHeight: 500 };
   state.updateSize();
-  assert.equal(stats.fits, fits + 1);
+  assert.equal(stats.fits, fits);
+  assert.deepEqual(state.viewport.value, { width: 320, height: 500 });
 });
 
-test("App renders one retained map while keeping initial local mode offline", () => {
+test("App retains one shared map across its two supported modes", () => {
   const app = readFileSync(new URL("../src/App.vue", import.meta.url), "utf8");
   assert.equal((app.match(/<RealMapStage\b/g) ?? []).length, 1);
-  assert.match(app, /v-if="sharedMapMounted" v-show="mapMode !== 'local'"/);
-  assert.match(app, /sharedMapMounted = ref\(mapMode.value !== "local"\)/);
-  assert.doesNotMatch(app, /key="(?:real-preview|cpp-preview)"/);
+  const mapTag = app.match(/<RealMapStage\b[\s\S]*?\/>/)[0];
+  assert.doesNotMatch(mapTag, /\b(?:v-if|v-show|:key|key)=/);
+  assert.doesNotMatch(app, /LocalExperimentStage|sharedMapMounted/);
 });
+
+test("footer-sized viewport changes resize the retained map without reloading the SDK or clearing results", async t => {
+  const { state, props, stats } = stage(t);
+  await state.setupBaidu();
+  props.candidate = { lng: 121.505, lat: 31.333, coordType: "bd09ll" };
+  props.analysisResult = { coordinateSystem: "preview-local-v1", routeSegments: [] };
+  const candidate = props.candidate;
+  const result = props.analysisResult;
+  const instance = state.map;
+  state.stageEl.value = { clientWidth: 1440, clientHeight: 640 };
+  state.updateSize();
+  const fits = stats.fits;
+  const zoom = state.map.getZoom();
+  const center = state.map.getCenter();
+  const cameraChanges = stats.cameraChanges;
+  for (const height of [900, 640]) {
+    state.stageEl.value = { clientWidth: 1440, clientHeight: height };
+    state.updateSize();
+    state.updateSize(); // The same dimensions should not cause duplicate fits.
+    assert.equal(stats.fits, fits);
+    assert.equal(stats.cameraChanges, cameraChanges);
+    assert.equal(state.map.getZoom(), zoom);
+    assert.equal(state.map.getCenter(), center);
+    assert.deepEqual(state.viewport.value, { width: 1440, height });
+    assert.equal(state.map, instance);
+    assert.equal(stats.maps, 1);
+    assert.equal(stats.sdkLoads, 1);
+    assert.equal(props.zoomTier, "medium");
+    assert.equal(props.candidate, candidate);
+    assert.equal(props.analysisResult, result);
+  }
+});
+
+test("animated footer updates the SVG without fitting the retained map, including at completion", async t => {
+  const { state, props, stats } = stage(t);
+  await state.setupBaidu();
+  state.stageEl.value = { clientWidth: 1440, clientHeight: 640 };
+  state.updateSize();
+  const fits = stats.fits;
+  const instance = state.map;
+  const zoom = state.map.getZoom();
+  const center = state.map.getCenter();
+  const cameraChanges = stats.cameraChanges;
+  props.layoutTransitioning = true;
+  await nextTick();
+  for (const height of [660, 720, 800, 900, 850, 800, 700]) {
+    state.stageEl.value = { clientWidth: 1440, clientHeight: height };
+    state.updateSize();
+    assert.deepEqual(state.viewport.value, { width: 1440, height });
+    assert.equal(stats.fits, fits, "neither a fold nor its reversal should refit every frame");
+  }
+  props.layoutTransitioning = false;
+  await nextTick();
+  state.updateSize();
+  assert.equal(stats.fits, fits);
+  assert.equal(stats.cameraChanges, cameraChanges);
+  assert.equal(state.map.getZoom(), zoom);
+  assert.equal(state.map.getCenter(), center);
+  assert.equal(state.map, instance);
+  assert.equal(stats.maps, 1);
+  assert.equal(stats.sdkLoads, 1);
+});
+
+test("transition completion preserves zoom even before the final resize observer delivery", async t => {
+  const { state, props, stats } = stage(t);
+  await state.setupBaidu();
+  state.stageEl.value = { clientWidth: 1440, clientHeight: 640 };
+  state.updateSize();
+  const fits = stats.fits;
+  props.layoutTransitioning = true;
+  await nextTick();
+  state.stageEl.value = { clientWidth: 1440, clientHeight: 900 };
+  props.layoutTransitioning = false;
+  await nextTick();
+  assert.deepEqual(state.viewport.value, { width: 1440, height: 900 });
+  state.updateSize();
+  assert.equal(stats.fits, fits);
+});
+
+for (const tier of ["large", "medium", "small", "result"]) {
+  test(`native ${tier} zoom and panned centre survive footer resizing; explicit view actions still work`, async t => {
+    const { state, props, stats } = stage(t);
+    await state.setupBaidu();
+    state.stageEl.value = { clientWidth: 1440, clientHeight: 640 };
+    state.updateSize();
+    props.analysisMode = "cpp";
+    props.zoomTier = tier;
+    await nextTick();
+    // Stand in for a user's native drag, not the old fitted centre.
+    state.map.center = new state.BMap.Point(121.508, 31.335);
+    const center = state.map.getCenter();
+    const zoom = state.map.getZoom();
+    const fits = stats.fits;
+    const cameraChanges = stats.cameraChanges;
+    props.layoutTransitioning = true;
+    await nextTick();
+    for (const height of [700, 900, 800, 640]) {
+      state.stageEl.value = { clientWidth: 1440, clientHeight: height };
+      state.updateSize();
+      assert.equal(state.map.getZoom(), zoom);
+      assert.equal(state.map.getCenter(), center);
+    }
+    props.layoutTransitioning = false;
+    await nextTick();
+    assert.equal(stats.fits, fits);
+    assert.equal(stats.cameraChanges, cameraChanges);
+    // Explicitly requesting a new view remains the only reason to refit.
+    props.overviewRequestId += 1;
+    await nextTick();
+    assert.equal(stats.fits, fits + 1);
+    assert.equal(stats.cameraChanges, cameraChanges + 1);
+  });
+}
 
 function probeHarness(t, state) {
   const originalRaf = globalThis.requestAnimationFrame;

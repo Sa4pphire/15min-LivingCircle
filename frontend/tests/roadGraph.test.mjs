@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { buildDemoAnalysis } from "../src/analysisClient.js";
 import { buildDemoRoadGraph, clipSegmentToPolygon, parseRoadPath } from "../src/roadGraph.js";
 import { repairDemoRoadGraph } from "../src/roadGraphRepair.js";
+import { attachDividedRoadSections } from "../src/roadGraphSections.js";
 import { expandedLocalBounds, pointInPolygon, wgsToLocal } from "../src/mapGeometry.js";
 
 const square = [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]];
@@ -119,8 +120,9 @@ test("the entire generated graph is reproducible from the saved map geometry", (
   const rings = boundary.geometry.coordinates.map((ring) =>
     ring.map((point) => wgsToLocal(point, context.originWgs84)));
   const corners = expandedLocalBounds(rings[0]);
-  const rebuilt = repairDemoRoadGraph(buildDemoRoadGraph(context.features, rings,
-    [[...corners, corners[0]]]));
+  const specification = JSON.parse(readFileSync(new URL("../src/data/demoSidewalkSections.local.json", import.meta.url)));
+  const rebuilt = attachDividedRoadSections(repairDemoRoadGraph(buildDemoRoadGraph(context.features, rings,
+    [[...corners, corners[0]]])), specification);
   // JSON serialization normalizes negative zero in local coordinates.
   assert.equal(JSON.stringify(rebuilt), JSON.stringify(saved));
 });

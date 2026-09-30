@@ -8,6 +8,44 @@ export function zoomFactor(tier) {
   return mapZoomTiers.find((item) => item.id === tier)?.factor ?? 1;
 }
 
+// A discrete wheel step shares the button tiers; it never changes native SDK
+// zoom directly. Accumulate trackpad pixels, then allow the 420 ms camera
+// animation to settle before accepting the next step.
+export function createMapWheelStepper() {
+  let distance = 0;
+  let lastEventAt = -Infinity;
+  let nextStepAt = -Infinity;
+  return {
+    reset() {
+      distance = 0;
+      lastEventAt = -Infinity;
+      nextStepAt = -Infinity;
+    },
+    step(tier, event, now, pageHeight = 800) {
+      const deltaY = event.deltaY;
+      if (event.ctrlKey || !Number.isFinite(deltaY) || deltaY === 0 ||
+        Math.abs(event.deltaX ?? 0) > Math.abs(deltaY)) return null;
+      const delta = deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? pageHeight : 1);
+      if (now < nextStepAt) {
+        lastEventAt = now;
+        distance = 0;
+        return null;
+      }
+      if (now - lastEventAt > 180 || Math.sign(delta) !== Math.sign(distance)) distance = 0;
+      lastEventAt = now;
+      distance += delta;
+      if (Math.abs(distance) < 48) return null;
+      distance = 0;
+      nextStepAt = now + 460;
+      const index = mapZoomTiers.findIndex(item => item.id === tier);
+      // "Full circle" is a fitted view, not a fourth fixed zoom tier.
+      if (index < 0) return delta < 0 ? "medium" : "small";
+      const next = Math.max(0, Math.min(mapZoomTiers.length - 1, index + (delta < 0 ? -1 : 1)));
+      return mapZoomTiers[next].id;
+    },
+  };
+}
+
 export function markerScaleForTier(tier) {
   return zoomFactor(tier) / zoomFactor("medium");
 }

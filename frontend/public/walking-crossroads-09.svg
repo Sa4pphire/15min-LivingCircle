@@ -1,0 +1,895 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1380" viewBox="0 0 1600 1380" style="display:block;max-width:100%;height:auto" role="img" aria-labelledby="title desc">
+<title id="title">十字路口专项校对 · 第 9 页 · 合成数据</title>
+<desc id="desc">仅显示道路和节点；蓝色为转弯，橙色虚线为过街。所有推定过街仍待核实。</desc>
+<rect width="100%" height="100%" fill="#fbfdfc"/>
+<style>text{font-family:"Microsoft YaHei",sans-serif;fill:#173c3a}.road{fill:none;stroke:#75a5a0;stroke-width:.65;stroke-linecap:round}.shared{stroke:#245c52}.turn{stroke:#009cd4;stroke-width:1.3}.cross{stroke:#d1764e;stroke-width:1.4;stroke-dasharray:2 1}.node{fill:#54746e}.port{fill:#fff;stroke:#173c3a;stroke-width:.4}.center{fill:none;stroke:#d1764e;stroke-width:.7;stroke-dasharray:2 2}</style>
+<text x="25" y="40" font-size="27" font-weight="700">十字路口专项校对 · 第 9 页</text>
+<text x="25" y="74" font-size="17">蓝线：同角转弯　橙色虚线：过街（等待另计）　空心点：独立端口</text>
+<text x="25" y="101" font-size="15">“规则通过”不等于现实通行已核实；不得据此确认横道、隔离带或闸门。</text>
+<text x="20" y="140" font-size="15" font-weight="700">097 · crossroad-f70993461071</text>
+<text x="20" y="164" font-size="14">复杂几何 · 需人工判断</text>
+<text x="20" y="186" font-size="12">中心 1834.87, 90.2 · 3 原节点 / 5 方向</text>
+<svg x="20" y="196" width="360" height="335" viewBox="1769.867 -155.2 130 130">
+<path class="road" d="M1857.88 -93.79 L2113.48 -78.09"><title>w:39176202:0:0:left | sidewalk</title></path>
+<path class="road" d="M1857.52 -87.81 L2113.12 -72.11"><title>w:39176202:0:0:right | sidewalk</title></path>
+<path class="road" d="M1857.52 -87.81 L1830.63 -86.6"><title>w:39176208:0:0:left | sidewalk</title></path>
+<path class="road" d="M1857.88 -93.79 L1830.37 -92.6"><title>w:39176208:0:0:right | sidewalk</title></path>
+<path class="road" d="M1830.63 -86.6 L1816.27 -87.2"><title>w:133096545:0:0:left | sidewalk</title></path>
+<path class="road" d="M1830.37 -92.6 L1816.53 -93.2"><title>w:133096545:0:0:right | sidewalk</title></path>
+<path class="road" d="M1827.56 -90.22 L1834.46 -123.11"><title>w:133096552:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M1833.44 -88.98 L1840.34 -121.89"><title>w:133096552:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M1834.46 -123.11 L1844.26 -170.21"><title>w:133096552:0:0:s1:left | sidewalk</title></path>
+<path class="road" d="M1840.34 -121.89 L1850.14 -168.99"><title>w:133096552:0:0:s1:right | sidewalk</title></path>
+<path class="road" d="M1819.18 -89.08 L1770.43 32.74"><title>w:226153315:0:0:left | sidewalk</title></path>
+<path class="road" d="M1813.62 -91.31 L1764.97 30.26"><title>w:226153315:0:0:right | sidewalk</title></path>
+<path class="road" d="M1774 49.19 L1827.56 -90.22"><title>w:226153316:1:0:left | sidewalk</title></path>
+<path class="road" d="M1779.4 51.81 L1833.44 -88.98"><title>w:226153316:1:0:right | sidewalk</title></path>
+<path class="road" d="M1849.65 -232.46 L1819.18 -89.08"><title>w:1271913697:1:0:left | sidewalk</title></path>
+<path class="road" d="M1843.75 -233.54 L1813.62 -91.31"><title>w:1271913697:1:0:right | sidewalk</title></path>
+<path class="road shared" d="M1857.7 -90.8 L1893.3 -81"><title>w:39175393:0:0 | shared_way</title></path>
+<path class="road" d="M1857.7 -90.8 L1857.52 -87.81"><title>synthetic-turn:w:39175393:0:0:p:1857.7:-90.8 | turn</title></path>
+<path class="road shared" d="M1893.3 -81 L1920.8 -78"><title>w:39175393:1:0 | shared_way</title></path>
+<path class="road shared" d="M1959.7 -96.1 L1890.9 -98.8"><title>w:39175393:8:0 | shared_way</title></path>
+<path class="road shared" d="M1890.9 -98.8 L1857.7 -90.8"><title>w:39175393:9:0 | shared_way</title></path>
+<path class="road" d="M1857.7 -90.8 L1857.88 -93.79"><title>synthetic-turn:w:39175393:9:0:p:1857.7:-90.8 | turn</title></path>
+<path class="road shared" d="M1816.4 -90.2 L1604.6 -94.5"><title>w:144443016:0:0:s0 | shared_way</title></path>
+<path class="road" d="M1816.4 -90.2 L1813.62 -91.31"><title>synthetic-turn:w:144443016:0:0:s0:p:1816.4:-90.2 | turn</title></path>
+<path class="road shared" d="M1837.6 -122.5 L1927.7 -114.2"><title>w:159250245:0:0 | shared_way</title></path>
+<path class="road shared" d="M1878.5 -164.2 L1879.5 -139.9"><title>w:159250273:1:0 | shared_way</title></path>
+<path class="road shared" d="M1812.7 -6.8 L1832.4 -62.7"><title>w:226664667:8:0 | shared_way</title></path>
+<path class="road shared" d="M1832.4 -62.7 L1839.3 -70.3"><title>w:226664667:9:0 | shared_way</title></path>
+<path class="road shared" d="M1839.3 -70.3 L1861.5 -81"><title>w:226664667:10:0 | shared_way</title></path>
+<path class="road shared" d="M1861.5 -81 L1893.3 -81"><title>w:226664667:11:0 | shared_way</title></path>
+<path class="road" d="M1857.88 -93.79 L1857.52 -87.81"><title>synthetic-crossing:39176202:p:1857.7:-90.8 | crossing</title></path>
+<path class="road" d="M1837.6 -122.5 L1840.34 -121.89"><title>j:p:1837.6:-122.5:w:133096552:0:0 | turn</title></path>
+<circle class="node" cx="1857.884" cy="-93.794" r="0.45"><title>major:39176202:p:1857.7:-90.8:left</title></circle>
+<circle class="node" cx="1857.516" cy="-87.806" r="0.45"><title>major:39176202:p:1857.7:-90.8:right</title></circle>
+<circle class="node" cx="1830.632" cy="-86.603" r="0.45"><title>major:39176208:p:1830.5:-89.6:left</title></circle>
+<circle class="node" cx="1830.368" cy="-92.597" r="0.45"><title>major:39176208:p:1830.5:-89.6:right</title></circle>
+<circle class="node" cx="1816.272" cy="-87.203" r="0.45"><title>major:133096545:p:1816.4:-90.2:left</title></circle>
+<circle class="node" cx="1816.528" cy="-93.197" r="0.45"><title>major:133096545:p:1816.4:-90.2:right</title></circle>
+<circle class="node" cx="1827.564" cy="-90.216" r="0.45"><title>major:133096552:p:1830.5:-89.6:left</title></circle>
+<circle class="node" cx="1833.436" cy="-88.984" r="0.45"><title>major:133096552:p:1830.5:-89.6:right</title></circle>
+<circle class="node" cx="1834.463" cy="-123.113" r="0.45"><title>major:133096552:p:1837.4:-122.5:left</title></circle>
+<circle class="node" cx="1840.337" cy="-121.887" r="0.45"><title>major:133096552:p:1837.4:-122.5:right</title></circle>
+<circle class="node" cx="1819.185" cy="-89.085" r="0.45"><title>major:226153315:p:1816.4:-90.2:left</title></circle>
+<circle class="node" cx="1813.615" cy="-91.315" r="0.45"><title>major:226153315:p:1816.4:-90.2:right</title></circle>
+<circle class="node" cx="1857.7" cy="-90.8" r="0.45"><title>shared:p:1857.7:-90.8:w:39175393:0:0</title></circle>
+<circle class="node" cx="1893.3" cy="-81.0" r="0.45"><title>shared:p:1893.3:-81.0</title></circle>
+<circle class="node" cx="1890.9" cy="-98.8" r="0.45"><title>shared:p:1890.9:-98.8</title></circle>
+<circle class="node" cx="1857.7" cy="-90.8" r="0.45"><title>shared:p:1857.7:-90.8:w:39175393:9:0</title></circle>
+<circle class="node" cx="1816.4" cy="-90.2" r="0.45"><title>shared:p:1816.4:-90.2:w:144443016:0:0:s0</title></circle>
+<circle class="node" cx="1837.6" cy="-122.5" r="0.45"><title>shared:p:1837.6:-122.5</title></circle>
+<circle class="node" cx="1879.5" cy="-139.9" r="0.45"><title>shared:p:1879.5:-139.9</title></circle>
+<circle class="node" cx="1832.4" cy="-62.7" r="0.45"><title>shared:p:1832.4:-62.7</title></circle>
+<circle class="node" cx="1839.3" cy="-70.3" r="0.45"><title>shared:p:1839.3:-70.3</title></circle>
+<circle class="node" cx="1861.5" cy="-81.0" r="0.45"><title>shared:p:1861.5:-81.0</title></circle>
+<circle class="center" cx="1834.867" cy="-90.2" r="15"><title>cluster_too_large</title></circle>
+</svg>
+<text x="420" y="140" font-size="15" font-weight="700">098 · crossroad-b43c72286754</text>
+<text x="420" y="164" font-size="14">复杂几何 · 需人工判断</text>
+<text x="420" y="186" font-size="12">中心 -1839.07, 72.533 · 3 原节点 / 4 方向</text>
+<svg x="420" y="196" width="360" height="335" viewBox="-1904.067 -137.53300000000002 130 130">
+<path class="road" d="M-1839.86 -69.4 L-1849.06 -75.5"><title>w:71531775:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M-1836.54 -74.4 L-1845.74 -80.5"><title>w:71531775:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M-1849.06 -75.5 L-1888.17 -101.61"><title>w:71531775:0:0:s1:left | sidewalk</title></path>
+<path class="road" d="M-1845.74 -80.5 L-1884.83 -106.59"><title>w:71531775:0:0:s1:right | sidewalk</title></path>
+<path class="road" d="M-2227 -321.6 L-1837.95 -64.5"><title>w:1121644221:1:0:s0:left | sidewalk</title></path>
+<path class="road" d="M-2230.6 -316.8 L-1841.25 -59.5"><title>w:1121644221:1:0:s0:right | sidewalk</title></path>
+<path class="road" d="M-1837.95 -64.5 L-1751 -7.01"><title>w:1121644221:1:0:s1:left | sidewalk</title></path>
+<path class="road" d="M-1841.25 -59.5 L-1754.02 -1.82"><title>w:1121644221:1:0:s1:right | sidewalk</title></path>
+<path class="road" d="M-1888.17 -101.61 L-1956.62 -145.47"><title>w:1301570651:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M-1884.83 -106.59 L-1953.38 -150.53"><title>w:1301570651:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M-1833.21 -65.17 L-1839.86 -69.4"><title>w:1302032706:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1829.99 -70.23 L-1836.54 -74.4"><title>w:1302032706:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1749.85 -8.82 L-1833.21 -65.17"><title>w:1302032707:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1746.84 -14.02 L-1829.99 -70.23"><title>w:1302032707:0:0:right | sidewalk</title></path>
+<path class="road shared" d="M-1805.6 -85.3 L-1792.4 -85.2"><title>w:166550824:0:0:s0 | shared_way</title></path>
+<path class="road shared" d="M-1792.4 -85.2 L-1756.3 -84.8"><title>w:166550824:0:0:s1 | shared_way</title></path>
+<path class="road shared" d="M-1758.6 -108.6 L-1808.1 -92.8"><title>w:166550824:5:0:s0 | shared_way</title></path>
+<path class="road shared" d="M-1808.1 -92.8 L-1810.6 -92"><title>w:166550824:5:0:s1 | shared_way</title></path>
+<path class="road shared" d="M-1792.4 -85.1 L-1775.4 -92.8"><title>w:166550830:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1775.4 -92.8 L-1757.5 -92.5"><title>w:166550830:1:0 | shared_way</title></path>
+<path class="road shared" d="M-1759.8 -102.9 L-1790.7 -92.8"><title>w:166550830:4:0 | shared_way</title></path>
+<path class="road shared" d="M-1790.7 -92.8 L-1808.1 -92.8"><title>w:166550830:5:0 | shared_way</title></path>
+<path class="road shared" d="M-1839.9 -61.6 L-1895.5 37.6"><title>w:166550835:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1894.6 -158.4 L-1862.5 -134.8"><title>w:1208982804:2:0 | shared_way</title></path>
+<path class="road shared" d="M-1862.5 -134.8 L-1854 -134.3"><title>w:1208982804:3:0 | shared_way</title></path>
+<path class="road shared" d="M-1854 -134.3 L-1848.2 -141.8"><title>w:1208982804:4:0 | shared_way</title></path>
+<path class="road shared" d="M-1854 -134.3 L-1854.8 -113.9"><title>w:1208982805:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1854.8 -113.9 L-1868 -101.9"><title>w:1208982805:1:0 | shared_way</title></path>
+<path class="road shared" d="M-1845.4 -140.6 L-1841 -127.9"><title>w:1208982807:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1841 -127.9 L-1830.3 -127.1"><title>w:1208982807:1:0 | shared_way</title></path>
+<path class="road shared" d="M-1830.3 -127.1 L-1770.6 -146.7"><title>w:1208982807:2:0 | shared_way</title></path>
+<path class="road shared" d="M-1844.1 -132.1 L-1852.9 -121.9"><title>w:1208982808:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1854.8 -113.9 L-1852.4 -98.1"><title>w:1208982809:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1852.4 -98.1 L-1847.4 -78"><title>w:1208982810:0:0 | shared_way</title></path>
+<path class="road" d="M-1847.4 -78 L-1845.74 -80.5"><title>synthetic-turn:w:1208982810:0:0:p:-1847.4:-78.0 | turn</title></path>
+<path class="road shared" d="M-1831.6 -67.7 L-1819 -83.3"><title>w:1302032708:0:0 | shared_way</title></path>
+<path class="road" d="M-1831.6 -67.7 L-1829.99 -70.23"><title>synthetic-turn:w:1302032708:0:0:p:-1831.6:-67.7 | turn</title></path>
+<path class="road shared" d="M-1819 -83.3 L-1805.6 -85.3"><title>w:1302032708:1:0 | shared_way</title></path>
+<path class="road shared" d="M-1810.6 -92 L-1826.9 -84.8"><title>w:1302032709:0:0 | shared_way</title></path>
+<path class="road shared" d="M-1826.9 -84.8 L-1838.2 -71.9"><title>w:1302032709:1:0 | shared_way</title></path>
+<path class="road" d="M-1838.2 -71.9 L-1836.54 -74.4"><title>synthetic-turn:w:1302032709:1:0:p:-1838.2:-71.9 | turn</title></path>
+<path class="road" d="M-1792.4 -85.1 L-1792.4 -85.2"><title>j:p:-1792.4:-85.1:w:166550824:0:0 | turn</title></path>
+<path class="road" d="M-1839.9 -61.6 L-1841.25 -59.5"><title>j:p:-1839.9:-61.6:w:1121644221:1:0 | turn</title></path>
+<circle class="node" cx="-1839.858" cy="-69.4" r="0.45"><title>major:71531775:p:-1838.2:-71.9:left</title></circle>
+<circle class="node" cx="-1836.542" cy="-74.4" r="0.45"><title>major:71531775:p:-1838.2:-71.9:right</title></circle>
+<circle class="node" cx="-1849.062" cy="-75.502" r="0.45"><title>major:71531775:p:-1847.4:-78.0:left</title></circle>
+<circle class="node" cx="-1845.738" cy="-80.498" r="0.45"><title>major:71531775:p:-1847.4:-78.0:right</title></circle>
+<circle class="node" cx="-1888.166" cy="-101.605" r="0.45"><title>major:71531775:p:-1886.5:-104.1:left</title></circle>
+<circle class="node" cx="-1884.834" cy="-106.595" r="0.45"><title>major:71531775:p:-1886.5:-104.1:right</title></circle>
+<circle class="node" cx="-1837.946" cy="-64.503" r="0.45"><title>major:1121644221:p:-1839.6:-62.0:left</title></circle>
+<circle class="node" cx="-1841.254" cy="-59.497" r="0.45"><title>major:1121644221:p:-1839.6:-62.0:right</title></circle>
+<circle class="node" cx="-1833.211" cy="-65.169" r="0.45"><title>major:1302032706:p:-1831.6:-67.7:left</title></circle>
+<circle class="node" cx="-1829.989" cy="-70.231" r="0.45"><title>major:1302032706:p:-1831.6:-67.7:right</title></circle>
+<circle class="node" cx="-1805.6" cy="-85.3" r="0.45"><title>shared:p:-1805.6:-85.3</title></circle>
+<circle class="node" cx="-1792.4" cy="-85.2" r="0.45"><title>shared:p:-1792.4:-85.2</title></circle>
+<circle class="node" cx="-1808.1" cy="-92.8" r="0.45"><title>shared:p:-1808.1:-92.8</title></circle>
+<circle class="node" cx="-1810.6" cy="-92.0" r="0.45"><title>shared:p:-1810.6:-92.0</title></circle>
+<circle class="node" cx="-1792.4" cy="-85.1" r="0.45"><title>shared:p:-1792.4:-85.1</title></circle>
+<circle class="node" cx="-1775.4" cy="-92.8" r="0.45"><title>shared:p:-1775.4:-92.8</title></circle>
+<circle class="node" cx="-1790.7" cy="-92.8" r="0.45"><title>shared:p:-1790.7:-92.8</title></circle>
+<circle class="node" cx="-1839.9" cy="-61.6" r="0.45"><title>shared:p:-1839.9:-61.6</title></circle>
+<circle class="node" cx="-1862.5" cy="-134.8" r="0.45"><title>shared:p:-1862.5:-134.8</title></circle>
+<circle class="node" cx="-1854.0" cy="-134.3" r="0.45"><title>shared:p:-1854.0:-134.3</title></circle>
+<circle class="node" cx="-1854.8" cy="-113.9" r="0.45"><title>shared:p:-1854.8:-113.9</title></circle>
+<circle class="node" cx="-1868.0" cy="-101.9" r="0.45"><title>shared:p:-1868.0:-101.9</title></circle>
+<circle class="node" cx="-1841.0" cy="-127.9" r="0.45"><title>shared:p:-1841.0:-127.9</title></circle>
+<circle class="node" cx="-1830.3" cy="-127.1" r="0.45"><title>shared:p:-1830.3:-127.1</title></circle>
+<circle class="node" cx="-1844.1" cy="-132.1" r="0.45"><title>shared:p:-1844.1:-132.1</title></circle>
+<circle class="node" cx="-1852.9" cy="-121.9" r="0.45"><title>shared:p:-1852.9:-121.9</title></circle>
+<circle class="node" cx="-1852.4" cy="-98.1" r="0.45"><title>shared:p:-1852.4:-98.1</title></circle>
+<circle class="node" cx="-1847.4" cy="-78.0" r="0.45"><title>shared:p:-1847.4:-78.0:w:1208982810:0:0</title></circle>
+<circle class="node" cx="-1831.6" cy="-67.7" r="0.45"><title>shared:p:-1831.6:-67.7:w:1302032708:0:0</title></circle>
+<circle class="node" cx="-1819.0" cy="-83.3" r="0.45"><title>shared:p:-1819.0:-83.3</title></circle>
+<circle class="node" cx="-1826.9" cy="-84.8" r="0.45"><title>shared:p:-1826.9:-84.8</title></circle>
+<circle class="node" cx="-1838.2" cy="-71.9" r="0.45"><title>shared:p:-1838.2:-71.9:w:1302032709:1:0</title></circle>
+<circle class="center" cx="-1839.067" cy="-72.533" r="15"><title>ambiguous_or_not_four_arm</title></circle>
+</svg>
+<text x="820" y="140" font-size="15" font-weight="700">099 · crossroad-07bf29ff2753</text>
+<text x="820" y="164" font-size="14">复杂几何 · 需人工判断</text>
+<text x="820" y="186" font-size="12">中心 -227.05, 64.2 · 2 原节点 / 3 方向</text>
+<svg x="820" y="196" width="360" height="335" viewBox="-292.05 -129.2 130 130">
+<path class="road" d="M-204.94 -134.43 L-230.69 -65.25"><title>w:132889770:5:0:left | sidewalk</title></path>
+<path class="road" d="M-210.46 -136.77 L-236.31 -67.35"><title>w:132889770:5:0:right | sidewalk</title></path>
+<path class="road" d="M-202.31 -119 L-166.98 -192.62"><title>w:1225879539:0:0:left | sidewalk</title></path>
+<path class="road" d="M-196.9 -116.4 L-161.82 -189.57"><title>w:1225879539:0:0:right | sidewalk</title></path>
+<path class="road" d="M-251.2 39.14 L-237.1 -14.96"><title>w:1225879540:0:0:left | sidewalk</title></path>
+<path class="road" d="M-245.4 40.66 L-231.3 -13.44"><title>w:1225879540:0:0:right | sidewalk</title></path>
+<path class="road" d="M-245.46 -17.3 L-265.43 81.29"><title>w:1231937663:0:0:left | sidewalk</title></path>
+<path class="road" d="M-251.34 -18.5 L-271.38 80.51"><title>w:1231937663:0:0:right | sidewalk</title></path>
+<path class="road" d="M-223.41 -63.16 L-202.31 -119"><title>w:1231937665:0:0:left | sidewalk</title></path>
+<path class="road" d="M-217.79 -61.04 L-196.9 -116.4"><title>w:1231937665:0:0:right | sidewalk</title></path>
+<path class="road" d="M-230.69 -65.25 L-240.14 -35.78"><title>w:1423512915:0:0:left | sidewalk</title></path>
+<path class="road" d="M-236.31 -67.35 L-245.86 -37.62"><title>w:1423512915:0:0:right | sidewalk</title></path>
+<path class="road" d="M-240.14 -35.78 L-245.46 -17.3"><title>w:1423512916:0:0:left | sidewalk</title></path>
+<path class="road" d="M-245.86 -37.62 L-251.34 -18.5"><title>w:1423512916:0:0:right | sidewalk</title></path>
+<path class="road" d="M-231.59 -34.01 L-223.41 -63.16"><title>w:1423512917:0:0:left | sidewalk</title></path>
+<path class="road" d="M-225.81 -32.39 L-217.79 -61.04"><title>w:1423512917:0:0:right | sidewalk</title></path>
+<path class="road" d="M-237.1 -14.96 L-231.59 -34.01"><title>w:1423512918:0:0:left | sidewalk</title></path>
+<path class="road" d="M-231.3 -13.44 L-225.81 -32.39"><title>w:1423512918:0:0:right | sidewalk</title></path>
+<path class="road shared" d="M-337.7 -102.7 L-233.5 -66.3"><title>w:132887667:0:0 | shared_way</title></path>
+<path class="road" d="M-233.5 -66.3 L-236.31 -67.35"><title>synthetic-turn:w:132887667:0:0:p:-233.5:-66.3 | turn</title></path>
+<path class="road shared" d="M-247.2 74.3 L-228.5 -13"><title>w:225933173:6:0 | shared_way</title></path>
+<path class="road shared" d="M-254.3 -20.1 L-268.4 46.1"><title>w:225936598:0:0 | shared_way</title></path>
+<path class="road shared" d="M-199.6 -117.7 L-187.8 -121.1"><title>w:226892119:0:0 | shared_way</title></path>
+<path class="road" d="M-199.6 -117.7 L-196.9 -116.4"><title>synthetic-turn:w:226892119:0:0:p:-199.6:-117.7 | turn</title></path>
+<path class="road shared" d="M-187.8 -121.1 L-170.6 -153.3"><title>w:226892119:1:0 | shared_way</title></path>
+<path class="road shared" d="M-291.6 -24.7 L-361.4 -55.1"><title>w:537300773:0:0 | shared_way</title></path>
+<path class="road shared" d="M-233.5 -66.3 L-220.6 -62.1"><title>w:1231937664:0:0 | shared_way</title></path>
+<path class="road" d="M-233.5 -66.3 L-230.69 -65.25"><title>synthetic-turn:w:1231937664:0:0:p:-233.5:-66.3 | turn</title></path>
+<path class="road" d="M-220.6 -62.1 L-223.41 -63.16"><title>synthetic-turn:w:1231937664:0:0:p:-220.6:-62.1 | turn</title></path>
+<path class="road shared" d="M-222.2 -32.8 L-219.2 -43.4"><title>w:1423512919:0:0 | shared_way</title></path>
+<path class="road shared" d="M-219.2 -43.4 L-244.7 -51.3"><title>w:1423512919:1:0 | shared_way</title></path>
+<path class="road shared" d="M-244.7 -51.3 L-248.2 -39.9"><title>w:1423512919:2:0 | shared_way</title></path>
+<path class="road shared" d="M-228.5 -13 L-222.2 -32.8"><title>w:1423512920:0:0 | shared_way</title></path>
+<path class="road shared" d="M-248.2 -39.9 L-254.3 -20.1"><title>w:1423512921:0:0 | shared_way</title></path>
+<path class="road" d="M-230.69 -65.25 L-236.31 -67.35"><title>synthetic-crossing:132889770:p:-233.5:-66.3 | crossing</title></path>
+<circle class="node" cx="-230.689" cy="-65.253" r="0.45"><title>major:132889770:p:-233.5:-66.3:left</title></circle>
+<circle class="node" cx="-236.311" cy="-67.347" r="0.45"><title>major:132889770:p:-233.5:-66.3:right</title></circle>
+<circle class="node" cx="-202.305" cy="-118.997" r="0.45"><title>major:1225879539:p:-199.6:-117.7:left</title></circle>
+<circle class="node" cx="-196.895" cy="-116.403" r="0.45"><title>major:1225879539:p:-199.6:-117.7:right</title></circle>
+<circle class="node" cx="-237.103" cy="-14.957" r="0.45"><title>major:1225879540:p:-234.2:-14.2:left</title></circle>
+<circle class="node" cx="-231.297" cy="-13.443" r="0.45"><title>major:1225879540:p:-234.2:-14.2:right</title></circle>
+<circle class="node" cx="-245.46" cy="-17.305" r="0.45"><title>major:1231937663:p:-248.4:-17.9:left</title></circle>
+<circle class="node" cx="-251.34" cy="-18.495" r="0.45"><title>major:1231937663:p:-248.4:-17.9:right</title></circle>
+<circle class="node" cx="-223.406" cy="-63.16" r="0.45"><title>major:1231937665:p:-220.6:-62.1:left</title></circle>
+<circle class="node" cx="-217.794" cy="-61.04" r="0.45"><title>major:1231937665:p:-220.6:-62.1:right</title></circle>
+<circle class="node" cx="-240.144" cy="-35.783" r="0.45"><title>major:1423512915:p:-243.0:-36.7:left</title></circle>
+<circle class="node" cx="-245.856" cy="-37.617" r="0.45"><title>major:1423512915:p:-243.0:-36.7:right</title></circle>
+<circle class="node" cx="-231.589" cy="-34.01" r="0.45"><title>major:1423512917:p:-228.7:-33.2:left</title></circle>
+<circle class="node" cx="-225.811" cy="-32.39" r="0.45"><title>major:1423512917:p:-228.7:-33.2:right</title></circle>
+<circle class="node" cx="-233.5" cy="-66.3" r="0.45"><title>shared:p:-233.5:-66.3:w:132887667:0:0</title></circle>
+<circle class="node" cx="-228.5" cy="-13.0" r="0.45"><title>shared:p:-228.5:-13.0</title></circle>
+<circle class="node" cx="-254.3" cy="-20.1" r="0.45"><title>shared:p:-254.3:-20.1</title></circle>
+<circle class="node" cx="-199.6" cy="-117.7" r="0.45"><title>shared:p:-199.6:-117.7:w:226892119:0:0</title></circle>
+<circle class="node" cx="-187.8" cy="-121.1" r="0.45"><title>shared:p:-187.8:-121.1</title></circle>
+<circle class="node" cx="-291.6" cy="-24.7" r="0.45"><title>shared:p:-291.6:-24.7</title></circle>
+<circle class="node" cx="-233.5" cy="-66.3" r="0.45"><title>shared:p:-233.5:-66.3:w:1231937664:0:0</title></circle>
+<circle class="node" cx="-220.6" cy="-62.1" r="0.45"><title>shared:p:-220.6:-62.1:w:1231937664:0:0</title></circle>
+<circle class="node" cx="-222.2" cy="-32.8" r="0.45"><title>shared:p:-222.2:-32.8</title></circle>
+<circle class="node" cx="-219.2" cy="-43.4" r="0.45"><title>shared:p:-219.2:-43.4</title></circle>
+<circle class="node" cx="-244.7" cy="-51.3" r="0.45"><title>shared:p:-244.7:-51.3</title></circle>
+<circle class="node" cx="-248.2" cy="-39.9" r="0.45"><title>shared:p:-248.2:-39.9</title></circle>
+<circle class="center" cx="-227.05" cy="-64.2" r="15"><title>ambiguous_or_not_four_arm</title></circle>
+</svg>
+<text x="1220" y="140" font-size="15" font-weight="700">100 · crossroad-2a6c01731ac0</text>
+<text x="1220" y="164" font-size="14">复杂几何 · 需人工判断</text>
+<text x="1220" y="186" font-size="12">中心 2447.4, 58 · 1 原节点 / 3 方向</text>
+<svg x="1220" y="196" width="360" height="335" viewBox="2382.4 -123.0 130 130">
+<path class="road" d="M2175.95 -74.2 L2447.55 -61"><title>w:39176203:0:0:left | sidewalk</title></path>
+<path class="road" d="M2175.65 -68.2 L2447.25 -55"><title>w:39176203:0:0:right | sidewalk</title></path>
+<path class="road" d="M2528.15 -48.31 L2447.25 -55"><title>w:39366474:2:0:s1:left | sidewalk</title></path>
+<path class="road" d="M2528.65 -54.29 L2447.55 -61"><title>w:39366474:2:0:s1:right | sidewalk</title></path>
+<path class="road shared" d="M2377.6 -51.6 L2428.3 -50.7"><title>w:39176252:5:0 | shared_way</title></path>
+<path class="road shared" d="M2428.3 -50.7 L2447.4 -58"><title>w:39176252:6:0 | shared_way</title></path>
+<path class="road" d="M2447.4 -58 L2447.25 -55"><title>synthetic-turn:w:39176252:6:0:p:2447.4:-58.0 | turn</title></path>
+<path class="road shared" d="M2575.8 5 L2483.8 0"><title>w:154523877:0:0:s0 | shared_way</title></path>
+<path class="road shared" d="M2483.8 0 L2447.3 -2"><title>w:154523877:0:0:s1 | shared_way</title></path>
+<path class="road shared" d="M2447.3 -2 L2425.1 -3.2"><title>w:154523877:0:0:s2 | shared_way</title></path>
+<path class="road shared" d="M2425.1 -3.2 L2391.2 -5"><title>w:154523877:0:0:s3 | shared_way</title></path>
+<path class="road shared" d="M2391.2 -5 L2353.8 -7.1"><title>w:154523877:0:0:s4 | shared_way</title></path>
+<path class="road shared" d="M2427.2 -28 L2428.3 -50.7"><title>w:154523888:0:0 | shared_way</title></path>
+<path class="road shared" d="M2389.1 19.7 L2422.3 -3.8"><title>w:154523891:0:0 | shared_way</title></path>
+<path class="road shared" d="M2425.1 -3.7 L2427.2 -28"><title>w:154523904:0:0 | shared_way</title></path>
+<path class="road shared" d="M2422.3 -3.8 L2435.1 49"><title>w:154523919:0:0 | shared_way</title></path>
+<path class="road shared" d="M2391.2 -4.8 L2389.6 19.7"><title>w:154523933:0:0:s0 | shared_way</title></path>
+<path class="road shared" d="M2447.3 -2.4 L2445.8 22.5"><title>w:154523942:0:0:s0 | shared_way</title></path>
+<path class="road shared" d="M2398.7 57.9 L2422.3 -3.8"><title>w:154523951:0:0 | shared_way</title></path>
+<path class="road shared" d="M2483.8 -0.2 L2479.6 70.9"><title>w:154523968:0:0 | shared_way</title></path>
+<path class="road shared" d="M2422.3 -3.8 L2445.8 22.5"><title>w:154523989:0:0 | shared_way</title></path>
+<path class="road shared" d="M2447.4 -58 L2430.2 -67"><title>w:1330117271:0:0 | shared_way</title></path>
+<path class="road" d="M2447.4 -58 L2447.55 -61"><title>synthetic-turn:w:1330117271:0:0:p:2447.4:-58.0 | turn</title></path>
+<path class="road shared" d="M2430.2 -67 L2398.6 -72.1"><title>w:1330117271:1:0 | shared_way</title></path>
+<path class="road shared" d="M2398.6 -72.1 L2241.4 -78.7"><title>w:1330117271:2:0 | shared_way</title></path>
+<path class="road" d="M2447.55 -61 L2447.25 -55"><title>synthetic-crossing:39176203:p:2447.4:-58.0 | crossing</title></path>
+<path class="road" d="M2391.2 -4.8 L2391.2 -5"><title>j:p:2391.2:-4.8:w:154523877:0:0 | turn</title></path>
+<path class="road" d="M2425.1 -3.7 L2425.1 -3.2"><title>j:p:2425.1:-3.7:w:154523877:0:0 | turn</title></path>
+<path class="road" d="M2447.3 -2.4 L2447.3 -2"><title>j:p:2447.3:-2.4:w:154523877:0:0 | turn</title></path>
+<path class="road" d="M2483.8 -0.2 L2483.8 0"><title>j:p:2483.8:-0.2:w:154523877:0:0 | turn</title></path>
+<circle class="node" cx="2447.546" cy="-60.996" r="0.45"><title>major:39176203:p:2447.4:-58.0:left</title></circle>
+<circle class="node" cx="2447.254" cy="-55.004" r="0.45"><title>major:39176203:p:2447.4:-58.0:right</title></circle>
+<circle class="node" cx="2428.3" cy="-50.7" r="0.45"><title>shared:p:2428.3:-50.7</title></circle>
+<circle class="node" cx="2447.4" cy="-58.0" r="0.45"><title>shared:p:2447.4:-58.0:w:39176252:6:0</title></circle>
+<circle class="node" cx="2483.8" cy="0.0" r="0.45"><title>shared:p:2483.8:0.0</title></circle>
+<circle class="node" cx="2447.3" cy="-2.0" r="0.45"><title>shared:p:2447.3:-2.0</title></circle>
+<circle class="node" cx="2425.1" cy="-3.2" r="0.45"><title>shared:p:2425.1:-3.2</title></circle>
+<circle class="node" cx="2391.2" cy="-5.0" r="0.45"><title>shared:p:2391.2:-5.0</title></circle>
+<circle class="node" cx="2427.2" cy="-28.0" r="0.45"><title>shared:p:2427.2:-28.0</title></circle>
+<circle class="node" cx="2422.3" cy="-3.8" r="0.45"><title>shared:p:2422.3:-3.8</title></circle>
+<circle class="node" cx="2425.1" cy="-3.7" r="0.45"><title>shared:p:2425.1:-3.7</title></circle>
+<circle class="node" cx="2391.2" cy="-4.8" r="0.45"><title>shared:p:2391.2:-4.8</title></circle>
+<circle class="node" cx="2447.3" cy="-2.4" r="0.45"><title>shared:p:2447.3:-2.4</title></circle>
+<circle class="node" cx="2483.8" cy="-0.2" r="0.45"><title>shared:p:2483.8:-0.2</title></circle>
+<circle class="node" cx="2447.4" cy="-58.0" r="0.45"><title>shared:p:2447.4:-58.0:w:1330117271:0:0</title></circle>
+<circle class="node" cx="2430.2" cy="-67.0" r="0.45"><title>shared:p:2430.2:-67.0</title></circle>
+<circle class="node" cx="2398.6" cy="-72.1" r="0.45"><title>shared:p:2398.6:-72.1</title></circle>
+<circle class="center" cx="2447.4" cy="-58.0" r="15"><title>ambiguous_or_not_four_arm</title></circle>
+</svg>
+<text x="20" y="555" font-size="15" font-weight="700">101 · crossroad-49eb7039ddbe</text>
+<text x="20" y="579" font-size="14">复杂几何 · 需人工判断</text>
+<text x="20" y="601" font-size="12">中心 2422.3, 3.8 · 1 原节点 / 4 方向</text>
+<svg x="20" y="611" width="360" height="335" viewBox="2357.3 -68.8 130 130">
+<path class="road" d="M2175.95 -74.2 L2447.55 -61"><title>w:39176203:0:0:left | sidewalk</title></path>
+<path class="road" d="M2175.65 -68.2 L2447.25 -55"><title>w:39176203:0:0:right | sidewalk</title></path>
+<path class="road" d="M2528.15 -48.31 L2447.25 -55"><title>w:39366474:2:0:s1:left | sidewalk</title></path>
+<path class="road" d="M2528.65 -54.29 L2447.55 -61"><title>w:39366474:2:0:s1:right | sidewalk</title></path>
+<path class="road shared" d="M2171.8 -60.5 L2377.6 -51.6"><title>w:39176252:4:0 | shared_way</title></path>
+<path class="road shared" d="M2377.6 -51.6 L2428.3 -50.7"><title>w:39176252:5:0 | shared_way</title></path>
+<path class="road shared" d="M2428.3 -50.7 L2447.4 -58"><title>w:39176252:6:0 | shared_way</title></path>
+<path class="road" d="M2447.4 -58 L2447.25 -55"><title>synthetic-turn:w:39176252:6:0:p:2447.4:-58.0 | turn</title></path>
+<path class="road shared" d="M2575.8 5 L2483.8 0"><title>w:154523877:0:0:s0 | shared_way</title></path>
+<path class="road shared" d="M2483.8 0 L2447.3 -2"><title>w:154523877:0:0:s1 | shared_way</title></path>
+<path class="road shared" d="M2447.3 -2 L2425.1 -3.2"><title>w:154523877:0:0:s2 | shared_way</title></path>
+<path class="road shared" d="M2425.1 -3.2 L2391.2 -5"><title>w:154523877:0:0:s3 | shared_way</title></path>
+<path class="road shared" d="M2391.2 -5 L2353.8 -7.1"><title>w:154523877:0:0:s4 | shared_way</title></path>
+<path class="road shared" d="M2427.2 -28 L2428.3 -50.7"><title>w:154523888:0:0 | shared_way</title></path>
+<path class="road shared" d="M2389.1 19.7 L2422.3 -3.8"><title>w:154523891:0:0 | shared_way</title></path>
+<path class="road shared" d="M2386.8 60 L2398.7 57.8"><title>w:154523899:0:0:s0 | shared_way</title></path>
+<path class="road shared" d="M2398.7 57.8 L2437.6 50.8"><title>w:154523899:0:0:s1 | shared_way</title></path>
+<path class="road shared" d="M2425.1 -3.7 L2427.2 -28"><title>w:154523904:0:0 | shared_way</title></path>
+<path class="road shared" d="M2422.3 -3.8 L2435.1 49"><title>w:154523919:0:0 | shared_way</title></path>
+<path class="road shared" d="M2435.1 49 L2437.8 50.3"><title>w:154523919:1:0:s0 | shared_way</title></path>
+<path class="road shared" d="M2437.8 50.3 L2440.4 51.6"><title>w:154523919:1:0:s1 | shared_way</title></path>
+<path class="road shared" d="M2440.4 51.6 L2445.2 46"><title>w:154523919:2:0 | shared_way</title></path>
+<path class="road shared" d="M2445.2 46 L2439.4 40.9"><title>w:154523919:3:0 | shared_way</title></path>
+<path class="road shared" d="M2439.4 40.9 L2434.4 46.5"><title>w:154523919:4:0 | shared_way</title></path>
+<path class="road shared" d="M2391.2 -4.8 L2389.6 19.7"><title>w:154523933:0:0:s0 | shared_way</title></path>
+<path class="road shared" d="M2389.6 19.7 L2387 60"><title>w:154523933:0:0:s1 | shared_way</title></path>
+<path class="road shared" d="M2387 60 L2386.6 66.1"><title>w:154523933:0:0:s2 | shared_way</title></path>
+<path class="road shared" d="M2447.3 -2.4 L2445.8 22.5"><title>w:154523942:0:0:s0 | shared_way</title></path>
+<path class="road shared" d="M2445.8 22.5 L2443 69"><title>w:154523942:0:0:s1 | shared_way</title></path>
+<path class="road shared" d="M2398.7 57.9 L2422.3 -3.8"><title>w:154523951:0:0 | shared_way</title></path>
+<path class="road shared" d="M2483.8 -0.2 L2479.6 70.9"><title>w:154523968:0:0 | shared_way</title></path>
+<path class="road shared" d="M2422.3 -3.8 L2445.8 22.5"><title>w:154523989:0:0 | shared_way</title></path>
+<path class="road shared" d="M2447.4 -58 L2430.2 -67"><title>w:1330117271:0:0 | shared_way</title></path>
+<path class="road" d="M2447.4 -58 L2447.55 -61"><title>synthetic-turn:w:1330117271:0:0:p:2447.4:-58.0 | turn</title></path>
+<path class="road shared" d="M2430.2 -67 L2398.6 -72.1"><title>w:1330117271:1:0 | shared_way</title></path>
+<path class="road" d="M2447.55 -61 L2447.25 -55"><title>synthetic-crossing:39176203:p:2447.4:-58.0 | crossing</title></path>
+<path class="road" d="M2386.8 60 L2387 60"><title>j:p:2386.8:60.0:w:154523933:0:0 | turn</title></path>
+<path class="road" d="M2389.1 19.7 L2389.6 19.7"><title>j:p:2389.1:19.7:w:154523933:0:0 | turn</title></path>
+<path class="road" d="M2391.2 -4.8 L2391.2 -5"><title>j:p:2391.2:-4.8:w:154523877:0:0 | turn</title></path>
+<path class="road" d="M2398.7 57.9 L2398.7 57.8"><title>j:p:2398.7:57.9:w:154523899:0:0 | turn</title></path>
+<path class="road" d="M2425.1 -3.7 L2425.1 -3.2"><title>j:p:2425.1:-3.7:w:154523877:0:0 | turn</title></path>
+<path class="road" d="M2437.6 50.8 L2437.8 50.3"><title>j:p:2437.6:50.8:w:154523919:1:0 | turn</title></path>
+<path class="road" d="M2447.3 -2.4 L2447.3 -2"><title>j:p:2447.3:-2.4:w:154523877:0:0 | turn</title></path>
+<path class="road" d="M2483.8 -0.2 L2483.8 0"><title>j:p:2483.8:-0.2:w:154523877:0:0 | turn</title></path>
+<circle class="node" cx="2447.546" cy="-60.996" r="0.45"><title>major:39176203:p:2447.4:-58.0:left</title></circle>
+<circle class="node" cx="2447.254" cy="-55.004" r="0.45"><title>major:39176203:p:2447.4:-58.0:right</title></circle>
+<circle class="node" cx="2377.6" cy="-51.6" r="0.45"><title>shared:p:2377.6:-51.6</title></circle>
+<circle class="node" cx="2428.3" cy="-50.7" r="0.45"><title>shared:p:2428.3:-50.7</title></circle>
+<circle class="node" cx="2447.4" cy="-58.0" r="0.45"><title>shared:p:2447.4:-58.0:w:39176252:6:0</title></circle>
+<circle class="node" cx="2483.8" cy="0.0" r="0.45"><title>shared:p:2483.8:0.0</title></circle>
+<circle class="node" cx="2447.3" cy="-2.0" r="0.45"><title>shared:p:2447.3:-2.0</title></circle>
+<circle class="node" cx="2425.1" cy="-3.2" r="0.45"><title>shared:p:2425.1:-3.2</title></circle>
+<circle class="node" cx="2391.2" cy="-5.0" r="0.45"><title>shared:p:2391.2:-5.0</title></circle>
+<circle class="node" cx="2427.2" cy="-28.0" r="0.45"><title>shared:p:2427.2:-28.0</title></circle>
+<circle class="node" cx="2389.1" cy="19.7" r="0.45"><title>shared:p:2389.1:19.7</title></circle>
+<circle class="node" cx="2422.3" cy="-3.8" r="0.45"><title>shared:p:2422.3:-3.8</title></circle>
+<circle class="node" cx="2386.8" cy="60.0" r="0.45"><title>shared:p:2386.8:60.0</title></circle>
+<circle class="node" cx="2398.7" cy="57.8" r="0.45"><title>shared:p:2398.7:57.8</title></circle>
+<circle class="node" cx="2437.6" cy="50.8" r="0.45"><title>shared:p:2437.6:50.8</title></circle>
+<circle class="node" cx="2425.1" cy="-3.7" r="0.45"><title>shared:p:2425.1:-3.7</title></circle>
+<circle class="node" cx="2435.1" cy="49.0" r="0.45"><title>shared:p:2435.1:49.0</title></circle>
+<circle class="node" cx="2437.8" cy="50.3" r="0.45"><title>shared:p:2437.8:50.3</title></circle>
+<circle class="node" cx="2440.4" cy="51.6" r="0.45"><title>shared:p:2440.4:51.6</title></circle>
+<circle class="node" cx="2445.2" cy="46.0" r="0.45"><title>shared:p:2445.2:46.0</title></circle>
+<circle class="node" cx="2439.4" cy="40.9" r="0.45"><title>shared:p:2439.4:40.9</title></circle>
+<circle class="node" cx="2434.4" cy="46.5" r="0.45"><title>shared:p:2434.4:46.5</title></circle>
+<circle class="node" cx="2391.2" cy="-4.8" r="0.45"><title>shared:p:2391.2:-4.8</title></circle>
+<circle class="node" cx="2389.6" cy="19.7" r="0.45"><title>shared:p:2389.6:19.7</title></circle>
+<circle class="node" cx="2387.0" cy="60.0" r="0.45"><title>shared:p:2387.0:60.0</title></circle>
+<circle class="node" cx="2447.3" cy="-2.4" r="0.45"><title>shared:p:2447.3:-2.4</title></circle>
+<circle class="node" cx="2445.8" cy="22.5" r="0.45"><title>shared:p:2445.8:22.5</title></circle>
+<circle class="node" cx="2398.7" cy="57.9" r="0.45"><title>shared:p:2398.7:57.9</title></circle>
+<circle class="node" cx="2483.8" cy="-0.2" r="0.45"><title>shared:p:2483.8:-0.2</title></circle>
+<circle class="node" cx="2447.4" cy="-58.0" r="0.45"><title>shared:p:2447.4:-58.0:w:1330117271:0:0</title></circle>
+<circle class="node" cx="2430.2" cy="-67.0" r="0.45"><title>shared:p:2430.2:-67.0</title></circle>
+<circle class="center" cx="2422.3" cy="-3.8" r="15"><title>ambiguous_or_not_four_arm</title></circle>
+</svg>
+<text x="420" y="555" font-size="15" font-weight="700">102 · crossroad-39a3a4139db3</text>
+<text x="420" y="579" font-size="14">复杂几何 · 需人工判断</text>
+<text x="420" y="601" font-size="12">中心 2148.66, -265.86 · 5 原节点 / 4 方向</text>
+<svg x="420" y="611" width="360" height="335" viewBox="2083.66 200.86 130 130">
+<path class="road" d="M2136.06 257.6 L2035.66 252.9"><title>w:39176344:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M2136.34 251.6 L2035.94 246.9"><title>w:39176344:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M2156.8 443.41 L2156.5 271"><title>w:72352074:0:0:s1:left | sidewalk</title></path>
+<path class="road" d="M2162.8 443.39 L2162.5 271"><title>w:72352074:0:0:s1:right | sidewalk</title></path>
+<path class="road" d="M2160.56 266.62 L2147.36 272.72"><title>w:74023884:0:0:left | sidewalk</title></path>
+<path class="road" d="M2158.04 261.18 L2144.84 267.28"><title>w:74023884:0:0:right | sidewalk</title></path>
+<path class="road" d="M2575.62 293.1 L2207.03 271.6"><title>w:74032728:1:0:left | sidewalk</title></path>
+<path class="road" d="M2575.97 287.11 L2207.38 265.61"><title>w:74032728:1:0:right | sidewalk</title></path>
+<path class="road" d="M2159.89 268.03 L2165.18 268.72"><title>w:74382573:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M2159.11 273.97 L2164.42 274.68"><title>w:74382573:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M2165.18 268.72 L2201.33 273.21"><title>w:74382573:0:0:s1:left | sidewalk</title></path>
+<path class="road" d="M2164.42 274.68 L2200.87 279.19"><title>w:74382573:0:0:s1:right | sidewalk</title></path>
+<path class="road" d="M2201.33 273.21 L2285.74 275.57"><title>w:74382573:1:0:left | sidewalk</title></path>
+<path class="road" d="M2200.87 279.19 L2285.47 281.56"><title>w:74382573:1:0:right | sidewalk</title></path>
+<path class="road" d="M2156.5 271 L2156.3 263.98"><title>w:74382574:0:0:left | sidewalk</title></path>
+<path class="road" d="M2162.5 271 L2162.3 263.82"><title>w:74382574:0:0:right | sidewalk</title></path>
+<path class="road" d="M2146.32 267.01 L2159.89 268.03"><title>w:74382578:0:0:left | sidewalk</title></path>
+<path class="road" d="M2145.88 272.99 L2159.11 273.97"><title>w:74382578:0:0:right | sidewalk</title></path>
+<path class="road" d="M2149.09 269.76 L2152.1 307.18"><title>w:154557753:0:0:left | sidewalk</title></path>
+<path class="road" d="M2143.11 270.24 L2146.1 307.42"><title>w:154557753:0:0:right | sidewalk</title></path>
+<path class="road" d="M2152.1 307.18 L2152.29 673.18"><title>w:154557753:1:0:left | sidewalk</title></path>
+<path class="road" d="M2146.1 307.42 L2146.29 673.22"><title>w:154557753:1:0:right | sidewalk</title></path>
+<path class="road" d="M2035.35 261.5 L2142.35 266.8"><title>w:225949523:0:0:s4:left | sidewalk</title></path>
+<path class="road" d="M2035.05 267.5 L2142.05 272.8"><title>w:225949523:0:0:s4:right | sidewalk</title></path>
+<path class="road" d="M2142.35 266.8 L2146.32 267.01"><title>w:225949523:0:0:s5:left | sidewalk</title></path>
+<path class="road" d="M2142.05 272.8 L2145.88 272.99"><title>w:225949523:0:0:s5:right | sidewalk</title></path>
+<path class="road" d="M2138.72 252.98 L2148.62 268.38"><title>w:226152432:0:0:left | sidewalk</title></path>
+<path class="road" d="M2133.68 256.22 L2143.58 271.62"><title>w:226152432:0:0:right | sidewalk</title></path>
+<path class="road" d="M2158.18 266.68 L2135.08 257.38"><title>w:226152435:0:0:left | sidewalk</title></path>
+<path class="road" d="M2160.42 261.12 L2137.32 251.82"><title>w:226152435:0:0:right | sidewalk</title></path>
+<path class="road" d="M2207.03 271.6 L2159.01 266.89"><title>w:1255195535:0:0:left | sidewalk</title></path>
+<path class="road" d="M2207.38 265.61 L2159.59 260.91"><title>w:1255195535:0:0:right | sidewalk</title></path>
+<path class="road shared" d="M2132.6 -49 L2131.3 240.1"><title>w:39176250:1:0 | shared_way</title></path>
+<path class="road shared" d="M2131.3 240.1 L2136.2 254.6"><title>w:39176250:2:0 | shared_way</title></path>
+<path class="road" d="M2136.2 254.6 L2136.34 251.6"><title>synthetic-turn:w:39176250:2:0:p:2136.2:254.6 | turn</title></path>
+<path class="road shared" d="M2159.3 263.9 L2157.2 87.1"><title>w:39410699:0:0 | shared_way</title></path>
+<path class="road" d="M2159.3 263.9 L2159.59 260.91"><title>synthetic-turn:w:39410699:0:0:p:2159.3:263.9 | turn</title></path>
+<path class="road shared" d="M2169.5 808.8 L2164.8 271.9"><title>w:177403191:1:0 | shared_way</title></path>
+<path class="road shared" d="M2142.2 269.8 L2147.4 1259.6"><title>w:177403197:0:0 | shared_way</title></path>
+<path class="road" d="M2142.2 269.8 L2142.05 272.8"><title>synthetic-turn:w:177403197:0:0:p:2142.2:269.8 | turn</title></path>
+<path class="road shared" d="M2133.3 249.8 L1743.9 231.1"><title>w:226664667:0:0 | shared_way</title></path>
+<path class="road shared" d="M2178 316.9 L2298.2 315.7"><title>w:895629978:0:0 | shared_way</title></path>
+<path class="road" d="M2164.8 271.9 L2164.42 274.68"><title>j:p:2164.8:271.9:w:74382573:0:0 | turn</title></path>
+<circle class="node" cx="2136.06" cy="257.597" r="0.45"><title>major:39176344:p:2136.2:254.6:left</title></circle>
+<circle class="node" cx="2136.34" cy="251.603" r="0.45"><title>major:39176344:p:2136.2:254.6:right</title></circle>
+<circle class="node" cx="2156.5" cy="271.005" r="0.45"><title>major:72352074:p:2159.5:271.0:left</title></circle>
+<circle class="node" cx="2162.5" cy="270.995" r="0.45"><title>major:72352074:p:2159.5:271.0:right</title></circle>
+<circle class="node" cx="2160.558" cy="266.623" r="0.45"><title>major:74023884:p:2159.3:263.9:left</title></circle>
+<circle class="node" cx="2158.042" cy="261.177" r="0.45"><title>major:74023884:p:2159.3:263.9:right</title></circle>
+<circle class="node" cx="2147.358" cy="272.723" r="0.45"><title>major:74023884:p:2146.1:270.0:left</title></circle>
+<circle class="node" cx="2144.842" cy="267.277" r="0.45"><title>major:74023884:p:2146.1:270.0:right</title></circle>
+<circle class="node" cx="2207.025" cy="271.595" r="0.45"><title>major:74032728:p:2207.2:268.6:left</title></circle>
+<circle class="node" cx="2207.375" cy="265.605" r="0.45"><title>major:74032728:p:2207.2:268.6:right</title></circle>
+<circle class="node" cx="2159.893" cy="268.026" r="0.45"><title>major:74382573:p:2159.5:271.0:left</title></circle>
+<circle class="node" cx="2159.107" cy="273.974" r="0.45"><title>major:74382573:p:2159.5:271.0:right</title></circle>
+<circle class="node" cx="2165.181" cy="268.724" r="0.45"><title>major:74382573:p:2164.8:271.7:left</title></circle>
+<circle class="node" cx="2164.419" cy="274.676" r="0.45"><title>major:74382573:p:2164.8:271.7:right</title></circle>
+<circle class="node" cx="2201.327" cy="273.209" r="0.45"><title>major:74382573:p:2201.1:276.2:left</title></circle>
+<circle class="node" cx="2200.873" cy="279.191" r="0.45"><title>major:74382573:p:2201.1:276.2:right</title></circle>
+<circle class="node" cx="2156.301" cy="263.984" r="0.45"><title>major:74382574:p:2159.3:263.9:left</title></circle>
+<circle class="node" cx="2162.299" cy="263.816" r="0.45"><title>major:74382574:p:2159.3:263.9:right</title></circle>
+<circle class="node" cx="2146.323" cy="267.008" r="0.45"><title>major:74382578:p:2146.1:270.0:left</title></circle>
+<circle class="node" cx="2145.877" cy="272.992" r="0.45"><title>major:74382578:p:2146.1:270.0:right</title></circle>
+<circle class="node" cx="2149.09" cy="269.759" r="0.45"><title>major:154557753:p:2146.1:270.0:left</title></circle>
+<circle class="node" cx="2143.11" cy="270.241" r="0.45"><title>major:154557753:p:2146.1:270.0:right</title></circle>
+<circle class="node" cx="2152.098" cy="307.179" r="0.45"><title>major:154557753:p:2149.1:307.3:left</title></circle>
+<circle class="node" cx="2146.102" cy="307.421" r="0.45"><title>major:154557753:p:2149.1:307.3:right</title></circle>
+<circle class="node" cx="2142.351" cy="266.804" r="0.45"><title>major:225949523:p:2142.2:269.8:left</title></circle>
+<circle class="node" cx="2142.049" cy="272.796" r="0.45"><title>major:225949523:p:2142.2:269.8:right</title></circle>
+<circle class="node" cx="2138.724" cy="252.978" r="0.45"><title>major:226152432:p:2136.2:254.6:left</title></circle>
+<circle class="node" cx="2133.676" cy="256.222" r="0.45"><title>major:226152432:p:2136.2:254.6:right</title></circle>
+<circle class="node" cx="2148.624" cy="268.378" r="0.45"><title>major:226152432:p:2146.1:270.0:left</title></circle>
+<circle class="node" cx="2143.576" cy="271.622" r="0.45"><title>major:226152432:p:2146.1:270.0:right</title></circle>
+<circle class="node" cx="2158.18" cy="266.683" r="0.45"><title>major:226152435:p:2159.3:263.9:left</title></circle>
+<circle class="node" cx="2160.42" cy="261.117" r="0.45"><title>major:226152435:p:2159.3:263.9:right</title></circle>
+<circle class="node" cx="2135.08" cy="257.383" r="0.45"><title>major:226152435:p:2136.2:254.6:left</title></circle>
+<circle class="node" cx="2137.32" cy="251.817" r="0.45"><title>major:226152435:p:2136.2:254.6:right</title></circle>
+<circle class="node" cx="2159.007" cy="266.886" r="0.45"><title>major:1255195535:p:2159.3:263.9:left</title></circle>
+<circle class="node" cx="2159.593" cy="260.914" r="0.45"><title>major:1255195535:p:2159.3:263.9:right</title></circle>
+<circle class="node" cx="2131.3" cy="240.1" r="0.45"><title>shared:p:2131.3:240.1</title></circle>
+<circle class="node" cx="2136.2" cy="254.6" r="0.45"><title>shared:p:2136.2:254.6:w:39176250:2:0</title></circle>
+<circle class="node" cx="2159.3" cy="263.9" r="0.45"><title>shared:p:2159.3:263.9:w:39410699:0:0</title></circle>
+<circle class="node" cx="2164.8" cy="271.9" r="0.45"><title>shared:p:2164.8:271.9</title></circle>
+<circle class="node" cx="2142.2" cy="269.8" r="0.45"><title>shared:p:2142.2:269.8:w:177403197:0:0</title></circle>
+<circle class="node" cx="2133.3" cy="249.8" r="0.45"><title>shared:p:2133.3:249.8</title></circle>
+<circle class="node" cx="2178.0" cy="316.9" r="0.45"><title>shared:p:2178.0:316.9</title></circle>
+<circle class="center" cx="2148.66" cy="265.86" r="15"><title>multiple_shared_approaches_need_review</title></circle>
+</svg>
+<text x="820" y="555" font-size="15" font-weight="700">103 · crossroad-f6db34137e8d</text>
+<text x="820" y="579" font-size="14">复杂几何 · 需人工判断</text>
+<text x="820" y="601" font-size="12">中心 1537, -402.7 · 3 原节点 / 3 方向</text>
+<svg x="820" y="611" width="360" height="335" viewBox="1472.0 337.7 130 130">
+<path class="road" d="M1548.52 458.47 L1543.54 417.9"><title>w:27042049:0:0:left | sidewalk</title></path>
+<path class="road" d="M1554.48 457.73 L1549.26 416.1"><title>w:27042049:0:0:right | sidewalk</title></path>
+<path class="road" d="M1543.54 417.9 L1535.05 402.01"><title>w:27042049:1:0:left | sidewalk</title></path>
+<path class="road" d="M1549.26 416.1 L1540.35 399.19"><title>w:27042049:1:0:right | sidewalk</title></path>
+<path class="road" d="M1559.12 548.05 L1548.52 458.47"><title>w:72145666:0:0:left | sidewalk</title></path>
+<path class="road" d="M1565.08 547.35 L1554.48 457.73"><title>w:72145666:0:0:right | sidewalk</title></path>
+<path class="road" d="M1535.42 398.65 L1556.32 374.25"><title>w:72145669:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M1539.98 402.55 L1560.88 378.15"><title>w:72145669:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M1556.32 374.25 L1599.34 324.05"><title>w:72145669:0:0:s1:left | sidewalk</title></path>
+<path class="road" d="M1560.88 378.15 L1604.06 327.75"><title>w:72145669:0:0:s1:right | sidewalk</title></path>
+<path class="road" d="M1528.95 388.31 L1539.75 398.41"><title>w:74506376:0:0:left | sidewalk</title></path>
+<path class="road" d="M1524.85 392.69 L1535.65 402.79"><title>w:74506376:0:0:right | sidewalk</title></path>
+<path class="road" d="M1607.5 296.66 L1529.22 392.4"><title>w:226664665:0:0:left | sidewalk</title></path>
+<path class="road" d="M1602.5 293.34 L1524.58 388.6"><title>w:226664665:0:0:right | sidewalk</title></path>
+<path class="road" d="M1470.33 464.23 L1535.42 398.65"><title>w:1268390901:2:0:left | sidewalk</title></path>
+<path class="road" d="M1474.47 468.57 L1539.98 402.55"><title>w:1268390901:2:0:right | sidewalk</title></path>
+<path class="road" d="M1529.22 392.4 L1479.58 442.86"><title>w:1346418433:0:0:left | sidewalk</title></path>
+<path class="road" d="M1524.58 388.6 L1475.42 438.54"><title>w:1346418433:0:0:right | sidewalk</title></path>
+<path class="road" d="M1479.58 442.86 L1295.22 610.12"><title>w:1346418433:1:0:s0:left | sidewalk</title></path>
+<path class="road" d="M1475.42 438.54 L1291.18 605.68"><title>w:1346418433:1:0:s0:right | sidewalk</title></path>
+<path class="road shared" d="M1571.7 552.2 L1558.6 402.5"><title>w:154419009:5:0 | shared_way</title></path>
+<path class="road shared" d="M1608.2 445.5 L1581.2 445.3"><title>w:154421559:2:0 | shared_way</title></path>
+<path class="road shared" d="M1559.5 377 L1570.9 391.9"><title>w:154421564:0:0 | shared_way</title></path>
+<path class="road shared" d="M1570.9 391.9 L1583.7 402.3"><title>w:154421564:1:0 | shared_way</title></path>
+<path class="road shared" d="M1583.7 402.3 L1597.1 407.7"><title>w:154421564:2:0 | shared_way</title></path>
+<path class="road shared" d="M1597.1 407.7 L1646.5 407.3"><title>w:154421564:3:0 | shared_way</title></path>
+<path class="road shared" d="M1590.9 455.5 L1607.5 456.5"><title>w:154421585:0:0 | shared_way</title></path>
+<path class="road shared" d="M1511 449.2 L1522 439.2"><title>w:177232642:0:0:s0 | shared_way</title></path>
+<path class="road shared" d="M1522 439.2 L1546.4 417"><title>w:177232642:0:0:s1 | shared_way</title></path>
+<path class="road" d="M1546.4 417 L1543.54 417.9"><title>synthetic-turn:w:177232642:0:0:s1:p:1546.4:417.0 | turn</title></path>
+<path class="road shared" d="M1546.4 417 L1558.5 402.4"><title>w:177232642:1:0:s0 | shared_way</title></path>
+<path class="road" d="M1546.4 417 L1549.26 416.1"><title>synthetic-turn:w:177232642:1:0:s0:p:1546.4:417.0 | turn</title></path>
+<path class="road shared" d="M1558.5 402.4 L1589.8 364.6"><title>w:177232642:1:0:s1 | shared_way</title></path>
+<path class="road shared" d="M1589.8 364.6 L1640.8 296.3"><title>w:177232642:2:0 | shared_way</title></path>
+<path class="road shared" d="M1522 439.2 L1493.2 405.4"><title>w:177232644:0:0 | shared_way</title></path>
+<path class="road shared" d="M1447.9 447 L1529.3 367.7"><title>w:177232647:2:0 | shared_way</title></path>
+<path class="road shared" d="M1529.3 367.7 L1563 326.5"><title>w:177232647:3:0 | shared_way</title></path>
+<path class="road shared" d="M1593.4 294.4 L1519.4 384.7"><title>w:177232651:2:0 | shared_way</title></path>
+<path class="road shared" d="M1519.4 384.7 L1463.1 441.3"><title>w:177232651:3:0 | shared_way</title></path>
+<path class="road shared" d="M1465.4 487.2 L1530.6 424.8"><title>w:177233327:1:0 | shared_way</title></path>
+<path class="road shared" d="M1530.6 424.8 L1578.6 370.8"><title>w:177233327:2:0 | shared_way</title></path>
+<path class="road shared" d="M1578.6 370.8 L1662.5 257.9"><title>w:177233327:3:0 | shared_way</title></path>
+<path class="road shared" d="M1073.9 848 L1511 449.2"><title>w:177233335:17:0 | shared_way</title></path>
+<path class="road shared" d="M1572.9 477.8 L1551.5 458.1"><title>w:372791801:1:0 | shared_way</title></path>
+<path class="road" d="M1551.5 458.1 L1554.48 457.73"><title>synthetic-turn:w:372791801:1:0:p:1551.5:458.1 | turn</title></path>
+<path class="road" d="M1543.54 417.9 L1549.26 416.1"><title>synthetic-crossing:27042049:p:1546.4:417.0 | crossing</title></path>
+<path class="road" d="M1558.6 402.5 L1558.5 402.4"><title>j:p:1558.6:402.5:w:177232642:1:0 | turn</title></path>
+<path class="road" d="M1559.5 377 L1560.88 378.15"><title>j:p:1559.5:377.0:w:72145669:0:0 | turn</title></path>
+<circle class="node" cx="1548.523" cy="458.469" r="0.45"><title>major:27042049:p:1551.5:458.1:left</title></circle>
+<circle class="node" cx="1554.477" cy="457.731" r="0.45"><title>major:27042049:p:1551.5:458.1:right</title></circle>
+<circle class="node" cx="1543.539" cy="417.903" r="0.45"><title>major:27042049:p:1546.4:417.0:left</title></circle>
+<circle class="node" cx="1549.261" cy="416.097" r="0.45"><title>major:27042049:p:1546.4:417.0:right</title></circle>
+<circle class="node" cx="1535.05" cy="402.006" r="0.45"><title>major:27042049:p:1537.7:400.6:left</title></circle>
+<circle class="node" cx="1540.35" cy="399.194" r="0.45"><title>major:27042049:p:1537.7:400.6:right</title></circle>
+<circle class="node" cx="1535.422" cy="398.648" r="0.45"><title>major:72145669:p:1537.7:400.6:left</title></circle>
+<circle class="node" cx="1539.978" cy="402.552" r="0.45"><title>major:72145669:p:1537.7:400.6:right</title></circle>
+<circle class="node" cx="1556.322" cy="374.248" r="0.45"><title>major:72145669:p:1558.6:376.2:left</title></circle>
+<circle class="node" cx="1560.878" cy="378.152" r="0.45"><title>major:72145669:p:1558.6:376.2:right</title></circle>
+<circle class="node" cx="1528.949" cy="388.309" r="0.45"><title>major:74506376:p:1526.9:390.5:left</title></circle>
+<circle class="node" cx="1524.851" cy="392.691" r="0.45"><title>major:74506376:p:1526.9:390.5:right</title></circle>
+<circle class="node" cx="1539.749" cy="398.409" r="0.45"><title>major:74506376:p:1537.7:400.6:left</title></circle>
+<circle class="node" cx="1535.651" cy="402.791" r="0.45"><title>major:74506376:p:1537.7:400.6:right</title></circle>
+<circle class="node" cx="1529.222" cy="392.399" r="0.45"><title>major:226664665:p:1526.9:390.5:left</title></circle>
+<circle class="node" cx="1524.578" cy="388.601" r="0.45"><title>major:226664665:p:1526.9:390.5:right</title></circle>
+<circle class="node" cx="1479.578" cy="442.864" r="0.45"><title>major:1346418433:p:1477.5:440.7:left</title></circle>
+<circle class="node" cx="1475.422" cy="438.536" r="0.45"><title>major:1346418433:p:1477.5:440.7:right</title></circle>
+<circle class="node" cx="1558.6" cy="402.5" r="0.45"><title>shared:p:1558.6:402.5</title></circle>
+<circle class="node" cx="1581.2" cy="445.3" r="0.45"><title>shared:p:1581.2:445.3</title></circle>
+<circle class="node" cx="1559.5" cy="377.0" r="0.45"><title>shared:p:1559.5:377.0</title></circle>
+<circle class="node" cx="1570.9" cy="391.9" r="0.45"><title>shared:p:1570.9:391.9</title></circle>
+<circle class="node" cx="1583.7" cy="402.3" r="0.45"><title>shared:p:1583.7:402.3</title></circle>
+<circle class="node" cx="1597.1" cy="407.7" r="0.45"><title>shared:p:1597.1:407.7</title></circle>
+<circle class="node" cx="1590.9" cy="455.5" r="0.45"><title>shared:p:1590.9:455.5</title></circle>
+<circle class="node" cx="1511.0" cy="449.2" r="0.45"><title>shared:p:1511.0:449.2</title></circle>
+<circle class="node" cx="1522.0" cy="439.2" r="0.45"><title>shared:p:1522.0:439.2</title></circle>
+<circle class="node" cx="1546.4" cy="417.0" r="0.45"><title>shared:p:1546.4:417.0:w:177232642:0:0:s1</title></circle>
+<circle class="node" cx="1546.4" cy="417.0" r="0.45"><title>shared:p:1546.4:417.0:w:177232642:1:0:s0</title></circle>
+<circle class="node" cx="1558.5" cy="402.4" r="0.45"><title>shared:p:1558.5:402.4</title></circle>
+<circle class="node" cx="1589.8" cy="364.6" r="0.45"><title>shared:p:1589.8:364.6</title></circle>
+<circle class="node" cx="1493.2" cy="405.4" r="0.45"><title>shared:p:1493.2:405.4</title></circle>
+<circle class="node" cx="1529.3" cy="367.7" r="0.45"><title>shared:p:1529.3:367.7</title></circle>
+<circle class="node" cx="1519.4" cy="384.7" r="0.45"><title>shared:p:1519.4:384.7</title></circle>
+<circle class="node" cx="1530.6" cy="424.8" r="0.45"><title>shared:p:1530.6:424.8</title></circle>
+<circle class="node" cx="1578.6" cy="370.8" r="0.45"><title>shared:p:1578.6:370.8</title></circle>
+<circle class="node" cx="1551.5" cy="458.1" r="0.45"><title>shared:p:1551.5:458.1:w:372791801:1:0</title></circle>
+<circle class="center" cx="1537.0" cy="402.7" r="15"><title>ambiguous_or_not_four_arm</title></circle>
+</svg>
+<text x="1220" y="555" font-size="15" font-weight="700">104 · crossroad-949d111ec2db</text>
+<text x="1220" y="579" font-size="14">复杂几何 · 需人工判断</text>
+<text x="1220" y="601" font-size="12">中心 404.1, -722 · 1 原节点 / 3 方向</text>
+<svg x="1220" y="611" width="360" height="335" viewBox="339.1 657.0 130 130">
+<path class="road shared" d="M403.3 755.4 L403.1 763.9"><title>w:132865846:0:0 | shared_way</title></path>
+<path class="road shared" d="M404.1 722 L404 728.2"><title>w:132865853:0:0 | shared_way</title></path>
+<path class="road shared" d="M351 747.9 L350.3 790.9"><title>w:225808695:0:0 | shared_way</title></path>
+<path class="road shared" d="M400.7 817.9 L412.4 775.2"><title>w:225957408:3:0:s1 | shared_way</title></path>
+<path class="road shared" d="M412.4 775.2 L413.1 757"><title>w:225957408:4:0 | shared_way</title></path>
+<path class="road shared" d="M404.1 722 L408.9 711.6"><title>w:225971496:0:0 | shared_way</title></path>
+<path class="road shared" d="M408.9 711.6 L409.2 700.4"><title>w:225971496:1:0 | shared_way</title></path>
+<path class="road shared" d="M409.2 700.4 L387.1 631.3"><title>w:225971496:2:0 | shared_way</title></path>
+<path class="road shared" d="M390.7 725.2 L383.3 750.9"><title>w:225971499:0:0 | shared_way</title></path>
+<path class="road shared" d="M424.2 733.8 L424.9 731.3"><title>w:225971502:0:0 | shared_way</title></path>
+<path class="road shared" d="M424.9 731.3 L413.8 727.7"><title>w:225971502:1:0 | shared_way</title></path>
+<path class="road shared" d="M395.7 820.3 L406.7 779.5"><title>w:225971505:6:0 | shared_way</title></path>
+<path class="road shared" d="M406.7 779.5 L403.1 763.9"><title>w:225971505:7:0 | shared_way</title></path>
+<path class="road shared" d="M394.3 712.6 L390.7 725.2"><title>w:225971510:0:0 | shared_way</title></path>
+<path class="road shared" d="M378.4 655 L394.7 704.8"><title>w:225971512:1:0 | shared_way</title></path>
+<path class="road shared" d="M394.7 704.8 L404.1 722"><title>w:225971512:2:0 | shared_way</title></path>
+<path class="road shared" d="M395.5 726.9 L394.3 712.6"><title>w:225971515:0:0 | shared_way</title></path>
+<path class="road shared" d="M394.3 712.6 L382.5 673.9"><title>w:225971515:1:0 | shared_way</title></path>
+<path class="road shared" d="M382.5 673.9 L353.7 606"><title>w:225971515:2:0 | shared_way</title></path>
+<path class="road shared" d="M403.1 763.9 L392.6 810.4"><title>w:225971516:0:0 | shared_way</title></path>
+<path class="road shared" d="M404 728.2 L403.3 755.4"><title>w:225971518:0:0 | shared_way</title></path>
+<path class="road shared" d="M395.7 752.7 L395.5 726.9"><title>w:225971519:0:0 | shared_way</title></path>
+<path class="road shared" d="M413.8 730.2 L408.5 685"><title>w:225971534:0:0 | shared_way</title></path>
+<path class="road shared" d="M408.5 685 L388.6 632"><title>w:225971534:1:0 | shared_way</title></path>
+<path class="road shared" d="M383.3 750.9 L382.6 753.4"><title>w:225971540:0:0 | shared_way</title></path>
+<path class="road shared" d="M382.6 753.4 L395 757.3"><title>w:225971540:1:0 | shared_way</title></path>
+<path class="road shared" d="M417.4 757.6 L424.2 733.8"><title>w:225971542:0:0 | shared_way</title></path>
+<path class="road shared" d="M413.1 757 L413.8 730.2"><title>w:225971549:0:0 | shared_way</title></path>
+<path class="road shared" d="M412.4 775.2 L417.4 757.6"><title>w:225971556:0:0 | shared_way</title></path>
+<path class="road shared" d="M403.1 763.9 L394.2 778"><title>w:225971558:0:0 | shared_way</title></path>
+<path class="road shared" d="M394.2 778 L376.1 827.2"><title>w:225971558:1:0 | shared_way</title></path>
+<path class="road shared" d="M387.6 792.8 L395.7 752.7"><title>w:226154107:12:0 | shared_way</title></path>
+<path class="road shared" d="M340.1 543.5 L398.4 683.3"><title>w:1231722504:1:0 | shared_way</title></path>
+<path class="road shared" d="M398.4 683.3 L404.1 722"><title>w:1231722504:2:0 | shared_way</title></path>
+<path class="road shared" d="M324.2 719.1 L370.4 714.1"><title>w:1239825890:12:0 | shared_way</title></path>
+<path class="road shared" d="M350.8 720 L351 747.9"><title>w:1239825891:0:0 | shared_way</title></path>
+<circle class="node" cx="403.3" cy="755.4" r="0.45"><title>shared:p:403.3:755.4</title></circle>
+<circle class="node" cx="403.1" cy="763.9" r="0.45"><title>shared:p:403.1:763.9</title></circle>
+<circle class="node" cx="404.1" cy="722.0" r="0.45"><title>shared:p:404.1:722.0</title></circle>
+<circle class="node" cx="404.0" cy="728.2" r="0.45"><title>shared:p:404.0:728.2</title></circle>
+<circle class="node" cx="351.0" cy="747.9" r="0.45"><title>shared:p:351.0:747.9</title></circle>
+<circle class="node" cx="412.4" cy="775.2" r="0.45"><title>shared:p:412.4:775.2</title></circle>
+<circle class="node" cx="413.1" cy="757.0" r="0.45"><title>shared:p:413.1:757.0</title></circle>
+<circle class="node" cx="408.9" cy="711.6" r="0.45"><title>shared:p:408.9:711.6</title></circle>
+<circle class="node" cx="409.2" cy="700.4" r="0.45"><title>shared:p:409.2:700.4</title></circle>
+<circle class="node" cx="390.7" cy="725.2" r="0.45"><title>shared:p:390.7:725.2</title></circle>
+<circle class="node" cx="383.3" cy="750.9" r="0.45"><title>shared:p:383.3:750.9</title></circle>
+<circle class="node" cx="424.2" cy="733.8" r="0.45"><title>shared:p:424.2:733.8</title></circle>
+<circle class="node" cx="424.9" cy="731.3" r="0.45"><title>shared:p:424.9:731.3</title></circle>
+<circle class="node" cx="413.8" cy="727.7" r="0.45"><title>shared:p:413.8:727.7</title></circle>
+<circle class="node" cx="406.7" cy="779.5" r="0.45"><title>shared:p:406.7:779.5</title></circle>
+<circle class="node" cx="394.3" cy="712.6" r="0.45"><title>shared:p:394.3:712.6</title></circle>
+<circle class="node" cx="394.7" cy="704.8" r="0.45"><title>shared:p:394.7:704.8</title></circle>
+<circle class="node" cx="395.5" cy="726.9" r="0.45"><title>shared:p:395.5:726.9</title></circle>
+<circle class="node" cx="382.5" cy="673.9" r="0.45"><title>shared:p:382.5:673.9</title></circle>
+<circle class="node" cx="395.7" cy="752.7" r="0.45"><title>shared:p:395.7:752.7</title></circle>
+<circle class="node" cx="413.8" cy="730.2" r="0.45"><title>shared:p:413.8:730.2</title></circle>
+<circle class="node" cx="408.5" cy="685.0" r="0.45"><title>shared:p:408.5:685.0</title></circle>
+<circle class="node" cx="382.6" cy="753.4" r="0.45"><title>shared:p:382.6:753.4</title></circle>
+<circle class="node" cx="395.0" cy="757.3" r="0.45"><title>shared:p:395.0:757.3</title></circle>
+<circle class="node" cx="417.4" cy="757.6" r="0.45"><title>shared:p:417.4:757.6</title></circle>
+<circle class="node" cx="394.2" cy="778.0" r="0.45"><title>shared:p:394.2:778.0</title></circle>
+<circle class="node" cx="398.4" cy="683.3" r="0.45"><title>shared:p:398.4:683.3</title></circle>
+<circle class="node" cx="370.4" cy="714.1" r="0.45"><title>shared:p:370.4:714.1</title></circle>
+<circle class="node" cx="350.8" cy="720.0" r="0.45"><title>shared:p:350.8:720.0</title></circle>
+<circle class="center" cx="404.1" cy="722.0" r="15"><title>ambiguous_or_not_four_arm</title></circle>
+</svg>
+<text x="20" y="970" font-size="15" font-weight="700">105 · crossroad-d67c086c0096</text>
+<text x="20" y="994" font-size="14">复杂几何 · 需人工判断</text>
+<text x="20" y="1016" font-size="12">中心 403.1, -763.9 · 1 原节点 / 3 方向</text>
+<svg x="20" y="1026" width="360" height="335" viewBox="338.1 698.9 130 130">
+<path class="road shared" d="M403.3 755.4 L403.1 763.9"><title>w:132865846:0:0 | shared_way</title></path>
+<path class="road shared" d="M404.1 722 L404 728.2"><title>w:132865853:0:0 | shared_way</title></path>
+<path class="road shared" d="M351 747.9 L350.3 790.9"><title>w:225808695:0:0 | shared_way</title></path>
+<path class="road shared" d="M350.3 790.9 L345.8 801.3"><title>w:225808695:1:0 | shared_way</title></path>
+<path class="road shared" d="M345.8 801.3 L326.8 816"><title>w:225808695:2:0 | shared_way</title></path>
+<path class="road shared" d="M403.9 832.2 L401 828.2"><title>w:225957408:1:0:s1 | shared_way</title></path>
+<path class="road shared" d="M401 828.2 L400.1 820.2"><title>w:225957408:2:0 | shared_way</title></path>
+<path class="road shared" d="M400.1 820.2 L400.7 817.9"><title>w:225957408:3:0:s0 | shared_way</title></path>
+<path class="road shared" d="M400.7 817.9 L412.4 775.2"><title>w:225957408:3:0:s1 | shared_way</title></path>
+<path class="road shared" d="M412.4 775.2 L413.1 757"><title>w:225957408:4:0 | shared_way</title></path>
+<path class="road shared" d="M404.1 722 L408.9 711.6"><title>w:225971496:0:0 | shared_way</title></path>
+<path class="road shared" d="M408.9 711.6 L409.2 700.4"><title>w:225971496:1:0 | shared_way</title></path>
+<path class="road shared" d="M409.2 700.4 L387.1 631.3"><title>w:225971496:2:0 | shared_way</title></path>
+<path class="road shared" d="M390.7 725.2 L383.3 750.9"><title>w:225971499:0:0 | shared_way</title></path>
+<path class="road shared" d="M424.2 733.8 L424.9 731.3"><title>w:225971502:0:0 | shared_way</title></path>
+<path class="road shared" d="M424.9 731.3 L413.8 727.7"><title>w:225971502:1:0 | shared_way</title></path>
+<path class="road shared" d="M399.3 835.3 L395.7 820.3"><title>w:225971505:5:0 | shared_way</title></path>
+<path class="road shared" d="M395.7 820.3 L406.7 779.5"><title>w:225971505:6:0 | shared_way</title></path>
+<path class="road shared" d="M406.7 779.5 L403.1 763.9"><title>w:225971505:7:0 | shared_way</title></path>
+<path class="road shared" d="M394.3 712.6 L390.7 725.2"><title>w:225971510:0:0 | shared_way</title></path>
+<path class="road shared" d="M378.4 655 L394.7 704.8"><title>w:225971512:1:0 | shared_way</title></path>
+<path class="road shared" d="M394.7 704.8 L404.1 722"><title>w:225971512:2:0 | shared_way</title></path>
+<path class="road shared" d="M395.5 726.9 L394.3 712.6"><title>w:225971515:0:0 | shared_way</title></path>
+<path class="road shared" d="M394.3 712.6 L382.5 673.9"><title>w:225971515:1:0 | shared_way</title></path>
+<path class="road shared" d="M403.1 763.9 L392.6 810.4"><title>w:225971516:0:0 | shared_way</title></path>
+<path class="road shared" d="M392.6 810.4 L381 835.2"><title>w:225971516:1:0 | shared_way</title></path>
+<path class="road shared" d="M404 728.2 L403.3 755.4"><title>w:225971518:0:0 | shared_way</title></path>
+<path class="road shared" d="M395.7 752.7 L395.5 726.9"><title>w:225971519:0:0 | shared_way</title></path>
+<path class="road shared" d="M413.8 730.2 L408.5 685"><title>w:225971534:0:0 | shared_way</title></path>
+<path class="road shared" d="M383.3 750.9 L382.6 753.4"><title>w:225971540:0:0 | shared_way</title></path>
+<path class="road shared" d="M382.6 753.4 L395 757.3"><title>w:225971540:1:0 | shared_way</title></path>
+<path class="road shared" d="M417.4 757.6 L424.2 733.8"><title>w:225971542:0:0 | shared_way</title></path>
+<path class="road shared" d="M413.1 757 L413.8 730.2"><title>w:225971549:0:0 | shared_way</title></path>
+<path class="road shared" d="M412.4 775.2 L417.4 757.6"><title>w:225971556:0:0 | shared_way</title></path>
+<path class="road shared" d="M403.1 763.9 L394.2 778"><title>w:225971558:0:0 | shared_way</title></path>
+<path class="road shared" d="M394.2 778 L376.1 827.2"><title>w:225971558:1:0 | shared_way</title></path>
+<path class="road shared" d="M376.1 827.2 L365 845.4"><title>w:225971558:2:0 | shared_way</title></path>
+<path class="road shared" d="M400.7 817.9 L380.1 811.5"><title>w:226153623:0:0 | shared_way</title></path>
+<path class="road shared" d="M395.7 820.3 L382 815.5"><title>w:226153627:0:0 | shared_way</title></path>
+<path class="road shared" d="M360.4 847.1 L378.6 815.2"><title>w:226154107:10:0 | shared_way</title></path>
+<path class="road shared" d="M378.6 815.2 L380.1 811.5"><title>w:226154107:11:0:s0 | shared_way</title></path>
+<path class="road shared" d="M380.1 811.5 L387.6 792.8"><title>w:226154107:11:0:s1 | shared_way</title></path>
+<path class="road shared" d="M387.6 792.8 L395.7 752.7"><title>w:226154107:12:0 | shared_way</title></path>
+<path class="road shared" d="M398.4 683.3 L404.1 722"><title>w:1231722504:2:0 | shared_way</title></path>
+<path class="road shared" d="M324.2 719.1 L370.4 714.1"><title>w:1239825890:12:0 | shared_way</title></path>
+<path class="road shared" d="M350.8 720 L351 747.9"><title>w:1239825891:0:0 | shared_way</title></path>
+<circle class="node" cx="403.3" cy="755.4" r="0.45"><title>shared:p:403.3:755.4</title></circle>
+<circle class="node" cx="403.1" cy="763.9" r="0.45"><title>shared:p:403.1:763.9</title></circle>
+<circle class="node" cx="404.1" cy="722.0" r="0.45"><title>shared:p:404.1:722.0</title></circle>
+<circle class="node" cx="404.0" cy="728.2" r="0.45"><title>shared:p:404.0:728.2</title></circle>
+<circle class="node" cx="351.0" cy="747.9" r="0.45"><title>shared:p:351.0:747.9</title></circle>
+<circle class="node" cx="350.3" cy="790.9" r="0.45"><title>shared:p:350.3:790.9</title></circle>
+<circle class="node" cx="345.8" cy="801.3" r="0.45"><title>shared:p:345.8:801.3</title></circle>
+<circle class="node" cx="401.0" cy="828.2" r="0.45"><title>shared:p:401.0:828.2</title></circle>
+<circle class="node" cx="400.1" cy="820.2" r="0.45"><title>shared:p:400.1:820.2</title></circle>
+<circle class="node" cx="400.7" cy="817.9" r="0.45"><title>shared:p:400.7:817.9</title></circle>
+<circle class="node" cx="412.4" cy="775.2" r="0.45"><title>shared:p:412.4:775.2</title></circle>
+<circle class="node" cx="413.1" cy="757.0" r="0.45"><title>shared:p:413.1:757.0</title></circle>
+<circle class="node" cx="408.9" cy="711.6" r="0.45"><title>shared:p:408.9:711.6</title></circle>
+<circle class="node" cx="409.2" cy="700.4" r="0.45"><title>shared:p:409.2:700.4</title></circle>
+<circle class="node" cx="390.7" cy="725.2" r="0.45"><title>shared:p:390.7:725.2</title></circle>
+<circle class="node" cx="383.3" cy="750.9" r="0.45"><title>shared:p:383.3:750.9</title></circle>
+<circle class="node" cx="424.2" cy="733.8" r="0.45"><title>shared:p:424.2:733.8</title></circle>
+<circle class="node" cx="424.9" cy="731.3" r="0.45"><title>shared:p:424.9:731.3</title></circle>
+<circle class="node" cx="413.8" cy="727.7" r="0.45"><title>shared:p:413.8:727.7</title></circle>
+<circle class="node" cx="395.7" cy="820.3" r="0.45"><title>shared:p:395.7:820.3</title></circle>
+<circle class="node" cx="406.7" cy="779.5" r="0.45"><title>shared:p:406.7:779.5</title></circle>
+<circle class="node" cx="394.3" cy="712.6" r="0.45"><title>shared:p:394.3:712.6</title></circle>
+<circle class="node" cx="394.7" cy="704.8" r="0.45"><title>shared:p:394.7:704.8</title></circle>
+<circle class="node" cx="395.5" cy="726.9" r="0.45"><title>shared:p:395.5:726.9</title></circle>
+<circle class="node" cx="392.6" cy="810.4" r="0.45"><title>shared:p:392.6:810.4</title></circle>
+<circle class="node" cx="395.7" cy="752.7" r="0.45"><title>shared:p:395.7:752.7</title></circle>
+<circle class="node" cx="413.8" cy="730.2" r="0.45"><title>shared:p:413.8:730.2</title></circle>
+<circle class="node" cx="382.6" cy="753.4" r="0.45"><title>shared:p:382.6:753.4</title></circle>
+<circle class="node" cx="395.0" cy="757.3" r="0.45"><title>shared:p:395.0:757.3</title></circle>
+<circle class="node" cx="417.4" cy="757.6" r="0.45"><title>shared:p:417.4:757.6</title></circle>
+<circle class="node" cx="394.2" cy="778.0" r="0.45"><title>shared:p:394.2:778.0</title></circle>
+<circle class="node" cx="376.1" cy="827.2" r="0.45"><title>shared:p:376.1:827.2</title></circle>
+<circle class="node" cx="380.1" cy="811.5" r="0.45"><title>shared:p:380.1:811.5</title></circle>
+<circle class="node" cx="382.0" cy="815.5" r="0.45"><title>shared:p:382.0:815.5</title></circle>
+<circle class="node" cx="378.6" cy="815.2" r="0.45"><title>shared:p:378.6:815.2</title></circle>
+<circle class="node" cx="387.6" cy="792.8" r="0.45"><title>shared:p:387.6:792.8</title></circle>
+<circle class="node" cx="370.4" cy="714.1" r="0.45"><title>shared:p:370.4:714.1</title></circle>
+<circle class="node" cx="350.8" cy="720.0" r="0.45"><title>shared:p:350.8:720.0</title></circle>
+<circle class="center" cx="403.1" cy="763.9" r="15"><title>ambiguous_or_not_four_arm</title></circle>
+</svg>
+<text x="420" y="970" font-size="15" font-weight="700">106 · crossroad-939136952f62</text>
+<text x="420" y="994" font-size="14">复杂几何 · 需人工判断</text>
+<text x="420" y="1016" font-size="12">中心 -540.25, -1144.7 · 2 原节点 / 3 方向</text>
+<svg x="420" y="1026" width="360" height="335" viewBox="-605.25 1079.7 130 130">
+<path class="road" d="M-540.14 1135.52 L-543.5 1154.58"><title>w:135807027:0:0:left | sidewalk</title></path>
+<path class="road" d="M-546.05 1134.48 L-549.5 1154.42"><title>w:135807027:0:0:right | sidewalk</title></path>
+<path class="road" d="M-543.5 1154.58 L-522.04 1335.63"><title>w:135807027:1:0:left | sidewalk</title></path>
+<path class="road" d="M-549.5 1154.42 L-527.96 1336.57"><title>w:135807027:1:0:right | sidewalk</title></path>
+<path class="road" d="M-523.87 1302.01 L-540.38 1154.73"><title>w:905260345:1:0:left | sidewalk</title></path>
+<path class="road" d="M-517.93 1301.19 L-534.42 1154.07"><title>w:905260345:1:0:right | sidewalk</title></path>
+<path class="road" d="M-537.47 1151.4 L-301.41 1145.9"><title>w:1231722488:0:0:left | sidewalk</title></path>
+<path class="road" d="M-537.33 1157.4 L-301.59 1151.9"><title>w:1231722488:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1102.94 1161.7 L-537.47 1151.4"><title>w:1231722489:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1102.86 1167.7 L-537.33 1157.4"><title>w:1231722489:0:0:right | sidewalk</title></path>
+<path class="road" d="M-540.38 1154.73 L-545.98 1135.85"><title>w:1231722490:0:0:left | sidewalk</title></path>
+<path class="road" d="M-534.42 1154.07 L-540.22 1134.15"><title>w:1231722490:0:0:right | sidewalk</title></path>
+<path class="road" d="M-291 1135.04 L-543.07 1138"><title>w:1231937662:0:0:left | sidewalk</title></path>
+<path class="road" d="M-291 1129.04 L-543.13 1132"><title>w:1231937662:0:0:right | sidewalk</title></path>
+<path class="road" d="M-543.07 1138 L-784.07 1145.53"><title>w:1363028136:0:0:left | sidewalk</title></path>
+<path class="road" d="M-543.13 1132 L-784.15 1139.53"><title>w:1363028136:0:0:right | sidewalk</title></path>
+<circle class="node" cx="-540.145" cy="1135.515" r="0.45"><title>major:135807027:p:-543.1:1135.0:left</title></circle>
+<circle class="node" cx="-546.055" cy="1134.485" r="0.45"><title>major:135807027:p:-543.1:1135.0:right</title></circle>
+<circle class="node" cx="-543.501" cy="1154.582" r="0.45"><title>major:135807027:p:-546.5:1154.5:left</title></circle>
+<circle class="node" cx="-549.499" cy="1154.418" r="0.45"><title>major:135807027:p:-546.5:1154.5:right</title></circle>
+<circle class="node" cx="-540.381" cy="1154.734" r="0.45"><title>major:905260345:p:-537.4:1154.4:left</title></circle>
+<circle class="node" cx="-534.419" cy="1154.066" r="0.45"><title>major:905260345:p:-537.4:1154.4:right</title></circle>
+<circle class="node" cx="-537.47" cy="1151.401" r="0.45"><title>major:1231722488:p:-537.4:1154.4:left</title></circle>
+<circle class="node" cx="-537.33" cy="1157.399" r="0.45"><title>major:1231722488:p:-537.4:1154.4:right</title></circle>
+<circle class="node" cx="-545.978" cy="1135.846" r="0.45"><title>major:1231722490:p:-543.1:1135.0:left</title></circle>
+<circle class="node" cx="-540.222" cy="1134.154" r="0.45"><title>major:1231722490:p:-543.1:1135.0:right</title></circle>
+<circle class="node" cx="-543.065" cy="1138.0" r="0.45"><title>major:1231937662:p:-543.1:1135.0:left</title></circle>
+<circle class="node" cx="-543.135" cy="1132.0" r="0.45"><title>major:1231937662:p:-543.1:1135.0:right</title></circle>
+<circle class="center" cx="-540.25" cy="1144.7" r="15"><title>ambiguous_or_not_four_arm</title></circle>
+</svg>
+<text x="820" y="970" font-size="15" font-weight="700">107 · crossroad-ce4a5ec97bf9</text>
+<text x="820" y="994" font-size="14">复杂几何 · 需人工判断</text>
+<text x="820" y="1016" font-size="12">中心 -1744.9, -1179.7 · 2 原节点 / 3 方向</text>
+<svg x="820" y="1026" width="360" height="335" viewBox="-1809.9 1114.7 130 130">
+<path class="road" d="M-1911.25 1183.9 L-1801.35 1178.5"><title>w:39611541:2:0:s1:left | sidewalk</title></path>
+<path class="road" d="M-1910.95 1189.9 L-1801.05 1184.5"><title>w:39611541:2:0:s1:right | sidewalk</title></path>
+<path class="road" d="M-1742.4 1183.96 L-1742.12 1208.44"><title>w:39657517:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1748.4 1184.04 L-1748.08 1209.16"><title>w:39657517:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1742.12 1208.44 L-1736.7 1232.17"><title>w:39657517:1:0:left | sidewalk</title></path>
+<path class="road" d="M-1748.08 1209.16 L-1742.69 1231.83"><title>w:39657517:1:0:right | sidewalk</title></path>
+<path class="road" d="M-1736.7 1232.17 L-1759.35 1295.67"><title>w:39657517:2:0:left | sidewalk</title></path>
+<path class="road" d="M-1742.69 1231.83 L-1765.25 1294.53"><title>w:39657517:2:0:right | sidewalk</title></path>
+<path class="road" d="M-1807.28 1177.7 L-1977.22 1184.4"><title>w:68741889:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1807.52 1171.7 L-1977.18 1178.4"><title>w:68741889:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1801.35 1178.5 L-1776.34 1177.3"><title>w:68741890:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1801.05 1184.5 L-1776.06 1183.3"><title>w:68741890:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1745.61 1181.01 L-1566.73 1168.2"><title>w:136796355:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1745.19 1186.99 L-1566.47 1174.2"><title>w:136796355:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1575.09 1166.6 L-1744.19 1178.39"><title>w:1430584487:2:0:left | sidewalk</title></path>
+<path class="road" d="M-1575.31 1160.6 L-1744.61 1172.41"><title>w:1430584487:2:0:right | sidewalk</title></path>
+<path class="road" d="M-1748.4 1184.04 L-1747.38 1175.05"><title>w:1430584488:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1742.4 1183.96 L-1741.42 1175.75"><title>w:1430584488:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1776.34 1177.3 L-1745.61 1181.01"><title>w:1430584489:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1776.06 1183.3 L-1745.19 1186.99"><title>w:1430584489:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1779.51 1177.8 L-1807.28 1177.7"><title>w:1430584490:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1779.49 1171.8 L-1807.52 1171.7"><title>w:1430584490:0:0:right | sidewalk</title></path>
+<path class="road" d="M-1744.19 1178.39 L-1779.51 1177.8"><title>w:1430584491:0:0:left | sidewalk</title></path>
+<path class="road" d="M-1744.61 1172.41 L-1779.49 1171.8"><title>w:1430584491:0:0:right | sidewalk</title></path>
+<circle class="node" cx="-1801.347" cy="1178.504" r="0.45"><title>major:39611541:p:-1801.2:1181.5:left</title></circle>
+<circle class="node" cx="-1801.053" cy="1184.496" r="0.45"><title>major:39611541:p:-1801.2:1181.5:right</title></circle>
+<circle class="node" cx="-1742.4" cy="1183.964" r="0.45"><title>major:39657517:p:-1745.4:1184.0:left</title></circle>
+<circle class="node" cx="-1748.4" cy="1184.036" r="0.45"><title>major:39657517:p:-1745.4:1184.0:right</title></circle>
+<circle class="node" cx="-1742.122" cy="1208.44" r="0.45"><title>major:39657517:p:-1745.1:1208.8:left</title></circle>
+<circle class="node" cx="-1748.078" cy="1209.16" r="0.45"><title>major:39657517:p:-1745.1:1208.8:right</title></circle>
+<circle class="node" cx="-1736.705" cy="1232.173" r="0.45"><title>major:39657517:p:-1739.7:1232.0:left</title></circle>
+<circle class="node" cx="-1742.695" cy="1231.827" r="0.45"><title>major:39657517:p:-1739.7:1232.0:right</title></circle>
+<circle class="node" cx="-1807.282" cy="1177.698" r="0.45"><title>major:68741889:p:-1807.4:1174.7:left</title></circle>
+<circle class="node" cx="-1807.518" cy="1171.702" r="0.45"><title>major:68741889:p:-1807.4:1174.7:right</title></circle>
+<circle class="node" cx="-1776.344" cy="1177.303" r="0.45"><title>major:68741890:p:-1776.2:1180.3:left</title></circle>
+<circle class="node" cx="-1776.056" cy="1183.297" r="0.45"><title>major:68741890:p:-1776.2:1180.3:right</title></circle>
+<circle class="node" cx="-1745.614" cy="1181.008" r="0.45"><title>major:136796355:p:-1745.4:1184.0:left</title></circle>
+<circle class="node" cx="-1745.186" cy="1186.992" r="0.45"><title>major:136796355:p:-1745.4:1184.0:right</title></circle>
+<circle class="node" cx="-1744.191" cy="1178.393" r="0.45"><title>major:1430584487:p:-1744.4:1175.4:left</title></circle>
+<circle class="node" cx="-1744.609" cy="1172.407" r="0.45"><title>major:1430584487:p:-1744.4:1175.4:right</title></circle>
+<circle class="node" cx="-1747.38" cy="1175.053" r="0.45"><title>major:1430584488:p:-1744.4:1175.4:left</title></circle>
+<circle class="node" cx="-1741.42" cy="1175.747" r="0.45"><title>major:1430584488:p:-1744.4:1175.4:right</title></circle>
+<circle class="node" cx="-1779.511" cy="1177.8" r="0.45"><title>major:1430584490:p:-1779.5:1174.8:left</title></circle>
+<circle class="node" cx="-1779.489" cy="1171.8" r="0.45"><title>major:1430584490:p:-1779.5:1174.8:right</title></circle>
+<circle class="center" cx="-1744.9" cy="1179.7" r="15"><title>ambiguous_or_not_four_arm</title></circle>
+</svg>
+<text x="1220" y="970" font-size="15" font-weight="700">108 · crossroad-4d3e7f033b80</text>
+<text x="1220" y="994" font-size="14">复杂几何 · 需人工判断</text>
+<text x="1220" y="1016" font-size="12">中心 -2295.05, -1182.8 · 4 原节点 / 5 方向</text>
+<svg x="1220" y="1026" width="360" height="335" viewBox="-2360.05 1117.8 130 130">
+<path class="road" d="M-2282.01 1184.7 L-2121.7 1178.9"><title>w:39611541:0:0:left | sidewalk</title></path>
+<path class="road" d="M-2281.79 1190.7 L-2121.7 1184.9"><title>w:39611541:0:0:right | sidewalk</title></path>
+<path class="road" d="M-2308.27 1181.49 L-2473.17 1172.3"><title>w:39611545:0:0:s0:left | sidewalk</title></path>
+<path class="road" d="M-2307.93 1175.51 L-2472.83 1166.31"><title>w:39611545:0:0:s0:right | sidewalk</title></path>
+<path class="road" d="M-2148.72 1175.6 L-2282.18 1181.1"><title>w:68741889:2:0:left | sidewalk</title></path>
+<path class="road" d="M-2148.68 1169.6 L-2282.42 1175.1"><title>w:68741889:2:0:right | sidewalk</title></path>
+<path class="road" d="M-2304.9 1186.96 L-2307.7 1337.66"><title>w:71531845:0:0:left | sidewalk</title></path>
+<path class="road" d="M-2310.9 1186.84 L-2313.7 1337.54"><title>w:71531845:0:0:right | sidewalk</title></path>
+<path class="road" d="M-2283.99 1175.62 L-2229.33 1138.51"><title>w:435742325:0:0:left | sidewalk</title></path>
+<path class="road" d="M-2280.61 1180.58 L-2225.47 1143.1"><title>w:435742325:0:0:right | sidewalk</title></path>
+<path class="road" d="M-2221 1125.54 L-2240.01 1140.99"><title>w:626599390:5:0:left | sidewalk</title></path>
+<path class="road" d="M-2225.2 1121.26 L-2242.19 1135.4"><title>w:626599390:5:0:right | sidewalk</title></path>
+<path class="road" d="M-2240.01 1140.99 L-2263.18 1142.3"><title>w:626599390:6:0:left | sidewalk</title></path>
+<path class="road" d="M-2242.19 1135.4 L-2261.62 1136.5"><title>w:626599390:6:0:right | sidewalk</title></path>
+<path class="road" d="M-2263.18 1142.3 L-2284.64 1128.41"><title>w:626599390:7:0:left | sidewalk</title></path>
+<path class="road" d="M-2261.62 1136.5 L-2281.36 1123.39"><title>w:626599390:7:0:right | sidewalk</title></path>
+<path class="road" d="M-2308.88 1184.06 L-2283.28 1175.26"><title>w:1075505398:0:0:left | sidewalk</title></path>
+<path class="road" d="M-2306.93 1189.74 L-2281.32 1180.94"><title>w:1075505398:0:0:right | sidewalk</title></path>
+<path class="road" d="M-2285.79 1363.7 L-2284.9 1187.68"><title>w:1075505399:3:0:left | sidewalk</title></path>
+<path class="road" d="M-2279.81 1363.3 L-2278.9 1187.71"><title>w:1075505399:3:0:right | sidewalk</title></path>
+<path class="road" d="M-2285.3 1178.11 L-2286.2 952.91"><title>w:1075641774:0:0:left | sidewalk</title></path>
+<path class="road" d="M-2279.3 1178.09 L-2280.2 952.89"><title>w:1075641774:0:0:right | sidewalk</title></path>
+<path class="road" d="M-2296.12 930.95 L-2294.6 2161.29"><title>w:1126139728:4:0:left | sidewalk</title></path>
+<path class="road" d="M-2302.08 930.25 L-2300.6 2161.31"><title>w:1126139728:4:0:right | sidewalk</title></path>
+<path class="road" d="M-2291 1805.63 L-2290.3 1048.75"><title>w:1126139733:6:0:left | sidewalk</title></path>
+<path class="road" d="M-2285 1805.57 L-2284.3 1048.65"><title>w:1126139733:6:0:right | sidewalk</title></path>
+<path class="road" d="M-2302.14 959.62 L-2305.1 1178.54"><title>w:1231722497:0:0:left | sidewalk</title></path>
+<path class="road" d="M-2308.05 958.58 L-2311.1 1178.46"><title>w:1231722497:0:0:right | sidewalk</title></path>
+<path class="road" d="M-2307.81 1183.9 L-2282.01 1184.7"><title>w:1231722498:0:0:left | sidewalk</title></path>
+<path class="road" d="M-2307.99 1189.9 L-2281.79 1190.7"><title>w:1231722498:0:0:right | sidewalk</title></path>
+<path class="road" d="M-2284.9 1187.68 L-2285.3 1178.11"><title>w:1271904996:0:0:left | sidewalk</title></path>
+<path class="road" d="M-2278.9 1187.71 L-2279.3 1178.09"><title>w:1271904996:0:0:right | sidewalk</title></path>
+<path class="road" d="M-2651.03 1163.81 L-2307.81 1183.9"><title>w:1430584492:0:0:left | sidewalk</title></path>
+<path class="road" d="M-2651.38 1169.8 L-2307.99 1189.9"><title>w:1430584492:0:0:right | sidewalk</title></path>
+<path class="road" d="M-2282.18 1181.1 L-2308.27 1181.49"><title>w:1430584493:0:0:left | sidewalk</title></path>
+<path class="road" d="M-2282.42 1175.1 L-2307.93 1175.51"><title>w:1430584493:0:0:right | sidewalk</title></path>
+<path class="road" d="M-2305.1 1178.54 L-2304.9 1186.96"><title>w:1430584494:0:0:left | sidewalk</title></path>
+<path class="road" d="M-2311.1 1178.46 L-2310.9 1186.84"><title>w:1430584494:0:0:right | sidewalk</title></path>
+<path class="road shared" d="M-2373.6 1155.9 L-2354 1155.6"><title>w:97666191:0:0 | shared_way</title></path>
+<path class="road shared" d="M-2353.9 1205.9 L-2354 1155.6"><title>w:97666206:0:0 | shared_way</title></path>
+<path class="road shared" d="M-2354 1155.6 L-2333.2 1154.2"><title>w:97666206:1:0 | shared_way</title></path>
+<path class="road shared" d="M-2333.2 1154.2 L-2327.6 1149.7"><title>w:97666206:2:0 | shared_way</title></path>
+<path class="road shared" d="M-2327.6 1149.7 L-2324.5 1143"><title>w:97666206:3:0 | shared_way</title></path>
+<path class="road shared" d="M-2324.5 1143 L-2324.4 1124.3"><title>w:97666206:4:0 | shared_way</title></path>
+<path class="road shared" d="M-2324.4 1124.3 L-2266.5 1124.1"><title>w:97666206:5:0 | shared_way</title></path>
+<path class="road shared" d="M-2323.9 1106.3 L-2324.4 1124.3"><title>w:97666227:0:0 | shared_way</title></path>
+<path class="road shared" d="M-2246.5 1126.8 L-2257.9 1130.2"><title>w:97666234:0:0 | shared_way</title></path>
+<path class="road shared" d="M-2257.9 1130.2 L-2265.3 1125.8"><title>w:97666234:1:0 | shared_way</title></path>
+<path class="road shared" d="M-2265.3 1125.8 L-2266.5 1124.1"><title>w:97666234:2:0:s0 | shared_way</title></path>
+<path class="road shared" d="M-2266.5 1124.1 L-2268.1 1121.8"><title>w:97666234:2:0:s1 | shared_way</title></path>
+<path class="road shared" d="M-2268.1 1121.8 L-2267.8 1105.7"><title>w:97666234:3:0 | shared_way</title></path>
+<path class="road shared" d="M-2353.4 1221.5 L-2353.9 1205.9"><title>w:97666250:0:0 | shared_way</title></path>
+<path class="road shared" d="M-2269.6 1153 L-2248.5 1167.6"><title>w:1170983589:0:0 | shared_way</title></path>
+<path class="road shared" d="M-2248.5 1167.6 L-2246.9 1200"><title>w:1170983589:1:0 | shared_way</title></path>
+<path class="road shared" d="M-2323.4 1208.4 L-2270.1 1210.4"><title>w:1170983590:0:0 | shared_way</title></path>
+<path class="road shared" d="M-2353.4 1221.5 L-2349.5 1221.4"><title>w:1170983591:0:0 | shared_way</title></path>
+<path class="road shared" d="M-2349.5 1221.4 L-2349.2 1208.6"><title>w:1170983591:1:0 | shared_way</title></path>
+<path class="road shared" d="M-2349.2 1208.6 L-2323.4 1208.4"><title>w:1170983591:2:0 | shared_way</title></path>
+<path class="road shared" d="M-2410.1 1127.8 L-2357.2 1126.1"><title>w:1484202951:2:0 | shared_way</title></path>
+<path class="road shared" d="M-2357.2 1126.1 L-2358.3 1150.7"><title>w:1484202951:3:0 | shared_way</title></path>
+<path class="road shared" d="M-2358.3 1150.7 L-2372.2 1151.9"><title>w:1484202951:4:0 | shared_way</title></path>
+<circle class="node" cx="-2282.009" cy="1184.702" r="0.45"><title>major:39611541:p:-2281.9:1187.7:left</title></circle>
+<circle class="node" cx="-2281.791" cy="1190.698" r="0.45"><title>major:39611541:p:-2281.9:1187.7:right</title></circle>
+<circle class="node" cx="-2308.267" cy="1181.495" r="0.45"><title>major:39611545:p:-2308.1:1178.5:left</title></circle>
+<circle class="node" cx="-2307.933" cy="1175.505" r="0.45"><title>major:39611545:p:-2308.1:1178.5:right</title></circle>
+<circle class="node" cx="-2282.177" cy="1181.097" r="0.45"><title>major:68741889:p:-2282.3:1178.1:left</title></circle>
+<circle class="node" cx="-2282.423" cy="1175.103" r="0.45"><title>major:68741889:p:-2282.3:1178.1:right</title></circle>
+<circle class="node" cx="-2304.901" cy="1186.956" r="0.45"><title>major:71531845:p:-2307.9:1186.9:left</title></circle>
+<circle class="node" cx="-2310.899" cy="1186.844" r="0.45"><title>major:71531845:p:-2307.9:1186.9:right</title></circle>
+<circle class="node" cx="-2283.986" cy="1175.619" r="0.45"><title>major:435742325:p:-2282.3:1178.1:left</title></circle>
+<circle class="node" cx="-2280.614" cy="1180.581" r="0.45"><title>major:435742325:p:-2282.3:1178.1:right</title></circle>
+<circle class="node" cx="-2240.009" cy="1140.995" r="0.45"><title>major:626599390:p:-2241.1:1138.2:left</title></circle>
+<circle class="node" cx="-2242.191" cy="1135.405" r="0.45"><title>major:626599390:p:-2241.1:1138.2:right</title></circle>
+<circle class="node" cx="-2263.177" cy="1142.298" r="0.45"><title>major:626599390:p:-2262.4:1139.4:left</title></circle>
+<circle class="node" cx="-2261.623" cy="1136.502" r="0.45"><title>major:626599390:p:-2262.4:1139.4:right</title></circle>
+<circle class="node" cx="-2284.644" cy="1128.409" r="0.45"><title>major:626599390:p:-2283.0:1125.9:left</title></circle>
+<circle class="node" cx="-2281.356" cy="1123.391" r="0.45"><title>major:626599390:p:-2283.0:1125.9:right</title></circle>
+<circle class="node" cx="-2308.875" cy="1184.063" r="0.45"><title>major:1075505398:p:-2307.9:1186.9:left</title></circle>
+<circle class="node" cx="-2306.925" cy="1189.737" r="0.45"><title>major:1075505398:p:-2307.9:1186.9:right</title></circle>
+<circle class="node" cx="-2283.275" cy="1175.263" r="0.45"><title>major:1075505398:p:-2282.3:1178.1:left</title></circle>
+<circle class="node" cx="-2281.325" cy="1180.937" r="0.45"><title>major:1075505398:p:-2282.3:1178.1:right</title></circle>
+<circle class="node" cx="-2284.9" cy="1187.685" r="0.45"><title>major:1075505399:p:-2281.9:1187.7:left</title></circle>
+<circle class="node" cx="-2278.9" cy="1187.715" r="0.45"><title>major:1075505399:p:-2281.9:1187.7:right</title></circle>
+<circle class="node" cx="-2285.3" cy="1178.112" r="0.45"><title>major:1075641774:p:-2282.3:1178.1:left</title></circle>
+<circle class="node" cx="-2279.3" cy="1178.088" r="0.45"><title>major:1075641774:p:-2282.3:1178.1:right</title></circle>
+<circle class="node" cx="-2305.1" cy="1178.541" r="0.45"><title>major:1231722497:p:-2308.1:1178.5:left</title></circle>
+<circle class="node" cx="-2311.1" cy="1178.459" r="0.45"><title>major:1231722497:p:-2308.1:1178.5:right</title></circle>
+<circle class="node" cx="-2307.808" cy="1183.901" r="0.45"><title>major:1231722498:p:-2307.9:1186.9:left</title></circle>
+<circle class="node" cx="-2307.992" cy="1189.899" r="0.45"><title>major:1231722498:p:-2307.9:1186.9:right</title></circle>
+<circle class="node" cx="-2354.0" cy="1155.6" r="0.45"><title>shared:p:-2354.0:1155.6</title></circle>
+<circle class="node" cx="-2353.9" cy="1205.9" r="0.45"><title>shared:p:-2353.9:1205.9</title></circle>
+<circle class="node" cx="-2333.2" cy="1154.2" r="0.45"><title>shared:p:-2333.2:1154.2</title></circle>
+<circle class="node" cx="-2327.6" cy="1149.7" r="0.45"><title>shared:p:-2327.6:1149.7</title></circle>
+<circle class="node" cx="-2324.5" cy="1143.0" r="0.45"><title>shared:p:-2324.5:1143.0</title></circle>
+<circle class="node" cx="-2324.4" cy="1124.3" r="0.45"><title>shared:p:-2324.4:1124.3</title></circle>
+<circle class="node" cx="-2266.5" cy="1124.1" r="0.45"><title>shared:p:-2266.5:1124.1</title></circle>
+<circle class="node" cx="-2246.5" cy="1126.8" r="0.45"><title>shared:p:-2246.5:1126.8</title></circle>
+<circle class="node" cx="-2257.9" cy="1130.2" r="0.45"><title>shared:p:-2257.9:1130.2</title></circle>
+<circle class="node" cx="-2265.3" cy="1125.8" r="0.45"><title>shared:p:-2265.3:1125.8</title></circle>
+<circle class="node" cx="-2268.1" cy="1121.8" r="0.45"><title>shared:p:-2268.1:1121.8</title></circle>
+<circle class="node" cx="-2353.4" cy="1221.5" r="0.45"><title>shared:p:-2353.4:1221.5</title></circle>
+<circle class="node" cx="-2269.6" cy="1153.0" r="0.45"><title>shared:p:-2269.6:1153.0</title></circle>
+<circle class="node" cx="-2248.5" cy="1167.6" r="0.45"><title>shared:p:-2248.5:1167.6</title></circle>
+<circle class="node" cx="-2246.9" cy="1200.0" r="0.45"><title>shared:p:-2246.9:1200.0</title></circle>
+<circle class="node" cx="-2323.4" cy="1208.4" r="0.45"><title>shared:p:-2323.4:1208.4</title></circle>
+<circle class="node" cx="-2270.1" cy="1210.4" r="0.45"><title>shared:p:-2270.1:1210.4</title></circle>
+<circle class="node" cx="-2349.5" cy="1221.4" r="0.45"><title>shared:p:-2349.5:1221.4</title></circle>
+<circle class="node" cx="-2349.2" cy="1208.6" r="0.45"><title>shared:p:-2349.2:1208.6</title></circle>
+<circle class="node" cx="-2357.2" cy="1126.1" r="0.45"><title>shared:p:-2357.2:1126.1</title></circle>
+<circle class="node" cx="-2358.3" cy="1150.7" r="0.45"><title>shared:p:-2358.3:1150.7</title></circle>
+<circle class="center" cx="-2295.05" cy="1182.8" r="15"><title>ambiguous_or_not_four_arm</title></circle>
+</svg>
+</svg>

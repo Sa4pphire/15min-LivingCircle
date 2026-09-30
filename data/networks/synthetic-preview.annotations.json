@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "coordinateSystem": "engine-local-meters",
   "synthetic": true,
-  "description": "SVG 人工校对记录；仅用于合成演示，未核实实际人行横道及通行许可。",
+  "description": "SVG 校对与显式路口推定记录；仅用于合成演示。百度底图辅助核对道路形态，不代表已核实人行横道及通行许可。",
   "crossings": [
     {
       "id": "park-loop-north",
@@ -26,7 +26,10 @@
   "junctions": [
     {
       "id": "blue-crossroads-01",
-      "centerMeters": [-273.15, 1347.85],
+      "centerMeters": [
+        -273.15,
+        1347.85
+      ],
       "verificationStatus": "user_marked_unverified",
       "source": "用户 2026-09-28 SVG 蓝色圈选十字路口：codex-clipboard-ea8c1954-1058-4627-8342-1c818a8b6c54.png；转弯与过街位置为演示模型，未实地核实。",
       "retireEdgeIds": [
@@ -35,31 +38,3281 @@
         "synthetic-turn:w:226889561:0:0:p:-277.5:-1350.8"
       ],
       "ports": [
-        {"id": "ne-west", "edgeId": "w:1322655092:0:0:right", "endpointNodeId": "major:74415456:p:-277.5:-1350.8:right", "setbackMeters": 18},
-        {"id": "ne-west-inner", "edgeId": "w:1322655092:0:0:left", "endpointNodeId": "major:74415456:p:-277.5:-1350.8:left", "setbackMeters": 18},
-        {"id": "ne-east-inner", "edgeId": "w:1322655091:0:0:left", "endpointNodeId": "major:225928287:p:-268.8:-1344.9:left", "setbackMeters": 18},
-        {"id": "ne-east", "edgeId": "w:1322655091:0:0:right", "endpointNodeId": "major:225928287:p:-268.8:-1344.9:right", "setbackMeters": 18},
-        {"id": "sw-west", "edgeId": "w:74415456:0:0:right", "endpointNodeId": "major:74415456:p:-277.5:-1350.8:right", "setbackMeters": 18},
-        {"id": "sw-west-inner", "edgeId": "w:74415456:0:0:left", "endpointNodeId": "major:74415456:p:-277.5:-1350.8:left", "setbackMeters": 18},
-        {"id": "sw-east-inner", "edgeId": "w:225928287:4:0:left", "endpointNodeId": "major:225928287:p:-268.8:-1344.9:left", "setbackMeters": 18},
-        {"id": "sw-east", "edgeId": "w:225928287:4:0:right", "endpointNodeId": "major:225928287:p:-268.8:-1344.9:right", "setbackMeters": 18},
-        {"id": "nw-north", "edgeId": "w:441758702:3:0:s1:left", "endpointNodeId": "major:441758702:p:-277.5:-1350.8:left", "setbackMeters": 18},
-        {"id": "nw-south", "edgeId": "w:441758702:3:0:s1:right", "endpointNodeId": "major:441758702:p:-277.5:-1350.8:right", "setbackMeters": 18},
-        {"id": "se-north", "edgeId": "w:168476055:0:0:right", "endpointNodeId": "major:168476055:p:-268.8:-1344.9:right", "setbackMeters": 18},
-        {"id": "se-south", "edgeId": "w:168476055:0:0:left", "endpointNodeId": "major:168476055:p:-268.8:-1344.9:left", "setbackMeters": 18}
+        {
+          "id": "ne-west",
+          "edgeId": "w:1322655092:0:0:right",
+          "endpointNodeId": "major:74415456:p:-277.5:-1350.8:right",
+          "setbackMeters": 18
+        },
+        {
+          "id": "ne-west-inner",
+          "edgeId": "w:1322655092:0:0:left",
+          "endpointNodeId": "major:74415456:p:-277.5:-1350.8:left",
+          "setbackMeters": 18
+        },
+        {
+          "id": "ne-east-inner",
+          "edgeId": "w:1322655091:0:0:left",
+          "endpointNodeId": "major:225928287:p:-268.8:-1344.9:left",
+          "setbackMeters": 18
+        },
+        {
+          "id": "ne-east",
+          "edgeId": "w:1322655091:0:0:right",
+          "endpointNodeId": "major:225928287:p:-268.8:-1344.9:right",
+          "setbackMeters": 18
+        },
+        {
+          "id": "sw-west",
+          "edgeId": "w:74415456:0:0:right",
+          "endpointNodeId": "major:74415456:p:-277.5:-1350.8:right",
+          "setbackMeters": 18
+        },
+        {
+          "id": "sw-west-inner",
+          "edgeId": "w:74415456:0:0:left",
+          "endpointNodeId": "major:74415456:p:-277.5:-1350.8:left",
+          "setbackMeters": 18
+        },
+        {
+          "id": "sw-east-inner",
+          "edgeId": "w:225928287:4:0:left",
+          "endpointNodeId": "major:225928287:p:-268.8:-1344.9:left",
+          "setbackMeters": 18
+        },
+        {
+          "id": "sw-east",
+          "edgeId": "w:225928287:4:0:right",
+          "endpointNodeId": "major:225928287:p:-268.8:-1344.9:right",
+          "setbackMeters": 18
+        },
+        {
+          "id": "nw-north",
+          "edgeId": "w:441758702:3:0:s1:left",
+          "endpointNodeId": "major:441758702:p:-277.5:-1350.8:left",
+          "setbackMeters": 18
+        },
+        {
+          "id": "nw-south",
+          "edgeId": "w:441758702:3:0:s1:right",
+          "endpointNodeId": "major:441758702:p:-277.5:-1350.8:right",
+          "setbackMeters": 18
+        },
+        {
+          "id": "se-north",
+          "edgeId": "w:168476055:0:0:right",
+          "endpointNodeId": "major:168476055:p:-268.8:-1344.9:right",
+          "setbackMeters": 18
+        },
+        {
+          "id": "se-south",
+          "edgeId": "w:168476055:0:0:left",
+          "endpointNodeId": "major:168476055:p:-268.8:-1344.9:left",
+          "setbackMeters": 18
+        }
       ],
       "connectors": [
-        {"id": "corner-north", "kind": "turn", "fromPort": "ne-west", "toPort": "nw-north"},
-        {"id": "corner-west", "kind": "turn", "fromPort": "nw-south", "toPort": "sw-west"},
-        {"id": "corner-south", "kind": "turn", "fromPort": "sw-east", "toPort": "se-south"},
-        {"id": "corner-east", "kind": "turn", "fromPort": "se-north", "toPort": "ne-east"},
-        {"id": "cross-ne", "kind": "crossing", "fromPort": "ne-west", "toPort": "ne-east", "waitSeconds": 20},
-        {"id": "cross-sw", "kind": "crossing", "fromPort": "sw-west", "toPort": "sw-east", "waitSeconds": 20},
-        {"id": "cross-nw", "kind": "crossing", "fromPort": "nw-north", "toPort": "nw-south", "waitSeconds": 20},
-        {"id": "cross-se", "kind": "crossing", "fromPort": "se-north", "toPort": "se-south", "waitSeconds": 20},
-        {"id": "cross-west-inner", "kind": "crossing", "fromPort": "ne-west-inner", "toPort": "sw-west-inner", "waitSeconds": 20},
-        {"id": "cross-east-inner", "kind": "crossing", "fromPort": "ne-east-inner", "toPort": "sw-east-inner", "waitSeconds": 20}
+        {
+          "id": "corner-north",
+          "kind": "turn",
+          "fromPort": "ne-west",
+          "toPort": "nw-north"
+        },
+        {
+          "id": "corner-west",
+          "kind": "turn",
+          "fromPort": "nw-south",
+          "toPort": "sw-west"
+        },
+        {
+          "id": "corner-south",
+          "kind": "turn",
+          "fromPort": "sw-east",
+          "toPort": "se-south"
+        },
+        {
+          "id": "corner-east",
+          "kind": "turn",
+          "fromPort": "se-north",
+          "toPort": "ne-east"
+        },
+        {
+          "id": "cross-ne",
+          "kind": "crossing",
+          "fromPort": "ne-west",
+          "toPort": "ne-east",
+          "waitSeconds": 20
+        },
+        {
+          "id": "cross-sw",
+          "kind": "crossing",
+          "fromPort": "sw-west",
+          "toPort": "sw-east",
+          "waitSeconds": 20
+        },
+        {
+          "id": "cross-nw",
+          "kind": "crossing",
+          "fromPort": "nw-north",
+          "toPort": "nw-south",
+          "waitSeconds": 20
+        },
+        {
+          "id": "cross-se",
+          "kind": "crossing",
+          "fromPort": "se-north",
+          "toPort": "se-south",
+          "waitSeconds": 20
+        },
+        {
+          "id": "cross-west-inner",
+          "kind": "crossing",
+          "fromPort": "ne-west-inner",
+          "toPort": "sw-west-inner",
+          "waitSeconds": 20
+        },
+        {
+          "id": "cross-east-inner",
+          "kind": "crossing",
+          "fromPort": "ne-east-inner",
+          "toPort": "sw-east-inner",
+          "waitSeconds": 20
+        }
+      ]
+    },
+    {
+      "id": "review-guofan-guoxiu",
+      "name": "北部四向路口（国帆路沿线）",
+      "centerMeters": [
+        381.5,
+        1048.5
+      ],
+      "rawNodeIds": [
+        "p:381.5:-1048.5"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 SVG 全图校对：共享原节点的四条主路在人行道转换后缺少转弯与过街；按四角模型推定。",
+      "mapEvidence": "参考现有百度底图的国帆路沿线道路形态；具体横道与等待时间未核实。",
+      "approachGroups": [
+        {
+          "id": "north",
+          "edgeIds": [
+            "w:1002716295:0:0"
+          ]
+        },
+        {
+          "id": "east",
+          "edgeIds": [
+            "w:1368697070:2:0"
+          ]
+        },
+        {
+          "id": "south",
+          "edgeIds": [
+            "w:68998159:3:0"
+          ]
+        },
+        {
+          "id": "west",
+          "edgeIds": [
+            "w:74415448:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "review-yinxing-guoquan",
+      "name": "中部双车道十字路口（国权北路／殷行路）",
+      "centerMeters": [
+        -270.125,
+        -243.45
+      ],
+      "rawNodeIds": [
+        "p:-277.5:235.7",
+        "p:-261.4:235.8",
+        "p:-278.9:250.5",
+        "p:-262.7:251.8"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 SVG 全图校对：四个相邻中心节点属于同一双车道路口，原中心线内连接不能代替人行横道。",
+      "mapEvidence": "现有百度底图可见国权北路与殷行路平面交叉；横道位置按模型推定，未实地核实。",
+      "approachGroups": [
+        {
+          "id": "north",
+          "edgeIds": [
+            "w:1225879547:0:0",
+            "w:1231937663:1:0"
+          ]
+        },
+        {
+          "id": "east",
+          "edgeIds": [
+            "w:39175390:0:0:s0",
+            "w:132863825:0:0"
+          ]
+        },
+        {
+          "id": "south",
+          "edgeIds": [
+            "w:132863832:0:0",
+            "w:226161205:0:0"
+          ]
+        },
+        {
+          "id": "west",
+          "edgeIds": [
+            "w:225937832:0:0",
+            "w:337813521:1:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "review-yingao-guoquan",
+      "name": "南部双车道十字路口（国权北路／殷高东路）",
+      "centerMeters": [
+        -273.967,
+        -1144.233
+      ],
+      "rawNodeIds": [
+        "p:-279.0:1131.9",
+        "p:-263.5:1150.1",
+        "p:-279.4:1150.7"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 SVG 全图校对：南部主路口有三处中心线节点，补四角转弯及带等待的跨街连接。",
+      "mapEvidence": "结合四路围合南边界与现有百度底图的道路走势；具体横道未核实。",
+      "approachGroups": [
+        {
+          "id": "north",
+          "edgeIds": [
+            "w:226015940:0:0",
+            "w:1231722500:0:0"
+          ]
+        },
+        {
+          "id": "east",
+          "edgeIds": [
+            "w:132985316:5:0",
+            "w:413897980:0:0"
+          ]
+        },
+        {
+          "id": "south",
+          "edgeIds": [
+            "w:132985298:0:0",
+            "w:1231722487:0:0"
+          ]
+        },
+        {
+          "id": "west",
+          "edgeIds": [
+            "w:1231722488:1:0",
+            "w:1231937662:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "review-south-central",
+      "name": "南部斜交路口（双车道接共享通道）",
+      "centerMeters": [
+        181.4,
+        -1243.75
+      ],
+      "rawNodeIds": [
+        "p:179.3:1256.8",
+        "p:183.5:1230.7"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：补入南侧旧 T 节点；双车道中间人行道通往相对共享入口时使用显式、带等待的过街。未核实通行许可。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:132865840:6:0",
+            "w:68996422:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:132985316:1:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:549935555:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:132985316:0:0"
+          ]
+        }
+      ],
+      "medianConnections": [
+        {
+          "id": "median-shared-0",
+          "fromPort": "arm-0-0",
+          "toPort": "arm-2-0",
+          "waitSeconds": 20
+        },
+        {
+          "id": "median-shared-2",
+          "fromPort": "arm-0-2",
+          "toPort": "arm-2-0",
+          "waitSeconds": 20
+        }
+      ]
+    },
+    {
+      "id": "review-southeast-outer",
+      "name": "东南外围斜交路口一",
+      "centerMeters": [
+        556.3,
+        -1490
+      ],
+      "rawNodeIds": [
+        "p:556.3:1490.0"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 SVG 全图校对：展示外围的四向主路口缺少人行连接，保留外围计算范围。",
+      "mapEvidence": "SVG 原路网拓扑推定；实际横道与是否为平面公共步行路口仍待地图详图或现场核实。",
+      "approachGroups": [
+        {
+          "id": "ne",
+          "edgeIds": [
+            "w:226663349:0:0:s0"
+          ]
+        },
+        {
+          "id": "se",
+          "edgeIds": [
+            "w:966921112:1:0"
+          ]
+        },
+        {
+          "id": "sw",
+          "edgeIds": [
+            "w:226663350:0:0"
+          ]
+        },
+        {
+          "id": "nw",
+          "edgeIds": [
+            "w:68996111:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "review-southeast-outer-2",
+      "name": "东南外围斜交路口二",
+      "centerMeters": [
+        973.9,
+        -1386.1
+      ],
+      "rawNodeIds": [
+        "p:973.9:1386.1"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 SVG 全图校对：外围交叉主路具有共同原节点，补充显式转弯与过街端口。",
+      "mapEvidence": "SVG 原路网拓扑推定；实际横道与通行权限未核实。",
+      "approachGroups": [
+        {
+          "id": "ne",
+          "edgeIds": [
+            "w:240014351:0:0:s3"
+          ]
+        },
+        {
+          "id": "se",
+          "edgeIds": [
+            "w:226472191:0:0"
+          ]
+        },
+        {
+          "id": "sw",
+          "edgeIds": [
+            "w:240014351:1:0:s0"
+          ]
+        },
+        {
+          "id": "nw",
+          "edgeIds": [
+            "w:226472189:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "review-north-outer",
+      "name": "北部外围四向路口",
+      "centerMeters": [
+        454.9,
+        1574.8
+      ],
+      "rawNodeIds": [
+        "p:454.9:-1574.8"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 SVG 全图校对：北部外围共享原节点的四向主路，补充四角模型而非按几何相交自动连接。",
+      "mapEvidence": "SVG 原路网拓扑推定；道路是否允许步行和实际横道仍待核实。",
+      "approachGroups": [
+        {
+          "id": "ne",
+          "edgeIds": [
+            "w:1444043969:0:0"
+          ]
+        },
+        {
+          "id": "se",
+          "edgeIds": [
+            "w:1002720926:5:0"
+          ]
+        },
+        {
+          "id": "sw",
+          "edgeIds": [
+            "w:1003005389:1:0"
+          ]
+        },
+        {
+          "id": "nw",
+          "edgeIds": [
+            "w:1002720926:4:0:s1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "review-central-shared",
+      "name": "中部共享支路接入路口",
+      "centerMeters": [
+        -27.4,
+        374.9
+      ],
+      "rawNodeIds": [
+        "p:-27.4:-374.9"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 SVG 全图校对：一条 shared_way 支路与三条主路汇合，拆开支路端点，避免借支路免费换侧。",
+      "mapEvidence": "结合区内百度底图道路形态与 SVG 共享节点；具体支路通行权限和横道未核实。",
+      "approachGroups": [
+        {
+          "id": "ne",
+          "edgeIds": [
+            "w:133097700:0:0"
+          ]
+        },
+        {
+          "id": "se",
+          "edgeIds": [
+            "w:133097699:0:0:s0"
+          ]
+        },
+        {
+          "id": "sw",
+          "edgeIds": [
+            "w:133097701:3:0"
+          ]
+        },
+        {
+          "id": "nw",
+          "edgeIds": [
+            "w:68997079:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-6258f1ad0044",
+      "name": "十字路口 · ad0044",
+      "centerMeters": [
+        -1213.7,
+        2294.9
+      ],
+      "rawNodeIds": [
+        "p:-1213.7:-2294.9"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1326437229:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1326437228:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:39611710:2:0:s1"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:422945048:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-cbac250bbc1e",
+      "name": "十字路口 · 0bbc1e",
+      "centerMeters": [
+        63.1,
+        1955
+      ],
+      "rawNodeIds": [
+        "p:63.1:-1955.0"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:479194749:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1116719083:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:68998435:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:74444895:0:0:s1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-edca5b18213c",
+      "name": "十字路口 · 18213c",
+      "centerMeters": [
+        -890.8,
+        1442.1
+      ],
+      "rawNodeIds": [
+        "p:-890.8:-1442.1"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1234279877:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1234279876:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:71531795:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:74444894:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-865f12333c8e",
+      "name": "十字路口 · 333c8e",
+      "centerMeters": [
+        -1714.1,
+        1351.5
+      ],
+      "rawNodeIds": [
+        "p:-1714.1:-1351.5"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1075724570:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:71531781:3:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1078939201:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1075724569:0:0:s0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-3e31c1232d93",
+      "name": "十字路口 · 232d93",
+      "centerMeters": [
+        -2018.6,
+        1279.3
+      ],
+      "rawNodeIds": [
+        "p:-2018.6:-1279.3"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1327168502:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1078939200:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:71531787:0:0:s1"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:135807017:0:0:s1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-121c6535ff27",
+      "name": "十字路口 · 35ff27",
+      "centerMeters": [
+        -152,
+        1264.7
+      ],
+      "rawNodeIds": [
+        "p:-152.0:-1264.7"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1003005393:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:74415448:5:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:132887680:5:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:74415448:4:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-bb06bd97c1cb",
+      "name": "十字路口 · 97c1cb",
+      "centerMeters": [
+        -2531.9,
+        1077.5
+      ],
+      "rawNodeIds": [
+        "p:-2531.9:-1077.5"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1075724571:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:71531804:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:71531790:2:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1075724572:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-17fada56724e",
+      "name": "十字路口 · 56724e",
+      "centerMeters": [
+        773.1,
+        1024.8
+      ],
+      "rawNodeIds": [
+        "p:773.1:-1024.8"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:68998164:0:0:s1"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1317092182:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1368697070:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:74415449:0:0:s0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-d1d28493bc6a",
+      "name": "十字路口 · 93bc6a",
+      "centerMeters": [
+        -1824.2,
+        763.6
+      ],
+      "rawNodeIds": [
+        "p:-1824.2:-763.6"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1078939203:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:135807017:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:71531772:2:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1078939202:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-c80c4c30310b",
+      "name": "十字路口 · 30310b",
+      "centerMeters": [
+        -737.3,
+        585.1
+      ],
+      "rawNodeIds": [
+        "p:-732.8:-583.9",
+        "p:-741.8:-586.3"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:225928287:0:0",
+            "w:74415456:3:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:225808698:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1329381027:0:0",
+            "w:1329381031:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:132887661:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-8dea03beb5cc",
+      "name": "十字路口 · beb5cc",
+      "centerMeters": [
+        1903.6,
+        560.8
+      ],
+      "rawNodeIds": [
+        "p:1903.6:-560.8"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:46974625:1:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:133096552:3:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:46974625:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:133096552:2:0:s1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-826b397500c1",
+      "name": "十字路口 · 7500c1",
+      "centerMeters": [
+        -914,
+        256.7
+      ],
+      "rawNodeIds": [
+        "p:-914.0:-256.7"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:225928294:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:135806194:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1227641728:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:132887660:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-4bbd185ee05f",
+      "name": "十字路口 · 5ee05f",
+      "centerMeters": [
+        -1996.1,
+        174.4
+      ],
+      "rawNodeIds": [
+        "p:-1996.1:-174.4"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1234279874:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1234279875:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1208982782:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1301570651:0:0:s1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-b82e29aaea0e",
+      "name": "十字路口 · aaea0e",
+      "centerMeters": [
+        -1730.2,
+        -4.7
+      ],
+      "rawNodeIds": [
+        "p:-1717.9:7.2",
+        "p:-1722.0:14.1",
+        "p:-1738.4:-4.7",
+        "p:-1742.5:2.2"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1075724580:0:0:s0",
+            "w:966921097:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1121644221:1:0:s1",
+            "w:1302032707:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1075505413:0:0",
+            "w:136954567:6:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:337813520:0:0",
+            "w:71534222:1:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-eb528813fd7e",
+      "name": "十字路口 · 13fd7e",
+      "centerMeters": [
+        1462.1,
+        -235.4
+      ],
+      "rawNodeIds": [
+        "p:1462.1:235.4"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:226152434:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:44606544:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:226152434:1:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:154523958:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-fd57472cfc86",
+      "name": "十字路口 · 2cfc86",
+      "centerMeters": [
+        1654.22,
+        -240.48
+      ],
+      "rawNodeIds": [
+        "p:1636.1:248.3",
+        "p:1646.2:233.0",
+        "p:1656.9:248.4",
+        "p:1663.6:240.0",
+        "p:1668.3:232.7"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:226153315:2:0",
+            "w:226153316:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:226152434:0:0",
+            "w:226664669:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:226152623:0:0",
+            "w:72145669:1:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:39176343:0:0",
+            "w:39176344:0:0:s2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-1fea47f14eb2",
+      "name": "十字路口 · f14eb2",
+      "centerMeters": [
+        1258.7,
+        -241.55
+      ],
+      "rawNodeIds": [
+        "p:1258.7:232.8",
+        "p:1258.7:250.3"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1363028129:0:0",
+            "w:1363028130:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:136756612:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:132865841:0:0",
+            "w:74023857:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:225924367:4:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-175c3fd10535",
+      "name": "十字路口 · d10535",
+      "centerMeters": [
+        284.75,
+        -242.2
+      ],
+      "rawNodeIds": [
+        "p:284.4:249.3",
+        "p:285.1:235.1"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:226891185:4:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1231722473:0:0",
+            "w:226891186:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:226891183:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:132863822:0:0",
+            "w:133096536:3:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-a8766f98edb5",
+      "name": "十字路口 · 98edb5",
+      "centerMeters": [
+        -1211.5,
+        -242.35
+      ],
+      "rawNodeIds": [
+        "p:-1197.4:233.0",
+        "p:-1210.0:251.8",
+        "p:-1212.9:232.8",
+        "p:-1225.7:251.8"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1234279869:0:0",
+            "w:966921098:1:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1388445558:0:0",
+            "w:1388445561:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1388445559:0:0",
+            "w:1388445560:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1368697073:0:0",
+            "w:337813519:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-c15ced476946",
+      "name": "十字路口 · 476946",
+      "centerMeters": [
+        2297.6,
+        -278.9
+      ],
+      "rawNodeIds": [
+        "p:2297.6:278.9"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:71859488:3:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:74382573:1:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:71859488:4:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:74382573:2:0:s0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-d1722eaafad3",
+      "name": "十字路口 · aafad3",
+      "centerMeters": [
+        -269.35,
+        -589.15
+      ],
+      "rawNodeIds": [
+        "p:-263.1:589.1",
+        "p:-275.6:589.2"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:132865854:2:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1231937652:0:0",
+            "w:132863832:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1231722502:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1231722501:0:0",
+            "w:1231937653:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-752ed540f6b2",
+      "name": "十字路口 · 40f6b2",
+      "centerMeters": [
+        2154.8,
+        -685.1
+      ],
+      "rawNodeIds": [
+        "p:2149.3:685.2",
+        "p:2160.3:685.0"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1330708618:0:0:s1"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:154557753:1:0",
+            "w:72352074:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:27027943:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:72145664:0:0",
+            "w:74029604:0:0:s1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-168c5bb17b98",
+      "name": "十字路口 · b17b98",
+      "centerMeters": [
+        1038.4,
+        -849.9
+      ],
+      "rawNodeIds": [
+        "p:1033.7:842.3",
+        "p:1043.1:857.5"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1268390901:0:0",
+            "w:1346418433:3:0:s1"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:39181055:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:226663349:3:0",
+            "w:74506377:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:226905368:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-b421af2908e3",
+      "name": "十字路口 · 2908e3",
+      "centerMeters": [
+        -266.7,
+        -894.8
+      ],
+      "rawNodeIds": [
+        "p:-266.7:894.8"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:68996421:7:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1363028133:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1363028134:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:226015940:1:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-f3e191e35a79",
+      "name": "十字路口 · e35a79",
+      "centerMeters": [
+        1593.7,
+        -1042.6
+      ],
+      "rawNodeIds": [
+        "p:1593.7:1042.6"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:74018688:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:154555201:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:74018694:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:27027944:0:0:s5"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-ad1ec05ccbb3",
+      "name": "十字路口 · 5ccbb3",
+      "centerMeters": [
+        2157.35,
+        -1043.6
+      ],
+      "rawNodeIds": [
+        "p:2152.2:1043.5",
+        "p:2162.5:1043.7"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:72145664:0:0",
+            "w:74029604:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:27027944:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:74018686:0:0",
+            "w:74505146:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:74029610:0:0:s0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-2df933fadfbd",
+      "name": "十字路口 · fadfbd",
+      "centerMeters": [
+        1145.5,
+        -1054.1
+      ],
+      "rawNodeIds": [
+        "p:1145.5:1054.1"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:27395784:5:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:74024038:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:74024030:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:226825437:0:0:s1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-77ce98cf45e7",
+      "name": "十字路口 · cf45e7",
+      "centerMeters": [
+        -796.1,
+        -1142.9
+      ],
+      "rawNodeIds": [
+        "p:-796.1:1142.9"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1363028136:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:413897979:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1231722499:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1363028135:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-cb69cd8210dd",
+      "name": "十字路口 · 8210dd",
+      "centerMeters": [
+        1194.4,
+        -1146
+      ],
+      "rawNodeIds": [
+        "p:1194.4:1146.0"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:240014352:1:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:226825437:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:240014351:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:39115230:0:0:s1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-5b3792cee421",
+      "name": "十字路口 · cee421",
+      "centerMeters": [
+        -1317.2,
+        -1162.067
+      ],
+      "rawNodeIds": [
+        "p:-1314.6:1167.5",
+        "p:-1315.0:1151.4",
+        "p:-1322.0:1167.3"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1170983551:0:0",
+            "w:1170983553:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1368697069:0:0",
+            "w:966921102:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1271904997:0:0",
+            "w:136796355:1:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1234279870:0:0",
+            "w:136796357:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-231946c5d4b2",
+      "name": "十字路口 · c5d4b2",
+      "centerMeters": [
+        2156.75,
+        -1422.45
+      ],
+      "rawNodeIds": [
+        "p:2152.6:1422.0",
+        "p:2160.9:1422.9"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:39175408:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:74018686:0:0",
+            "w:74505146:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:159104985:0:0:s4"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:226012377:0:0",
+            "w:74450566:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-e634c9b6b647",
+      "name": "十字路口 · b6b647",
+      "centerMeters": [
+        583.5,
+        -1511.1
+      ],
+      "rawNodeIds": [
+        "p:583.5:1511.1"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:226000135:2:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:966921112:1:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:226000135:1:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:966921112:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-c54da2171cdd",
+      "name": "十字路口 · 171cdd",
+      "centerMeters": [
+        -262.3,
+        -1645.35
+      ],
+      "rawNodeIds": [
+        "p:-254.4:1644.4",
+        "p:-270.2:1646.3"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1231937657:0:0",
+            "w:1268390904:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:70937306:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:226015952:0:0",
+            "w:226662944:3:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:154634720:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-cccdd957327f",
+      "name": "十字路口 · 57327f",
+      "centerMeters": [
+        778.85,
+        -1649.7
+      ],
+      "rawNodeIds": [
+        "p:774.7:1656.0",
+        "p:783.0:1643.4"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:240014351:1:0:s1"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:966921110:0:0",
+            "w:966921112:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:966921111:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1042001643:0:0",
+            "w:1042001644:2:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-ac373170b931",
+      "name": "十字路口 · 70b931",
+      "centerMeters": [
+        62.1,
+        -1681.9
+      ],
+      "rawNodeIds": [
+        "p:62.1:1681.9"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:549935557:4:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:154634720:1:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1324895008:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1231937656:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-92f0130a8289",
+      "name": "十字路口 · 0a8289",
+      "centerMeters": [
+        -1552.8,
+        -1703.8
+      ],
+      "rawNodeIds": [
+        "p:-1552.8:1703.8"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:833383684:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1234279947:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1234279950:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:39791102:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-1e06d97822a6",
+      "name": "十字路口 · 7822a6",
+      "centerMeters": [
+        -748.5,
+        -1717.9
+      ],
+      "rawNodeIds": [
+        "p:-748.5:1717.9"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1170983598:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:966921118:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:154634698:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:966921122:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-97c57d291f83",
+      "name": "十字路口 · 291f83",
+      "centerMeters": [
+        -1133.2,
+        -1748
+      ],
+      "rawNodeIds": [
+        "p:-1133.2:1748.0"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:905260353:3:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:966921116:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:966921117:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:154634698:2:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-5468bb7a0343",
+      "name": "十字路口 · 7a0343",
+      "centerMeters": [
+        663,
+        -1797
+      ],
+      "rawNodeIds": [
+        "p:663.0:1797.0"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:966921111:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:27496109:4:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:966921111:1:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:27496109:3:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-dba1420b0dc9",
+      "name": "十字路口 · 0b0dc9",
+      "centerMeters": [
+        1023.45,
+        -1807.1
+      ],
+      "rawNodeIds": [
+        "p:1018.8:1813.7",
+        "p:1028.1:1800.5"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1042001645:1:0",
+            "w:68996115:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:74023996:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1042001643:1:0",
+            "w:1042001644:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:966921106:2:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-aa48ad6654f0",
+      "name": "十字路口 · 6654f0",
+      "centerMeters": [
+        2156.4,
+        -1809.45
+      ],
+      "rawNodeIds": [
+        "p:2151.8:1809.5",
+        "p:2161.0:1809.4"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:39175409:0:0:s3"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:226012378:0:0:s1",
+            "w:74450567:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:74505149:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:136796520:0:0:s2",
+            "w:74505150:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-d57eaf8fe2a8",
+      "name": "十字路口 · 8fe2a8",
+      "centerMeters": [
+        -2315.1,
+        -1813.3
+      ],
+      "rawNodeIds": [
+        "p:-2311.6:1813.2",
+        "p:-2318.6:1813.4"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1075641781:1:0",
+            "w:1231722496:1:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1329381020:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1075641782:0:0",
+            "w:1231722493:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1231722494:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-e189d016a561",
+      "name": "十字路口 · 16a561",
+      "centerMeters": [
+        302,
+        -1815.8
+      ],
+      "rawNodeIds": [
+        "p:302.0:1815.8"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:226663354:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1268390903:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1268390902:2:0:s2"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:132865249:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-f7458615b64f",
+      "name": "十字路口 · 15b64f",
+      "centerMeters": [
+        -2269.8,
+        -1828.4
+      ],
+      "rawNodeIds": [
+        "p:-2269.8:1828.4"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:49204106:1:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1075505399:1:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:49204106:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1075505399:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-c1d32d31b9ef",
+      "name": "十字路口 · 31b9ef",
+      "centerMeters": [
+        -197.1,
+        -1898.3
+      ],
+      "rawNodeIds": [
+        "p:-197.1:1898.3"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1324895009:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:226015952:5:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:553665502:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:226015952:6:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-b34c2deb3de2",
+      "name": "十字路口 · eb3de2",
+      "centerMeters": [
+        581.6,
+        -1924.5
+      ],
+      "rawNodeIds": [
+        "p:581.6:1924.5"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:966921111:1:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:132865249:2:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:74023958:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:74024003:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-7a438e7c429e",
+      "name": "十字路口 · 7c429e",
+      "centerMeters": [
+        1383.3,
+        -2053.2
+      ],
+      "rawNodeIds": [
+        "p:1383.3:2053.2"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:240014353:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:177320634:3:0:s1"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:27496088:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:177320634:4:0:s0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-75772ead6623",
+      "name": "十字路口 · ad6623",
+      "centerMeters": [
+        -2314.8,
+        -2164.25
+      ],
+      "rawNodeIds": [
+        "p:-2305.0:2163.8",
+        "p:-2324.6:2164.7"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1075641782:3:0",
+            "w:1231722493:1:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1329381021:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1075641780:0:0",
+            "w:966921128:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:966921127:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-501e248fa457",
+      "name": "十字路口 · 8fa457",
+      "centerMeters": [
+        559.3,
+        -2166.3
+      ],
+      "rawNodeIds": [
+        "p:559.3:2166.3"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:27042089:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:74023958:2:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:983954147:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:984589839:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-866f58cc3841",
+      "name": "十字路口 · cc3841",
+      "centerMeters": [
+        378.8,
+        -2168.2
+      ],
+      "rawNodeIds": [
+        "p:378.8:2168.2"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:74446205:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:74446206:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1123309043:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:984589840:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-4d8adda953ec",
+      "name": "十字路口 · a953ec",
+      "centerMeters": [
+        -1103.4,
+        -2171.9
+      ],
+      "rawNodeIds": [
+        "p:-1103.4:2171.9"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:905260351:1:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:966921115:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:905260351:2:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:966921115:1:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-2eb33a6e3cef",
+      "name": "十字路口 · 6e3cef",
+      "centerMeters": [
+        -2276.5,
+        -2173.7
+      ],
+      "rawNodeIds": [
+        "p:-2269.6:2175.5",
+        "p:-2283.4:2171.9"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:68741886:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1075505399:0:0",
+            "w:1075641786:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1329381022:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1329381023:1:0",
+            "w:1329381033:1:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-b01c9320e723",
+      "name": "十字路口 · 20e723",
+      "centerMeters": [
+        -424.6,
+        -2173.8
+      ],
+      "rawNodeIds": [
+        "p:-424.6:2173.8"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:770242707:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1231722492:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1231722491:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:166734689:0:0:s0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-7c1e61478452",
+      "name": "十字路口 · 478452",
+      "centerMeters": [
+        -1269.75,
+        -2174.1
+      ],
+      "rawNodeIds": [
+        "p:-1263.7:2174.1",
+        "p:-1275.8:2174.1"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1234279931:0:0",
+            "w:1271904999:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:1017121234:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:1123309046:0:0",
+            "w:136796363:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:1123309045:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-5630ae5d3859",
+      "name": "十字路口 · 5d3859",
+      "centerMeters": [
+        -678.4,
+        -2174.4
+      ],
+      "rawNodeIds": [
+        "p:-678.4:2174.4"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:1231722492:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:966921120:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:966921115:1:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:966921114:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-aaf572ef803f",
+      "name": "十字路口 · ef803f",
+      "centerMeters": [
+        -1849.3,
+        -2176.9
+      ],
+      "rawNodeIds": [
+        "p:-1849.3:2176.9"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:136796359:2:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:136796353:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:136796366:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:39791065:0:0:s2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-da6d16c33edd",
+      "name": "十字路口 · c33edd",
+      "centerMeters": [
+        560.2,
+        -2288.1
+      ],
+      "rawNodeIds": [
+        "p:560.2:2288.1"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:27396069:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:984589839:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:984589838:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:27496026:0:0:s0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-db8fcf0c02d3",
+      "name": "十字路口 · 0c02d3",
+      "centerMeters": [
+        1263.9,
+        -2372.7
+      ],
+      "rawNodeIds": [
+        "p:1263.9:2372.7"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:27395791:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:27396062:0:0"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:144434638:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:144436514:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-a2811c04467a",
+      "name": "十字路口 · 04467a",
+      "centerMeters": [
+        1386.9,
+        -2373.6
+      ],
+      "rawNodeIds": [
+        "p:1386.9:2373.6"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:74507318:0:0:s0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:177320634:4:0:s1"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:144436514:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:39408408:1:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroad-5a3da828db62",
+      "name": "十字路口 · 28db62",
+      "centerMeters": [
+        948.8,
+        -2375.7
+      ],
+      "rawNodeIds": [
+        "p:948.8:2375.7"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 十字路口专项校对：已有原图节点及短连接的四向道路模型；横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "arm-0",
+          "edgeIds": [
+            "w:27396062:0:0"
+          ]
+        },
+        {
+          "id": "arm-1",
+          "edgeIds": [
+            "w:27042081:0:0:s1"
+          ]
+        },
+        {
+          "id": "arm-2",
+          "edgeIds": [
+            "w:27203745:0:0"
+          ]
+        },
+        {
+          "id": "arm-3",
+          "edgeIds": [
+            "w:72352242:0:0:s0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "review-south-edge-three-arm",
+      "name": "南部边界三向路口（南向残段退役）",
+      "centerMeters": [
+        148.2,
+        -2556.6
+      ],
+      "rawNodeIds": [
+        "p:148.2:2556.6"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 全图校对：南向车道 w:1272508511 在覆盖边界内仅剩 0.2 米残段，界外部分不可达、无路由价值，其人行道随本路口退役；其余东／西北／西三向按拐角模型推定。横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "east",
+          "edgeIds": [
+            "w:1076772170:0:0"
+          ]
+        },
+        {
+          "id": "northwest",
+          "edgeIds": [
+            "w:225926025:0:0:s2"
+          ]
+        },
+        {
+          "id": "west",
+          "edgeIds": [
+            "w:74023915:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "review-east-offset-crossroad",
+      "name": "东部偏移路口主体（东西干道×南北路）",
+      "centerMeters": [
+        1576.6,
+        -1421.5
+      ],
+      "rawNodeIds": [
+        "p:1576.6:1421.5"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 全图校对：原候选把相距 13.4 米的两个路口顶点合并为五臂，无法按端口模型展开；现拆分为主体四向路口与东侧巷口（review-east-offset-alley）两处显式模型，中间 13.4 米路段两端各切端口、余段保留为人行道。横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "north",
+          "edgeIds": [
+            "w:74018694:0:0:s7"
+          ]
+        },
+        {
+          "id": "west",
+          "edgeIds": [
+            "w:74023981:3:0"
+          ]
+        },
+        {
+          "id": "south",
+          "edgeIds": [
+            "w:74450569:0:0"
+          ]
+        },
+        {
+          "id": "east",
+          "edgeIds": [
+            "w:74450564:0:0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "review-east-offset-alley",
+      "name": "东部偏移巷口（东西干道×南侧巷道）",
+      "centerMeters": [
+        1590.0,
+        -1421.5
+      ],
+      "rawNodeIds": [
+        "p:1590.0:1421.5"
+      ],
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-09-29 全图校对：与 review-east-offset-crossroad 配套；南侧 roadLocal 巷道以共享步道单端口接入东西干道，巷道口两侧各留同侧转弯，干道北侧经无等待转弯直行。横道与通行许可未核实。",
+      "mapEvidence": "原图道路几何与 SVG 局部校对；不是百度已确认的合法过街。",
+      "approachGroups": [
+        {
+          "id": "west",
+          "edgeIds": [
+            "w:74450564:0:0"
+          ]
+        },
+        {
+          "id": "alley-south",
+          "edgeIds": [
+            "w:1116719052:0:0"
+          ]
+        },
+        {
+          "id": "east",
+          "edgeIds": [
+            "w:159104985:0:0:s0"
+          ]
+        }
       ]
     }
-  ]
+  ],
+  "crossroadReviewBaseline": {
+    "nodes": 10464,
+    "edges": 10975,
+    "edgeKinds": {
+      "crossing": 88,
+      "shared_way": 6760,
+      "sidewalk": 2870,
+      "turn": 1257
+    },
+    "componentCount": 182,
+    "largestComponentNodes": 8945,
+    "componentSizes": [
+      8945,
+      192,
+      80,
+      48,
+      47,
+      38,
+      38,
+      37,
+      30,
+      27,
+      27,
+      24,
+      24,
+      23,
+      23,
+      23,
+      23,
+      18,
+      17,
+      16,
+      15,
+      15,
+      13,
+      13,
+      13,
+      12,
+      12,
+      12,
+      12,
+      11,
+      11,
+      10,
+      10,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "terminalNodes": 1251,
+    "isolatedNodes": 0,
+    "structuralErrors": 0,
+    "sha256": "d75ceac33d5c49d05813764e063999ce8281ab7c9bce18e496a9fd4b9bf75942",
+    "source": "Before 2026-09-29 crossroad refinement batch; synthetic, unverified"
+  }
 }

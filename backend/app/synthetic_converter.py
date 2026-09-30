@@ -9,7 +9,8 @@ from collections import defaultdict
 import math
 from typing import Any
 
-from .junction_annotations import apply_junction_annotations
+from .junction_annotations import apply_junction_annotations, expand_reviewed_junction
+from .divided_road_sections import apply_divided_road_sections
 
 
 SIDEWALK_OFFSET_METERS = 3.0
@@ -325,7 +326,10 @@ def convert_preview_graph(
 
     junction_records: list[dict[str, Any]] = []
     if junction_annotations:
-        edges, junction_records = apply_junction_annotations(nodes, edges, junction_annotations)
+        expanded = [expand_reviewed_junction(annotation, nodes, edges)
+                    if "approachGroups" in annotation else annotation
+                    for annotation in junction_annotations]
+        edges, junction_records = apply_junction_annotations(nodes, edges, expanded)
         for record in junction_records:
             for connector in record["connectors"]:
                 synthetic_link_ids.append(connector["edgeId"])
@@ -335,6 +339,16 @@ def convert_preview_graph(
         synthetic_link_ids = [edge_id for edge_id in synthetic_link_ids if edge_id in remaining_ids]
         synthetic_crossing_ids = [edge_id for edge_id in synthetic_crossing_ids
                                   if edge_id in remaining_ids]
+
+    # The shared source contains explicitly bounded local pilot sections.
+    # Preserve all outside geometry and marked junctions; remove only the
+    # selected inward-facing sidewalk spans, never a proximity-based guess.
+    edges, junction_records, divided_records = apply_divided_road_sections(
+        graph, nodes, edges, junction_records)
+    remaining_ids = {edge['id'] for edge in edges}
+    synthetic_link_ids = [edge_id for edge_id in synthetic_link_ids if edge_id in remaining_ids]
+    synthetic_crossing_ids = [edge_id for edge_id in synthetic_crossing_ids
+                              if edge_id in remaining_ids]
 
     # Discard any offset nodes that could not be referenced by an edge.
     used = {node_id for edge in edges for node_id in (edge["from"], edge["to"])}
@@ -365,5 +379,6 @@ def convert_preview_graph(
             "syntheticCrossingIds": synthetic_crossing_ids,
             "manualCrossingAnnotations": manual_records,
             "manualJunctionAnnotations": junction_records,
+            "dividedRoadSections": divided_records,
         },
     }
