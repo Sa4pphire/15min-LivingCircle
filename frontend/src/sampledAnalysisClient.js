@@ -28,6 +28,18 @@ function normalizeSampledReport(report, candidate) {
         Number.isFinite(point[0]) && Number.isFinite(point[1])),
     }))
     .filter((segment) => segment.points.length >= 2);
+  const samplingRouteSegments = (report.samplingRouteSegments ?? [])
+    .filter((segment) => Array.isArray(segment?.points))
+    .map((segment) => ({
+      ...segment,
+      points: segment.points.filter((point) =>
+        Array.isArray(point) && point.length >= 2 &&
+        Number.isFinite(point[0]) && Number.isFinite(point[1])),
+    }))
+    .filter((segment) => segment.points.length >= 2);
+  const routeCount = report.routeCount ?? new Set(
+    routeSegments.map((segment) => segment.poiUid).filter(Boolean),
+  ).size;
 
   return {
     source: "baidu-sampled-idw",
@@ -35,6 +47,8 @@ function normalizeSampledReport(report, candidate) {
     displayArea: { type: "polygon", geometry: report.isochrone },
     fallbackDisplayArea: { type: "polygon", geometry: fallbackGeometry },
     routeSegments,
+    samplingRouteSegments,
+    blindZones: report.blindZones ?? { type: "FeatureCollection", features: [] },
     facilities: report.facilities ?? {
       type: "FeatureCollection",
       features: [],
@@ -43,7 +57,13 @@ function normalizeSampledReport(report, candidate) {
     accessLink: null,
     summary: {
       sampleCount: report.durationSamples?.length ?? 0,
+      routeCount,
       routeSegmentCount: routeSegments.length,
+      poiRouteCount: routeCount,
+      samplingRouteCount: report.samplingRouteCount ?? new Set(
+        samplingRouteSegments.map((segment) => segment.sampleIndex).filter(Number.isFinite),
+      ).size,
+      samplingRouteSegmentCount: samplingRouteSegments.length,
       thresholdSeconds: report.thresholdSeconds,
       approximate: report.approximate,
     },
@@ -84,7 +104,7 @@ export async function requestSampledMapAnalysis(
 
   if (!accepted.analysisId) throw new Error("MISSING_ANALYSIS_ID");
 
-  const deadline = Date.now() + 60_000;
+  const deadline = Date.now() + 180_000;
   while (Date.now() < deadline) {
     if (signal?.aborted) throw new DOMException("Analysis cancelled", "AbortError");
 

@@ -33,6 +33,13 @@ test("提交采样任务，并把两个坐标系的等时圈整理给地图", as
         durationSeconds: 90,
       },
     ],
+    routeCount: 1,
+    samplingRouteCount: 1,
+    samplingRouteSegments: [
+      { id: "sample:1:0", sampleIndex: 1, angleDegrees: 0,
+        points: [[121.513, 31.337], [121.515, 31.337]],
+        distanceMeters: 240, durationSeconds: 180 },
+    ],
   };
   const responses = [
     { analysisId: "sample-1", status: "queued" },
@@ -68,6 +75,9 @@ test("提交采样任务，并把两个坐标系的等时圈整理给地图", as
   );
   assert.equal(result.summary.sampleCount, 49);
   assert.equal(result.summary.routeSegmentCount, 1);
+  assert.equal(result.summary.routeCount, 1);
+  assert.equal(result.summary.samplingRouteCount, 1);
+  assert.equal(result.samplingRouteSegments.length, 1);
   assert.deepEqual(result.routeSegments[0].points, [
     [121.513, 31.337], [121.514, 31.337],
   ]);

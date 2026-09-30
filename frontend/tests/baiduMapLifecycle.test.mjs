@@ -152,11 +152,12 @@ test("hidden map does not refit its viewport or request replacement tiles", asyn
   assert.equal(stats.fits, fits + 1);
 });
 
-test("App renders one retained map while keeping initial local mode offline", () => {
+test("App renders one retained map after replacing local experiment with blind-zone toggle", () => {
   const app = readFileSync(new URL("../src/App.vue", import.meta.url), "utf8");
   assert.equal((app.match(/<RealMapStage\b/g) ?? []).length, 1);
-  assert.match(app, /v-if="sharedMapMounted" v-show="mapMode !== 'local'"/);
-  assert.match(app, /sharedMapMounted = ref\(mapMode.value !== "local"\)/);
+  assert.match(app, /v-if="sharedMapMounted"/);
+  assert.match(app, /showBlindZones/);
+  assert.doesNotMatch(app, /LocalExperimentStage|局部实验/);
   assert.doesNotMatch(app, /key="(?:real-preview|cpp-preview)"/);
 });
 

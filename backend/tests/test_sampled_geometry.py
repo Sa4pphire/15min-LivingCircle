@@ -3,9 +3,31 @@ import math
 import pytest
 
 from app.sampled_geometry import (
+    build_blind_zone_grid,
+    isochrone_search_radius_meters,
     local_point_to_bd09,
     multipolygon_to_bd09,
+    point_in_isochrone,
 )
+
+
+def test_build_blind_zone_grid_marks_missing_service_categories() -> None:
+    geometry = {
+        "type": "MultiPolygon",
+        "coordinates": [[[
+            [-100.0, -100.0], [100.0, -100.0], [100.0, 100.0],
+            [-100.0, 100.0], [-100.0, -100.0],
+        ]]],
+    }
+    result = build_blind_zone_grid(geometry, [], (121.5, 31.3),
+                                   cell_size_meters=100.0,
+                                   service_radius_meters=100.0)
+
+    assert result["type"] == "FeatureCollection"
+    assert result["features"]
+    assert set(result["features"][0]["properties"]["missingCategories"]) == {
+        "market", "pharmacy", "primary_school",
+    }
 
 
 # 验证中心点的局部坐标仍然是原始 BD-09 中心点
@@ -72,3 +94,28 @@ def test_multipolygon_to_bd09_rejects_invalid_geometry() -> None:
             {"type": "Polygon", "coordinates": []},
             (121.513, 31.337),
         )
+
+
+def test_isochrone_search_radius_covers_local_geometry() -> None:
+    geometry = {
+        "type": "MultiPolygon",
+        "coordinates": [[[
+            [-500.0, 0.0], [0.0, 500.0], [500.0, 0.0], [-500.0, 0.0],
+        ]]],
+    }
+
+    assert isochrone_search_radius_meters(geometry) >= 530
+
+
+def test_point_in_isochrone_rejects_outside_and_hole() -> None:
+    geometry = {
+        "type": "MultiPolygon",
+        "coordinates": [[
+            [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 0.0]],
+            [[4.0, 2.0], [8.0, 2.0], [8.0, 6.0], [4.0, 2.0]],
+        ]],
+    }
+
+    assert point_in_isochrone((2.0, 2.0), geometry) is True
+    assert point_in_isochrone((5.0, 3.0), geometry) is False
+    assert point_in_isochrone((20.0, 2.0), geometry) is False

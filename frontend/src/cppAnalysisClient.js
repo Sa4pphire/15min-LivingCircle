@@ -17,6 +17,28 @@ function localizeGeometry(geometry) {
   };
 }
 
+function localizeFeatureCollection(collection) {
+  if (collection?.type !== "FeatureCollection" || !Array.isArray(collection.features)) {
+    return { type: "FeatureCollection", features: [] };
+  }
+  return {
+    type: "FeatureCollection",
+    features: collection.features.flatMap((feature, index) => {
+      if (!feature?.geometry || !["Polygon", "MultiPolygon", "LineString"].includes(feature.geometry.type)) {
+        return [];
+      }
+      const geometry = feature.geometry.type === "MultiPolygon"
+        ? localizeGeometry(feature.geometry)
+        : feature.geometry.type === "Polygon"
+          ? { type: "Polygon", coordinates: feature.geometry.coordinates.map(ring =>
+              ring.map(point => wgsToLocal(point, PREVIEW_ORIGIN_WGS84))) }
+          : { type: "LineString", coordinates: feature.geometry.coordinates.map(point =>
+              wgsToLocal(point, PREVIEW_ORIGIN_WGS84)) };
+      return [{ ...feature, id: feature.id ?? `feature-${index}`, geometry }];
+    }),
+  };
+}
+
 export function normalizeCppReport(report, origin) {
   if (report?.metadata?.networkSource !== "synthetic" ||
       report.metadata.coordType !== "wgs84ll" ||
@@ -58,6 +80,8 @@ export function normalizeCppReport(report, origin) {
     coordinateSystem: "preview-local-v1",
     origin: { x: origin.x, y: origin.y },
     displayArea: { type: "polygon", geometry: localizeGeometry(report.isochrone?.geometry) },
+    blindZones: localizeFeatureCollection(report.blindZones),
+    blindZoneWalkways: localizeFeatureCollection(report.blindZoneWalkways),
     routeSegments,
     accessLink,
     poiFacilities: poiCandidates(report),

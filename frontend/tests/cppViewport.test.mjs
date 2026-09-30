@@ -103,10 +103,10 @@ test("the overview button can explicitly refit even when already selected", t =>
   assert.equal(app.mapOverviewRequestId.value, previous + 1);
 });
 
-test("mode labels change without changing the API mode identifiers", t => {
+test("mode labels keep the two analysis modes and expose blind-zone toggle", t => {
   const app = componentState(t, "App.vue");
   assert.deepEqual(app.mapModes.map(({ id, label }) => [id, label]), [
-    ["real", "真实区域"], ["synthetic", "专家模式"], ["local", "局部实验"],
+    ["real", "真实区域"], ["synthetic", "专家模式"], ["blind", "盲区显示"],
   ]);
 });
 

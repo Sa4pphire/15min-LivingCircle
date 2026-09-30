@@ -42,7 +42,10 @@
 .real-analysis-gap { fill: none; stroke: #d1764e; stroke-width: 6; stroke-linecap: round; }
 .real-demo-result { pointer-events: none; }
 .real-demo-area { fill: rgba(20, 125, 114, .09); fill-rule: evenodd; stroke: #0a786d; stroke-width: 2.6; vector-effect: non-scaling-stroke; animation: real-circle-reveal .65s ease-out both; }
-.real-demo-route { fill: none; stroke: #087e71; stroke-width: 4.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .62s cubic-bezier(.22, .7, .3, 1) var(--route-delay, .5s) forwards; }
+  .real-demo-route { fill: none; stroke: #087e71; stroke-width: 4.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .62s cubic-bezier(.22, .7, .3, 1) var(--route-delay, .5s) forwards; }
+  .real-sampled-route { fill: none; stroke: #087e71; stroke-width: 3.6; stroke-linecap: round; stroke-linejoin: round; opacity: .82; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .62s cubic-bezier(.22, .7, .3, 1) var(--route-delay, .5s) forwards; }
+  .real-poi-route { fill: none; stroke: #2d74c4; stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; opacity: .96; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .62s cubic-bezier(.22, .7, .3, 1) var(--route-delay, .5s) forwards; }
+  .real-blind-zone { fill: rgba(211, 72, 74, .22); stroke: rgba(183, 48, 55, .45); stroke-width: .8; vector-effect: non-scaling-stroke; }
 .real-demo-access { fill: none; stroke: #d1764e; stroke-width: 2.5; stroke-dasharray: 4 4; stroke-linecap: round; vector-effect: non-scaling-stroke; animation: real-circle-reveal .5s ease-out .3s both; }
 @keyframes real-circle-reveal { from { opacity: 0; } to { opacity: 1; } }
 @keyframes real-route-draw { to { stroke-dashoffset: 0; } }
@@ -60,7 +63,14 @@
 .real-map-actions button:active { transform: scale(.97); }
 .real-map-actions button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 .real-demo-legend { position: absolute; z-index: 4; left: 16px; bottom: 17px; display: flex; flex-wrap: wrap; gap: 8px 14px; max-width: calc(100% - 310px); padding: 8px 10px; background: rgba(251, 253, 252, .94); color: #31574c; font-size: 10px; box-shadow: 0 2px 12px rgba(33, 66, 53, .07); pointer-events: none; }
-.real-demo-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .real-demo-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .real-route-legend { position: absolute; z-index: 4; left: 19px; bottom: 22px; display: flex; flex-wrap: wrap; gap: 8px 14px; max-width: calc(100% - 330px); padding: 8px 10px; background: rgba(251, 253, 252, .94); color: #31574c; font-size: 10px; box-shadow: 0 2px 12px rgba(33, 66, 53, .07); pointer-events: none; }
+  .real-route-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .real-route-legend small { color: #78928a; font-size: 9px; }
+  .real-route-legend i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; }
+  .legend-sampled-route { background: #087e71; }
+  .legend-poi-route { background: #2d74c4; }
+  .legend-blind-zone { height: 10px !important; background: rgba(211, 72, 74, .42); border: 1px solid rgba(183, 48, 55, .6); }
 .real-demo-legend i { display: inline-block; flex: none; width: 13px; height: 8px; }
 .has-cpp-result .real-demo-legend { max-width: calc(100% - 150px); }
 .real-demo-legend .legend-circle { height: 11px; width: 11px; border: 1.5px solid #147d72; border-radius: 50%; background: rgba(20, 125, 114, .1); }
@@ -96,6 +106,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .real-context, .real-fallback-svg .real-candidate-mark, .real-candidate-glyph { transition: none; }
-  .real-demo-area, .real-demo-access, .real-demo-route { animation: none; opacity: 1; }
-  .real-demo-route { stroke-dashoffset: 0; }
+  .real-demo-area, .real-demo-access, .real-demo-route, .real-sampled-route, .real-poi-route { animation: none; opacity: 1; }
+  .real-demo-route, .real-sampled-route, .real-poi-route { stroke-dashoffset: 0; }
 }

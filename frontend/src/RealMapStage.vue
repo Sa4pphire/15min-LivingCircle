@@ -27,6 +27,7 @@ const props = defineProps({
   overviewRequestId: { type: Number, default: 0 },
   analysisMode: { type: String, default: "preview" },
   selectionDisabled: { type: Boolean, default: false },
+  showBlindZones: { type: Boolean, default: false },
 });
 const emit = defineEmits(["select"]);
 
@@ -123,7 +124,7 @@ const fallbackCandidateTransform = computed(() => fallbackCandidate.value
 const liveCandidate = computed(() => {
   projectionVersion.value;
   if (mapState.value !== "ready" || props.candidate?.coordType !== "bd09ll" || !map || !BMap) return null;
-  const pixel = map.pointToPixel(new BMap.Point(props.candidate.lng, props.candidate.lat));
+  const pixel = mapPointToOverlayPixel([props.candidate.lng, props.candidate.lat]);
   return { x: pixel.x, y: pixel.y };
 });
 function localToBd09(point) {
@@ -132,6 +133,17 @@ function localToBd09(point) {
 
 function bd09ToLocal(point) {
   return mapAlignment.value?.toLocal(point) ?? null;
+}
+
+// The route/area SVG is an external overlay. Baidu exposes a separate pixel
+// origin for that container; using pointToPixel here shifts the whole layer
+// when the map viewport and overlay panes are not identical. Keep the
+// pointToPixel fallback for older SDK shims and unit-test doubles.
+function mapPointToOverlayPixel(point) {
+  if (!map || !BMap) return { x: 0, y: 0 };
+  const projector = map.pointToOverlayPixel ?? map.pointToPixel;
+  const pixel = projector.call(map, new BMap.Point(point[0], point[1]));
+  return { x: pixel.x, y: pixel.y };
 }
 
 function linePath(points) {
@@ -169,7 +181,7 @@ const liveDemoResult = computed(() => {
   // Both directions use the same precomputed official calibration grid.
   const project = (point) => {
     const converted = result.coordinateSystem === "preview-local-v1" ? localToBd09(point) : point;
-    const pixel = map.pointToPixel(new BMap.Point(...converted));
+    const pixel = mapPointToOverlayPixel(converted);
     return [pixel.x, pixel.y];
   };
   const projectPath = points => (result.coordinateSystem === "preview-local-v1"
@@ -179,7 +191,17 @@ const liveDemoResult = computed(() => {
       ? circlePath(result.displayArea.center, result.displayArea.radius, project)
       : geometryToSvgPath(result.coordinateSystem === "preview-local-v1"
         ? sampleLocalArea(result.displayArea.geometry) : result.displayArea.geometry, project),
-    routes: (result.routeSegments ?? []).map((segment) => ({
+    routes: (props.analysisMode === "cpp" ? result.routeSegments ?? [] : []).map((segment) => ({
+      id: segment.id,
+      d: linePath(projectPath(segment.points)),
+      delay: routeDelay(segment, result),
+    })),
+    poiRoutes: (props.analysisMode === "preview" ? result.routeSegments ?? [] : []).map((segment) => ({
+      id: segment.id,
+      d: linePath(projectPath(segment.points)),
+      delay: routeDelay(segment, result),
+    })),
+    samplingRoutes: (props.analysisMode === "preview" ? result.samplingRouteSegments ?? [] : []).map((segment) => ({
       id: segment.id,
       d: linePath(projectPath(segment.points)),
       delay: routeDelay(segment, result),
@@ -189,25 +211,33 @@ const liveDemoResult = computed(() => {
 });
 const projectedResult = computed(() => {
   projectionVersion.value;
-  if (mapState.value !== "ready" || !props.analysisResult?.isochrone || !map || !BMap) return null;
+  if (mapState.value !== "ready" || !props.analysisResult || !map || !BMap) return null;
   const project = ([lng, lat]) => {
-    const pixel = map.pointToPixel(new BMap.Point(lng, lat));
+    const pixel = mapPointToOverlayPixel([lng, lat]);
     return [pixel.x, pixel.y];
   };
   const result = props.analysisResult;
+  const projectGeometry = (geometry) => {
+    if (!geometry) return "";
+    const projectPoint = result.coordinateSystem === "preview-local-v1"
+      ? (point) => project(localToBd09(point)) : project;
+    return geometryToSvgPath(geometry, projectPoint);
+  };
   return {
-    area: geometryToSvgPath(result.isochrone?.geometry, project),
+    area: projectGeometry(result.isochrone?.geometry),
     walkways: (result.reachableWalkways?.features ?? []).map((feature) =>
-      geometryToSvgPath(feature.geometry, project)),
+      projectGeometry(feature.geometry)),
     gaps: (result.blindZoneWalkways?.features ?? []).map((feature) =>
-      geometryToSvgPath(feature.geometry, project)),
+      projectGeometry(feature.geometry)),
+    blindZones: (props.showBlindZones ? result.blindZones?.features ?? [] : []).map((feature) =>
+      projectGeometry(feature.geometry)),
   };
 });
 const poiMarkers = computed(() => {
   projectionVersion.value;
   return visiblePois(props.analysisResult, poiCategory.value).flatMap((poi) => {
     if (mapState.value === "ready" && map && BMap && poi.bd09) {
-      const pixel = map.pointToPixel(new BMap.Point(...poi.bd09));
+      const pixel = mapPointToOverlayPixel(poi.bd09);
       return [{ ...poi, pixel: [pixel.x, pixel.y] }];
     }
     if (!poi.point) return [];
@@ -223,9 +253,9 @@ const stateMessage = computed(() => props.analysisMode === "cpp" ? ({
     : `底图已载入 · 选区暂不可用：${boundaryError.value}`,
 })[mapState.value] : ({
   loading: "正在载入百度底图 · 使用本地边界数据…",
-  "no-key": "快速模式 · SVG 底图与临时路线示意",
+  "no-key": "真实区域 · SVG 底图与采样路线预览",
   error: `百度底图暂不可用 · ${mapError.value || "请检查网络或 AK"}`,
-  ready: boundaryState.value === "ready" ? "快速模式 · 临时路线仅作交互示意"
+  ready: boundaryState.value === "ready" ? "真实区域 · 百度采样等时圈与步行路线"
     : `底图已载入 · 选区暂不可用：${boundaryError.value}`,
 })[mapState.value]);
 
@@ -253,7 +283,7 @@ function scheduleProjection() {
     liveBoundaryPath.value = boundaryBd09.value ? geometryToSvgPath(
       { type: "Polygon", coordinates: [boundaryBd09.value] },
       ([lng, lat]) => {
-        const pixel = map.pointToPixel(new BMap.Point(lng, lat));
+        const pixel = mapPointToOverlayPixel([lng, lat]);
         return [pixel.x, pixel.y];
       },
     ) : "";
@@ -460,7 +490,10 @@ function moveProbe(event) {
       hoverInside.value = false;
       return;
     }
-    const point = map.pixelToPoint(new BMap.Pixel(x, y));
+    const point = (map.overlayPixelToPoint ?? map.pixelToPoint).call(
+      map,
+      new BMap.Pixel(x, y),
+    );
     hoverInside.value = pointInPolygon([point.lng, point.lat], [boundaryBd09.value]);
   } else {
     const local = fallbackPointFromClient(event.clientX, event.clientY);
@@ -500,7 +533,10 @@ async function initializeBaidu() {
     fittedZoom = map.getZoom();
     fittedCenter = map.getCenter();
     map.disableDragging?.();
-    map.disableScrollWheelZoom?.();
+    // The page shell also listens for wheel events to turn pages. The root
+    // stage stops propagation (see template below), while Baidu handles the
+    // wheel itself for continuous map zooming.
+    map.enableScrollWheelZoom?.();
     map.disableDoubleClickZoom?.();
     map.disableKeyboard?.();
     map.disablePinchToZoom?.();
@@ -614,6 +650,7 @@ onUnmounted(() => {
     @pointercancel="endFallbackDrag"
     @lostpointercapture="endFallbackDrag"
     @pointerleave="leaveProbe"
+    @wheel.stop
   >
     <div ref="baiduEl" class="real-baidu-map" :class="{ visible: mapState === 'ready' }" aria-hidden="true"></div>
 
@@ -668,11 +705,14 @@ onUnmounted(() => {
       <path v-if="projectedResult?.area" :d="projectedResult.area" class="real-analysis-area" fill-rule="evenodd" />
       <path v-for="(path, index) in projectedResult?.walkways ?? []" :key="`walk-${index}`" :d="path" class="real-analysis-walkway" />
       <path v-for="(path, index) in projectedResult?.gaps ?? []" :key="`gap-${index}`" :d="path" class="real-analysis-gap" />
+      <path v-for="(path, index) in projectedResult?.blindZones ?? []" :key="`blind-${index}`" :d="path" class="real-blind-zone" fill-rule="evenodd" />
       <path :d="liveBoundaryPath" class="real-live-boundary-fill" fill-rule="evenodd" />
       <path :d="liveBoundaryPath" class="real-live-boundary-outline" />
       <g v-if="liveDemoResult" class="real-demo-result">
         <path :d="liveDemoResult.area" class="real-demo-area" />
         <path v-for="segment in liveDemoResult.routes" :key="segment.id" :d="segment.d" class="real-demo-route" pathLength="1" :style="{ '--route-delay': segment.delay }" />
+        <path v-for="segment in liveDemoResult.samplingRoutes" :key="`sample-${segment.id}`" :d="segment.d" class="real-sampled-route" pathLength="1" :style="{ '--route-delay': segment.delay }" />
+        <path v-for="segment in liveDemoResult.poiRoutes" :key="`poi-${segment.id}`" :d="segment.d" class="real-poi-route" pathLength="1" :style="{ '--route-delay': segment.delay }" />
         <path v-if="analysisResult.accessLink?.length > 2" :d="liveDemoResult.access" class="real-demo-access" />
       </g>
       <g v-if="liveCandidate" :transform="`translate(${liveCandidate.x} ${liveCandidate.y})`" class="real-candidate-mark">
@@ -708,7 +748,7 @@ onUnmounted(() => {
       <span>{{ stateMessage }}</span>
     </div>
     <div class="real-map-actions">
-      <p>虚线内可选起点，外围可显示{{ analysisMode === 'cpp' ? '等时圈和街段' : '等时圈和代表路线' }}<br /><strong>点击区内位置，记录候选起点</strong></p>
+      <p>虚线内可选起点，外围可显示{{ analysisMode === 'cpp' ? '等时圈和街段' : '等时圈、采样路线和 POI 服务路线' }}<br /><strong>点击区内位置，记录候选起点</strong></p>
       <button type="button" :disabled="selectionDisabled || (mapState === 'ready' && boundaryState !== 'ready')" @click.stop="selectRegionCenter">选区域中心</button>
     </div>
     <div v-if="analysisResult?.coordinateSystem === 'preview-local-v1'" class="real-demo-legend" aria-label="合成示意图例">

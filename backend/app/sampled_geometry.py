@@ -61,3 +61,131 @@ def multipolygon_to_bd09(
             for polygon in coordinates
         ],
     }
+
+
+# 用能包住等时圈的圆形范围向百度取候选，最终仍按多边形筛选。
+def isochrone_search_radius_meters(geometry: dict[str, Any]) -> int:
+    if geometry.get("type") != "MultiPolygon":
+        raise ValueError("等时圈几何必须是 MultiPolygon")
+    distances = [
+        math.hypot(float(point[0]), float(point[1]))
+        for polygon in geometry.get("coordinates", [])
+        for ring in polygon
+        for point in ring
+    ]
+    if not distances:
+        return 0
+    if not all(math.isfinite(distance) for distance in distances):
+        raise ValueError("等时圈坐标不能包含非有限数值")
+    # 留少量余量，避免坐标转换和圆形检索的边界精度漏掉 POI。
+    return max(1, math.ceil(max(distances) * 1.02 + 20))
+
+
+def _point_in_ring(point: tuple[float, float], ring: list[list[float]]) -> bool:
+    x, y = point
+    inside = False
+    for index in range(len(ring)):
+        x1, y1 = ring[index - 1]
+        x2, y2 = ring[index]
+        cross = (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)
+        if abs(cross) < 1e-12 and min(x1, x2) <= x <= max(x1, x2) and min(y1, y2) <= y <= max(y1, y2):
+            return True
+        if (y1 > y) != (y2 > y):
+            intersection = x1 + (y - y1) * (x2 - x1) / (y2 - y1)
+            if x < intersection:
+                inside = not inside
+    return inside
+
+
+# 判断 BD-09 POI 是否落在任一等时圈面内，同时排除内洞。
+def point_in_isochrone(
+    point: tuple[float, float],
+    geometry: dict[str, Any],
+) -> bool:
+    if geometry.get("type") != "MultiPolygon":
+        raise ValueError("等时圈几何必须是 MultiPolygon")
+    if not all(math.isfinite(value) for value in point):
+        return False
+    return any(
+        _point_in_ring(point, polygon[0])
+        and not any(_point_in_ring(point, hole) for hole in polygon[1:])
+        for polygon in geometry.get("coordinates", [])
+        if polygon
+    )
+
+
+# 用 POI 服务半径把等时圈离散成可解释的候选盲区网格。
+def build_blind_zone_grid(
+    geometry: dict[str, Any],
+    facilities: list[dict[str, Any]],
+    origin: tuple[float, float],
+    *,
+    cell_size_meters: float = 250.0,
+    service_radius_meters: float = 1000.0,
+) -> dict[str, Any]:
+    if geometry.get("type") != "MultiPolygon":
+        raise ValueError("盲区网格需要 MultiPolygon 等时圈")
+    points = [
+        point
+        for polygon in geometry.get("coordinates", [])
+        for ring in polygon
+        for point in ring
+    ]
+    if not points or cell_size_meters <= 0 or service_radius_meters <= 0:
+        return {"type": "FeatureCollection", "features": []}
+    min_x = math.floor(min(float(point[0]) for point in points) / cell_size_meters)
+    max_x = math.ceil(max(float(point[0]) for point in points) / cell_size_meters)
+    min_y = math.floor(min(float(point[1]) for point in points) / cell_size_meters)
+    max_y = math.ceil(max(float(point[1]) for point in points) / cell_size_meters)
+    categories = ("market", "pharmacy", "primary_school")
+    scale_x = METERS_PER_DEGREE * math.cos(math.radians(float(origin[1])))
+    poi_points: dict[str, list[tuple[float, float]]] = {key: [] for key in categories}
+    for feature in facilities:
+        properties = feature.get("properties", {})
+        category = properties.get("category")
+        if category not in poi_points:
+            continue
+        try:
+            lng, lat = feature["geometry"]["coordinates"]
+            point = ((float(lng) - origin[0]) * scale_x,
+                     (float(lat) - origin[1]) * METERS_PER_DEGREE)
+        except (KeyError, TypeError, ValueError):
+            continue
+        if all(math.isfinite(value) for value in point):
+            poi_points[category].append(point)
+
+    features = []
+    for ix in range(min_x, max_x + 1):
+        for iy in range(min_y, max_y + 1):
+            center = ((ix + 0.5) * cell_size_meters,
+                      (iy + 0.5) * cell_size_meters)
+            if not point_in_isochrone(center, geometry):
+                continue
+            missing = [
+                category for category in categories
+                if not any(math.dist(center, poi) <= service_radius_meters
+                           for poi in poi_points[category])
+            ]
+            if not missing:
+                continue
+            corners = [
+                (ix * cell_size_meters, iy * cell_size_meters),
+                ((ix + 1) * cell_size_meters, iy * cell_size_meters),
+                ((ix + 1) * cell_size_meters, (iy + 1) * cell_size_meters),
+                (ix * cell_size_meters, (iy + 1) * cell_size_meters),
+                (ix * cell_size_meters, iy * cell_size_meters),
+            ]
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [[local_point_to_bd09(point, origin)
+                                      for point in corners]],
+                },
+                "properties": {
+                    "missingCategories": missing,
+                    "approximate": True,
+                    "serviceRadiusMeters": service_radius_meters,
+                },
+            })
+    return {"type": "FeatureCollection", "features": features}

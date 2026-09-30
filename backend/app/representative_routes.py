@@ -57,8 +57,9 @@ async def collect_representative_routes(
     facilities: list[dict[str, Any]],
     *,
     per_category: int = 1,
+    max_duration_seconds: float | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """返回可绘制路线和未成功路线的降级记录。"""
+    """返回可绘制路线，并过滤超过生活圈时限的目的地。"""
     routes: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
     for facility in select_representative_pois(facilities, origin, per_category=per_category):
@@ -70,6 +71,14 @@ async def collect_representative_routes(
             )
         except (BaiduApiError, OSError, TimeoutError) as exc:
             failures.append({"uid": facility.get("uid"), "error": str(exc)})
+            continue
+        duration = float(route["durationSeconds"])
+        if max_duration_seconds is not None and duration > max_duration_seconds:
+            failures.append({
+                "uid": facility.get("uid"),
+                "error": "route exceeds threshold",
+                "durationSeconds": duration,
+            })
             continue
         for index, points in enumerate(route["segments"]):
             routes.append({

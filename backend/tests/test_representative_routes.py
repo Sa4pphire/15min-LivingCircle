@@ -17,6 +17,26 @@ def test_selects_nearest_poi_once_per_category() -> None:
     assert [item["uid"] for item in selected] == ["school-near", "shop"]
 
 
+def test_per_category_limit_can_expand_route_density() -> None:
+    facilities = [
+        {
+            "uid": f"market-{index}",
+            "category": "market",
+            "lng": 121.513 + index * 0.0001,
+            "lat": 31.337,
+        }
+        for index in range(7)
+    ]
+
+    selected = select_representative_pois(
+        facilities,
+        (121.513, 31.337),
+        per_category=5,
+    )
+
+    assert len(selected) == 5
+
+
 def test_route_failure_is_partial_and_keeps_other_routes() -> None:
     class FakeClient:
         async def walking_route(self, origin, destination, *, destination_uid=None):
@@ -37,3 +57,27 @@ def test_route_failure_is_partial_and_keeps_other_routes() -> None:
     ))
     assert [route["poiUid"] for route in routes] == ["good"]
     assert failures == [{"uid": "bad", "error": "route unavailable"}]
+
+
+def test_route_over_threshold_is_not_reported_as_reachable() -> None:
+    class FakeClient:
+        async def walking_route(self, origin, destination, *, destination_uid=None):
+            return {
+                "distanceMeters": 2000.0,
+                "durationSeconds": 901.0,
+                "segments": [[[121.513, 31.337], [121.52, 31.337]]],
+            }
+
+    routes, failures = asyncio.run(collect_representative_routes(
+        FakeClient(),
+        (121.513, 31.337),
+        [{"uid": "late", "category": "market", "lng": 121.52, "lat": 31.337}],
+        max_duration_seconds=900.0,
+    ))
+
+    assert routes == []
+    assert failures == [{
+        "uid": "late",
+        "error": "route exceeds threshold",
+        "durationSeconds": 901.0,
+    }]
