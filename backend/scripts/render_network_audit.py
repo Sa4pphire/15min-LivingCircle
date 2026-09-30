@@ -95,7 +95,6 @@ def render(source: Path = SOURCE, output: Path = OUTPUT) -> dict[str, int]:
 
     lines = [
         '<svg xmlns="http://www.w3.org/2000/svg" '
-        'style="display:block;max-width:100%;height:auto" '
         f'width="{pixel_width}" height="{pixel_height}" '
         f'viewBox="{fmt(view_x)} {fmt(view_y)} '
         f'{fmt(view_width)} {fmt(view_height)}" '
@@ -104,7 +103,7 @@ def render(source: Path = SOURCE, output: Path = OUTPUT) -> dict[str, int]:
         '<desc id="network-desc">仅展示步行道路和图节点。'
         '深绿为共享通道，蓝绿为双侧人行道，棕色为转向连接，'
         '红线与红点为未经核实的过街连接及其端点；空心橙点为度数一的断头节点。'
-        '蓝色连接与蓝点为显式校对或推定的路口位置，仍未现场核实。'
+        '蓝色连接与蓝点为用户本轮人工校对的位置，仍未现场核实。'
         '</desc>',
         '<metadata>Source: data/networks/synthetic-preview.json; '
         'synthetic walking graph, not field-verified.</metadata>',
@@ -138,9 +137,7 @@ def render(source: Path = SOURCE, output: Path = OUTPUT) -> dict[str, int]:
                 detail.extend((f"streetBlockId: {edge['streetBlockId']}",
                                f"sharedWayType: {edge['sharedWayType']}"))
             if "annotationId" in edge:
-                detail.extend((f"显式标注: {edge['annotationId']}",
-                               f"状态: {edge.get('verificationStatus', 'unverified')}",
-                               "未现场核实"))
+                detail.extend((f"人工校对: {edge['annotationId']}", "未现场核实"))
             if kind == "crossing":
                 detail.append(f"等待时间: {edge.get('waitSeconds', 20)} 秒")
             title = escape(" | ".join(detail))

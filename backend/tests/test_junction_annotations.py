@@ -107,9 +107,7 @@ def test_all_four_outer_street_corners_are_connected_but_no_crossing_means_no_tr
 @pytest.mark.parametrize("change", ["missing_edge", "too_long", "verified", "turn_wait"])
 def test_bad_junction_annotation_fails_without_a_silent_repair(change: str) -> None:
     graph = json.loads((ROOT / "frontend/src/data/demoRoadGraph.local.json").read_text("utf-8"))
-    # This deliberately unreviewed baseline cannot apply the local section's
-    # closure, which names a different reviewed junction.
-    original = convert_preview_graph({**graph, "dividedRoadSections": []}, [121.505, 31.333])
+    original = convert_preview_graph(graph, [121.505, 31.333])
     annotation = deepcopy(json.loads((ROOT / "data/networks/synthetic-preview.annotations.json")
                                     .read_text("utf-8"))["junctions"][0])
     if change == "missing_edge":

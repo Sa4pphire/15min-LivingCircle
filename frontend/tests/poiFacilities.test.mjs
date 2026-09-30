@@ -37,6 +37,10 @@ test("all valid circle POIs are retained without a display cap or a modeled entr
   assert.equal(visiblePois(many, "dining").length, 48);
   assert.ok(visiblePois(many).every(poi => poi.modelReachable !== true));
 });
+test("local mode uses street proximity, never a made-up polygon", () => {
+  const local = { ...report, mode: "local_experiment" };
+  assert.deepEqual(visiblePois(local).map(item => item.id), ["shop", "hospital"]);
+});
 test("cache source distinguishes warm reads, fresh API calls, stale data and failures", () => {
   const result = poi => ({ ...report, metadata: { poi } });
   assert.equal(poiCacheLabel(result({ status: "ready", apiRequests: 0, cacheHits: 8 })), "缓存命中 8 项");
@@ -59,6 +63,7 @@ test("category statistics count only displayed candidates as model reachable", (
 test("empty category explains query versus circle counts without claiming real scarcity", () => {
   const result = { ...report, poiCategories: [{ category: "healthcare", queriedCount: 15 }] };
   assert.match(poiEmptyLabel(result, "healthcare"), /近似圈内暂无医院.*15 个.*不代表真实设施匮乏/);
+  assert.match(poiEmptyLabel({ ...result, mode: "local_experiment" }, "healthcare"), /可达街段附近/);
   assert.match(poiEmptyLabel({ metadata: { poi: { status: "unavailable" } } }), /未取得设施数据/);
 });
 test("Vite exposes only the browser AK prefix, not the legacy server key", () => {

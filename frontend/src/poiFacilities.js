@@ -29,8 +29,10 @@ export function poiCandidates(result) {
 }
 
 export function visiblePois(result, category = "all") {
+  const local = result?.mode === "local_experiment";
   return poiCandidates(result).filter((poi) =>
-    poi.insideDisplayPolygon === true &&
+    (local ? poi.nearReachableWalkway === true || poi.modelReachable === true
+      : poi.insideDisplayPolygon === true) &&
     (category === "all" || (poi.categories ?? [poi.category]).includes(category)));
 }
 
@@ -77,7 +79,8 @@ export function poiEmptyLabel(result, category = "all") {
     return "未取得设施数据，不将空结果解释为没有设施。";
   }
   const row = poiCategoryCounts(result).find(item => item.category === category);
-  if (row) return `近似圈内暂无${row.label}候选点位${row.queried !== null
+  const scope = result?.mode === "local_experiment" ? "可达街段附近" : "近似圈内";
+  if (row) return `${scope}暂无${row.label}候选点位${row.queried !== null
     ? `（检索范围返回 ${row.queried} 个）` : ""}。不代表真实设施匮乏。`;
   return "当前范围未展示候选设施；请留意检索范围、分页上限和数据状态。";
 }

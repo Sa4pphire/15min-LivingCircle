@@ -20,11 +20,11 @@ watch([() => props.result, () => props.category], () => { selected.value = null;
 <template>
   <section class="poi-inventory" :class="{ compact }" aria-label="百度设施候选清单">
     <div v-if="compact" class="poi-compact-heading">
-      <strong>圈内 POI</strong>
+      <strong>{{ result?.mode === 'local_experiment' ? '街段附近 POI' : '圈内 POI' }}</strong>
       <span role="status">{{ poiCacheLabel(result) }}</span>
     </div>
     <div class="poi-heading" v-if="!compact">
-      <h3>近似等时圈面内设施</h3>
+      <h3>{{ result?.mode === 'local_experiment' ? '可达街段附近设施' : '近似等时圈面内设施' }}</h3>
       <button type="button" @click="emit('refresh')">刷新 POI（调用 API）</button>
     </div>
     <div class="poi-filters" role="group" aria-label="设施类别筛选">
@@ -39,9 +39,9 @@ watch([() => props.result, () => props.category], () => { selected.value = null;
     <p v-if="compact && (!entries.length || info?.status === 'unavailable')" class="poi-empty" role="status">{{ poiEmptyLabel(result, category) }}</p>
     <p v-if="!compact && info" class="poi-cache-status">本次百度请求 {{ info.apiRequests ?? 0 }} 次，缓存命中 {{ info.cacheHits ?? 0 }} 项；缓存有效期 {{ info.cacheTtlHours ?? 168 }} 小时。</p>
     <template v-if="!compact">
-      <p class="poi-explanation">圈内数量按近似展示面统计，不等于步行可达数量。只有导航点接入路网的设施才有 C++ 模型耗时；清单和入口未经核实，不生成真实匮乏结论。</p>
+      <p class="poi-explanation">{{ result?.mode === 'local_experiment' ? '局部数量按可达街段附近 15 米及模型可达设施统计，不生成灰区面。' : '圈内数量按近似展示面统计，不等于步行可达数量。' }}只有导航点接入路网的设施才有 C++ 模型耗时；清单和入口未经核实，不生成真实匮乏结论。</p>
       <table class="poi-counts" aria-label="POI 候选点位分类统计">
-        <thead><tr><th scope="col">类别</th><th scope="col">检索候选</th><th scope="col">圈内</th><th scope="col">模型可达*</th></tr></thead>
+        <thead><tr><th scope="col">类别</th><th scope="col">检索候选</th><th scope="col">{{ result?.mode === 'local_experiment' ? '街段附近' : '圈内' }}</th><th scope="col">模型可达*</th></tr></thead>
         <tbody><tr v-for="row in categoryCounts" :key="row.category">
           <th scope="row" :style="{ color: row.color }">{{ row.label }}</th>
           <td>{{ row.queried ?? '—' }}</td><td>{{ row.displayed }}</td><td>{{ row.modelReachable }}</td>
