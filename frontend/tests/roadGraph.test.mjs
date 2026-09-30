@@ -116,11 +116,13 @@ test("the entire generated graph is reproducible from the saved map geometry", (
   const saved = JSON.parse(readFileSync(new URL("../src/data/demoRoadGraph.local.json", import.meta.url)));
   const context = JSON.parse(readFileSync(new URL("../src/data/demoContext.extended.wgs84.json", import.meta.url)));
   const boundary = JSON.parse(readFileSync(new URL("../src/data/demoBoundary.wgs84.json", import.meta.url)));
+  const sidewalkSections = JSON.parse(readFileSync(new URL("../src/data/demoSidewalkSections.local.json", import.meta.url)));
   const rings = boundary.geometry.coordinates.map((ring) =>
     ring.map((point) => wgsToLocal(point, context.originWgs84)));
   const corners = expandedLocalBounds(rings[0]);
   const rebuilt = repairDemoRoadGraph(buildDemoRoadGraph(context.features, rings,
     [[...corners, corners[0]]]));
+  rebuilt.dividedRoadSections = sidewalkSections.sections;
   // JSON serialization normalizes negative zero in local coordinates.
   assert.equal(JSON.stringify(rebuilt), JSON.stringify(saved));
 });

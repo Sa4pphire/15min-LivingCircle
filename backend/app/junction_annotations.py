@@ -4,6 +4,39 @@ import math
 from typing import Any
 
 
+def validate_inferred_junction_annotations(
+    annotations: list[dict[str, Any]],
+    source_edges: list[dict[str, Any]],
+) -> None:
+    """Validate review notes for connections already inferred by the graph."""
+    edge_ids = {edge.get("id") for edge in source_edges}
+    seen_ids: set[str] = set()
+    for annotation in annotations:
+        name = annotation.get("id")
+        if not isinstance(name, str) or not name or name in seen_ids:
+            raise ValueError("inferred junction annotation needs a unique ID")
+        seen_ids.add(name)
+        if annotation.get("verificationStatus") != "geometry_inferred_unverified":
+            raise ValueError("inferred junctions must remain unverified")
+        if not isinstance(annotation.get("source"), str) or not annotation["source"]:
+            raise ValueError("inferred junction annotation needs a source")
+        center = annotation.get("centerMeters")
+        if (not isinstance(center, list) or len(center) != 2 or
+                any(isinstance(value, bool) or not isinstance(value, (int, float)) or
+                    not math.isfinite(value) for value in center)):
+            raise ValueError("inferred junction centerMeters must be a finite point")
+        groups = annotation.get("approachGroups")
+        if not isinstance(groups, list) or not groups:
+            raise ValueError("inferred junction needs approach groups")
+        for group in groups:
+            if not isinstance(group, dict) or not isinstance(group.get("id"), str):
+                raise ValueError("inferred junction approach group needs an ID")
+            edge_group = group.get("edgeIds")
+            if (not isinstance(edge_group, list) or not edge_group or
+                    any(edge_id not in edge_ids for edge_id in edge_group)):
+                raise ValueError("inferred junction approach has an unknown edge")
+
+
 def apply_junction_annotations(
     nodes: dict[str, dict[str, Any]], edges: list[dict[str, Any]],
     annotations: list[dict[str, Any]],

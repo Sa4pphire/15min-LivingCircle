@@ -9,12 +9,14 @@ import { expandedLocalBounds, wgsToLocal } from "../src/mapGeometry.js";
 
 const context = JSON.parse(readFileSync(new URL("../src/data/demoContext.extended.wgs84.json", import.meta.url)));
 const boundary = JSON.parse(readFileSync(new URL("../src/data/demoBoundary.wgs84.json", import.meta.url)));
+const sidewalkSections = JSON.parse(readFileSync(new URL("../src/data/demoSidewalkSections.local.json", import.meta.url)));
 const origin = context.originWgs84;
 const rings = boundary.geometry.coordinates.map((ring) =>
   ring.map((point) => wgsToLocal(point, origin)));
 const corners = expandedLocalBounds(rings[0]);
 const coverageRings = [[...corners, corners[0]]];
 const graph = repairDemoRoadGraph(buildDemoRoadGraph(context.features, rings, coverageRings));
+graph.dividedRoadSections = sidewalkSections.sections;
 console.error(`Road graph: ${graph.nodes.length} nodes, ${graph.edges.length} edges, ${graph.junctions.length} shared vertices, ${graph.inferredJunctions.length} inferred links, ${graph.diagnostics.componentCount} components`);
 if (process.argv.includes("--write")) {
   writeFileSync(new URL("../src/data/demoRoadGraph.local.json", import.meta.url), JSON.stringify(graph));

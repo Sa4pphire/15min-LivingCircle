@@ -9,7 +9,10 @@ from collections import defaultdict
 import math
 from typing import Any
 
-from .junction_annotations import apply_junction_annotations
+from .junction_annotations import (
+    apply_junction_annotations,
+    validate_inferred_junction_annotations,
+)
 
 
 SIDEWALK_OFFSET_METERS = 3.0
@@ -325,7 +328,16 @@ def convert_preview_graph(
 
     junction_records: list[dict[str, Any]] = []
     if junction_annotations:
-        edges, junction_records = apply_junction_annotations(nodes, edges, junction_annotations)
+        explicit_junctions = [
+            annotation for annotation in junction_annotations
+            if "ports" in annotation or "connectors" in annotation
+        ]
+        inferred_junctions = [
+            annotation for annotation in junction_annotations
+            if annotation not in explicit_junctions
+        ]
+        validate_inferred_junction_annotations(inferred_junctions, source_edges)
+        edges, junction_records = apply_junction_annotations(nodes, edges, explicit_junctions)
         for record in junction_records:
             for connector in record["connectors"]:
                 synthetic_link_ids.append(connector["edgeId"])
