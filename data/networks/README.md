@@ -10,11 +10,25 @@
 
 `synthetic-preview.json` 由 `python backend/scripts/export_synthetic_preview.py` 从前端的
 `demoRoadGraph.local.json` 生成，并应用 `synthetic-preview.annotations.json` 中的人工校对记录。
-它有 10,438 个节点、10,917 条边：主干道中心线偏移成左右两条
-`sidewalk`；其余 `roadLocal`／`roadPath` 暂按 `shared_way` 处理。主干道交点处的共享道路
-分支使用独立端点，不直接从道路一侧免费通到另一侧；原有 41 处推断过街和人工校对的 8 条过街边
-均为**未经实地核实**的 `crossing`，等待时间为 20 秒。图的推断连接也未经核实；
+当前导出文件有 10,640 个节点、11,314 条边：主干道以两侧
+`sidewalk` 建模，已标注的 7 个双车道路段范围只保留外侧人行道；其余 `roadLocal`／`roadPath` 暂按 `shared_way` 处理。主干道交点处的共享道路
+分支使用独立端点，不直接从道路一侧免费通到另一侧；推断及人工标注的过街连接
+均**未经实地核实**，默认等待时间为 20 秒。图的推断连接也未经核实；
 文件中的 `synthetic: true` 不得移除。
+
+### 统一校对入口
+
+路网修正统一维护在 `synthetic-preview.annotations.json`：`junctions` 记录显式路口，
+`crossings` 记录过街，`dividedRoadSections` 记录双车道的局部外侧人行道规则，
+`connections` 记录已明确标注、仍未核实的共享步道补连。
+`synthetic-preview.json` 和前端路网中的标注元数据是生成结果，不另行维护一套修正规则。
+旧 `frontend/src/data/demoSidewalkSections.local.json` 仅保留为历史参考，不再由生成脚本读取。
+
+2026-10-01 首批主干道校对新增 6 段明确范围，涉及国权北路、殷行路、殷高东路，
+去除约 1.02 公里的框内中央伪人行道；原有两处用户标注的共享步道补连已迁入统一文件。
+复杂路口、弯道及国帆路／江湾城路的车道配对继续待核查，不自动补线。
+修正依据是本地道路几何和现有标注，不是现场通行证明。具体范围、验证结果及复现方式见
+[主干道校对记录](main-road-review.md)。
 
 2026-09-28 的两处蓝点校对位于小环路的节点 `shared:p:54.5:-501.1` 和
 `shared:p:-10.6:-430.4`。这两个节点原本在小环路内部已相连，但未接到旁边的主路。
@@ -23,7 +37,7 @@
 `manual-crossing:park-loop-south` 各自明确设置 `waitSeconds: 20`。
 记录为 `user_marked_unverified`，只表示用户在 SVG 中确认了建模位置，不证明现场有合法人行横道。
 重新运行导出脚本会保留这些修正；`python backend/scripts/render_network_audit.py`
-可更新 `synthetic-preview-audit.svg`，本轮校对的边及节点以蓝色突出。
+可在本地生成 `synthetic-preview-audit.svg` 供校对，生成的 SVG 不参与运行，也不提交。
 
 同日蓝色圈选的十字路口记为 `blue-crossroads-01`，局部中心为 `[-273.15,1347.85]`。
 四个街角增加 4 条 `turn`；四个路口外侧增加 4 条 `crossing`，双向主路原有内侧人行道
@@ -32,7 +46,7 @@
 `w:226889561:0:0` 及其两条接入边被显式替换，防止免费穿过路口。
 这些都是用户截图校对后的合成几何，不表示核实了具体斑马线或信号灯。
 `python backend/scripts/render_junction_audit.py blue-crossroads-01` 会生成
-`blue-crossroads-01.svg` 局部图：蓝色实线为同侧转弯，蓝色虚线为需等待的过街连接。
+本地生成的 `blue-crossroads-01.svg` 局部图中，蓝色实线为同侧转弯，蓝色虚线为需等待的过街连接。
 
 此图沿用 OSM SVG 预览的 WGS-84 来源和局部米制几何，但将预览的“Y 向南”转为引擎的“Y 向北”。
 它使用 `originWgs84`，API 请求中心点必须带 `coordType: "wgs84ll"`；不要把它伪装成 BD-09

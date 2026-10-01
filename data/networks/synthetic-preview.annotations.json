@@ -3,6 +3,90 @@
   "coordinateSystem": "engine-local-meters",
   "synthetic": true,
   "description": "SVG 校对与显式路口推定记录；仅用于合成演示。百度底图辅助核对道路形态，不代表已核实人行横道及通行许可。",
+  "dividedRoadSectionsCoordinateSystem": "preview-local-v1",
+  "dividedRoadSections": [
+    {
+      "id": "maoting-divided-road-pilot",
+      "name": "殷行路南侧／城投茂庭附近双车道局部样例",
+      "verificationStatus": "user_marked_unverified",
+      "source": "保留 2026-09-29/30 既有局部试点及殷行路口南侧内端口关闭规则；2026-10-01 迁至统一标注文件。未实地核实。",
+      "boundsMeters": { "minX": -300, "maxX": -240, "minY": 260, "maxY": 420 },
+      "carriageways": [ { "edgeId": "w:132863832:0:0", "outerSide": "right" }, { "edgeId": "w:226161205:0:0", "outerSide": "right" } ],
+      "medianWalkable": false,
+      "junctionApproachClosures": [ { "junctionId": "review-yinxing-guoquan", "portIds": ["south-0", "south-2"], "connectorIds": ["median-south-north-0", "median-south-north-1"] } ]
+    },
+    {
+      "id": "main-guoquan-north-straight", "name": "国权北路 · 殷行路口北侧直线段",
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-10-01 主干道校对：现有道路源图中两条反向车道的明确局部配对；只移除框内中央纵向人行道，不推定新横道或出入口。",
+      "boundsMeters": { "minX": -300, "maxX": -240, "minY": 165, "maxY": 215 },
+      "carriageways": [ { "edgeId": "w:1225879547:0:0", "outerSide": "right" }, { "edgeId": "w:1231937663:1:0", "outerSide": "right" } ],
+      "medianWalkable": false
+    },
+    {
+      "id": "main-guoquan-south-straight", "name": "国权北路 · 城投茂庭南侧直线段",
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-10-01 主干道校对：局部反向车道配对，避开中间分段点与南端路口，保留框外连接；合法通行未核实。",
+      "boundsMeters": { "minX": -300, "maxX": -240, "minY": 525, "maxY": 560 },
+      "carriageways": [ { "edgeId": "w:132863832:0:0", "outerSide": "right" }, { "edgeId": "w:1231937652:0:0", "outerSide": "right" } ],
+      "medianWalkable": false
+    },
+    {
+      "id": "main-guoquan-lower-straight", "name": "国权北路 · 南部双车道直线段",
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-10-01 主干道校对：只选内部直线段，不跨越弯折、并线或支路，不把中央车道当作步行通道。",
+      "boundsMeters": { "minX": -300, "maxX": -240, "minY": 690, "maxY": 850 },
+      "carriageways": [ { "edgeId": "w:1231722500:0:0", "outerSide": "right" }, { "edgeId": "w:1363028133:0:0", "outerSide": "right" } ],
+      "medianWalkable": false
+    },
+    {
+      "id": "main-yinxing-west-straight", "name": "殷行路 · 国权北路口东侧直线段",
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-10-01 主干道校对：依据反向车道几何选择两条物理外侧；两端路口和原分支接入仍沿用已有显式模型。",
+      "boundsMeters": { "minX": -225, "maxX": -135, "minY": 220, "maxY": 275 },
+      "carriageways": [ { "edgeId": "w:39175390:0:0:s0", "outerSide": "right" }, { "edgeId": "w:132863825:0:0", "outerSide": "right" } ],
+      "medianWalkable": false
+    },
+    {
+      "id": "main-yinxing-east-straight", "name": "殷行路 · 中部双车道直线段",
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-10-01 主干道校对：明确选择两条反向车道的内部直线段，不删除两端路口或接入分支，不新增自动换侧连接。",
+      "boundsMeters": { "minX": 125, "maxX": 245, "minY": 220, "maxY": 275 },
+      "carriageways": [ { "edgeId": "w:1231722473:0:0", "outerSide": "right" }, { "edgeId": "w:226891186:0:0", "outerSide": "right" } ],
+      "medianWalkable": false
+    },
+    {
+      "id": "main-yingao-east-straight", "name": "殷高东路 · 国权北路口东侧直线段",
+      "verificationStatus": "geometry_inferred_unverified",
+      "source": "2026-10-01 主干道校对：现有双车道几何的明确外侧配对，避开路口与车道端点，不据此确认横道或隔离带通行。",
+      "boundsMeters": { "minX": -240, "maxX": -185, "minY": 1115, "maxY": 1170 },
+      "carriageways": [ { "edgeId": "w:132985316:5:0", "outerSide": "right" }, { "edgeId": "w:413897980:0:0", "outerSide": "right" } ],
+      "medianWalkable": false
+    }
+  ],
+  "connections": [
+    {
+      "id": "marked-west-path-gap", "endpointNodeId": "shared:p:100.4:222.6",
+      "targetEdgeId": "w:154811304:0:0:s0", "targetPointMeters": [100.4, -222.765], "maxGapMeters": 1,
+      "verificationStatus": "user_marked_unverified",
+      "source": "保留 2026-09-30 用户红点及明确授权的未核实合成步道补连；2026-10-01 迁至统一标注，未增加新通行假设。"
+    },
+    {
+      "id": "marked-east-path-gap", "endpointNodeId": "shared:p:448.9:199.0",
+      "targetEdgeId": "w:154814514:5:0", "targetPointMeters": [447.902, -207.083], "maxGapMeters": 10,
+      "verificationStatus": "user_marked_unverified",
+      "source": "保留 2026-09-30 用户红点及明确授权的未核实合成步道补连；2026-10-01 迁至统一标注，约 8 米连接不代表已核实地块通行。"
+    }
+  ],
+  "mainRoadReview": {
+    "date": "2026-10-01", "verificationStatus": "geometry_inferred_unverified",
+    "focus": "主干道双车道外侧人行道；保留显式同角转弯和带等待过街，不按距离批量补连。",
+    "pending": [
+      "国权北路及殷行路其余弯折、并线和复杂路口须逐段核对；本次框外中央步道暂保留。",
+      "国帆路与江湾城路先沿用现有双侧模型，不自动与邻近辅路配对；车道组及通行权限仍需核查。",
+      "全部横道合法性、闸门、地块入口和桥梁层级仍未实地核实。"
+    ]
+  },
   "crossings": [
     {
       "id": "park-loop-north",

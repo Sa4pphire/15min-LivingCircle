@@ -1,18 +1,15 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from "vue";
+import { onUnmounted, ref } from "vue";
 import RealMapStage from "./RealMapStage.vue";
 import PoiInventoryPanel from "./PoiInventoryPanel.vue";
+import NeighborhoodFooter from "./NeighborhoodFooter.vue";
+import { visiblePois } from "./poiFacilities.js";
 import { requestCppMapAnalysis } from "./cppAnalysisClient.js";
-import { mapZoomTiers } from "./mapZoom";
 import { requestSampledMapAnalysis } from "./sampledAnalysisClient.js";
 
 
 const pageViewport = ref(null);
 const detailPage = ref(null);
-const wordmarkEl = ref(null);
-const wordmarkSvg = ref(null);
-const wordmarkText = ref(null);
-const cometLayer = ref(null);
 const activePage = ref(0);
 const requestedMode = new URLSearchParams(window.location.search).get("mode");
 const mapMode = ref(requestedMode === "synthetic" ? "synthetic" : "real");
@@ -21,31 +18,23 @@ const sharedMapMounted = ref(true);
 const mapModes = [
   { id: "real", label: "真实区域", description: "百度采样与 Python 插值等时圈"  },
   { id: "synthetic", label: "专家模式", description: "C++ 路网等时圈，当前仍使用合成数据" },
-  { id: "blind", label: "盲区显示", description: "显示缺少市场、药店或小学覆盖的候选网格" },
 ];
 const mapZoomTier = ref("medium");
 const mapOverviewRequestId = ref(0);
 const livingFooterCollapsed = ref(false);
-const mapScaleCollapsed = ref(false);
 const realCandidate = ref(null);
 const realAnalysisResult = ref(null);
 const realAnalysisState = ref("idle");
 const realAnalysisError = ref("");
 let realAnalysisAbort;
-let realAnimationTimer;
 const cppCandidate = ref(null);
 const cppAnalysisResult = ref(null);
 const cppAnalysisState = ref("idle");
 const cppAnalysisError = ref("");
 const cppPoiCategory = ref("all");
+const cppPoiFocusRequest = ref(null);
+let cppPoiFocusSequence = 0;
 let cppAnalysisAbort;
-let cppAnimationTimer;
-let wordmarkFrame;
-let cometPoints = [];
-let cometParticles = [];
-let cometStreaks = [];
-const cometLifetime = 620;
-const cometParticleCount = 24;
 const livingLetters = Array.from("LIVING CIRCLE");
 let pageWheelDistance = 0;
 let pageTurnTimer;
@@ -53,7 +42,6 @@ let pageTurning = false;
 
 function chooseRealPoint(point) {
   realAnalysisAbort?.abort();
-  clearTimeout(realAnimationTimer);
   realCandidate.value = point;
   realAnalysisResult.value = null;
   realAnalysisState.value = "idle";
@@ -75,9 +63,7 @@ async function runRealAnalysis() {
     );
     if (controller.signal.aborted) return;
     realAnalysisResult.value = result;
-    realAnimationTimer = setTimeout(() => {
-      if (!controller.signal.aborted) realAnalysisState.value = "complete";
-    }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 3200);
+    realAnalysisState.value = "complete";
   } catch (error) {
     if (controller.signal.aborted) return;
     realAnalysisState.value = "error";
@@ -88,8 +74,8 @@ async function runRealAnalysis() {
 
 function chooseCppPoint(point) {
   if (cppAnalysisState.value === "running") return;
+  cppPoiFocusRequest.value = null;
   cppAnalysisAbort?.abort();
-  clearTimeout(cppAnimationTimer);
   cppCandidate.value = point;
   cppAnalysisResult.value = null;
   if (mapZoomTier.value === "result") mapZoomTier.value = "medium";
@@ -99,8 +85,8 @@ function chooseCppPoint(point) {
 
 async function runCppAnalysis(refreshPois = false) {
   if (!cppCandidate.value?.local || cppAnalysisState.value === "running") return;
+  cppPoiFocusRequest.value = null;
   cppAnalysisAbort?.abort();
-  clearTimeout(cppAnimationTimer);
   const controller = new AbortController();
   cppAnalysisAbort = controller;
   cppAnalysisResult.value = null;
@@ -112,9 +98,7 @@ async function runCppAnalysis(refreshPois = false) {
       { signal: controller.signal });
     if (controller.signal.aborted) return;
     cppAnalysisResult.value = result;
-    cppAnimationTimer = setTimeout(() => {
-      if (!controller.signal.aborted) cppAnalysisState.value = "complete";
-    }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 3200);
+    cppAnalysisState.value = "complete";
   } catch (error) {
     if (controller.signal.aborted) return;
     cppAnalysisState.value = "error";
@@ -125,14 +109,16 @@ async function runCppAnalysis(refreshPois = false) {
   }
 }
 
+function showCppPoiOnMap(poi) {
+  // Resolve by ID from the current report, not a stale list item or its name.
+  const target = visiblePois(cppAnalysisResult.value).find(entry => entry.id === poi?.id);
+  if (!target) return;
+  switchMapMode("synthetic");
+  cppPoiFocusRequest.value = { id: target.id, sequence: ++cppPoiFocusSequence };
+  goToPage(0);
+}
+
 function switchMapMode(mode) {
-  if (mode === "blind") {
-    // Blind-zone data belongs to the real-area result. If the user is in
-    // expert mode, move back to the retained real map before toggling it.
-    if (mapMode.value !== "real") mapMode.value = "real";
-    showBlindZones.value = !showBlindZones.value;
-    return;
-  }
   if (!["real", "synthetic"].includes(mode)) return;
   showBlindZones.value = false;
   if (mapMode.value === mode) return;
@@ -140,120 +126,14 @@ function switchMapMode(mode) {
   mapMode.value = mode;
 }
 
+function toggleBlindZones() {
+  // Keep the existing real-area layer behavior without treating it as a mode.
+  if (mapMode.value !== "real") mapMode.value = "real";
+  showBlindZones.value = !showBlindZones.value;
+}
+
 function toggleLivingFooter() {
   livingFooterCollapsed.value = !livingFooterCollapsed.value;
-}
-
-function toggleMapScale() {
-  mapScaleCollapsed.value = !mapScaleCollapsed.value;
-}
-
-function setMapZoomTier(tier) {
-  // Refitting a result is an explicit user action, including another click
-  // while already in overview mode. Analysis completion never changes it.
-  if (tier === "result") mapOverviewRequestId.value += 1;
-  if (mapZoomTier.value === tier) return;
-  mapZoomTier.value = tier;
-}
-
-function motionEnabled(event) {
-  return event.pointerType === "mouse"
-    && window.matchMedia("(hover: hover) and (pointer: fine)").matches
-    && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
-function fitWordmark() {
-  if (!wordmarkSvg.value || !wordmarkText.value || !wordmarkEl.value) return;
-  const bounds = wordmarkText.value.getBBox();
-  if (!bounds.width || !bounds.height) return;
-  const context = document.createElement("canvas").getContext("2d");
-  if (!context) return;
-  context.font = getComputedStyle(wordmarkText.value).font;
-  const metrics = context.measureText("GEOVIEW");
-  const ascent = metrics.actualBoundingBoxAscent || 146;
-  const descent = metrics.actualBoundingBoxDescent || 0;
-  const inset = 3;
-  const width = bounds.width + inset * 2;
-  const height = ascent + descent + inset * 2;
-  wordmarkSvg.value.setAttribute("viewBox", `${bounds.x - inset} ${160 - ascent - inset} ${width} ${height}`);
-  wordmarkEl.value.style.aspectRatio = `${width} / ${height}`;
-}
-
-function ensureCometParticles() {
-  if (!cometLayer.value || cometParticles.length) return;
-  for (let index = 0; index < cometParticleCount - 1; index += 1) {
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("stroke", "#74d7b6");
-    line.setAttribute("stroke-linecap", "round");
-    line.setAttribute("opacity", "0");
-    cometLayer.value.appendChild(line);
-    cometStreaks.push(line);
-  }
-  for (let index = 0; index < cometParticleCount; index += 1) {
-    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    circle.setAttribute("fill", "url(#geoview-comet-gradient)");
-    circle.setAttribute("opacity", "0");
-    cometLayer.value.appendChild(circle);
-    cometParticles.push(circle);
-  }
-}
-
-function paintComet(now) {
-  cometPoints = cometPoints.filter((point) => now - point.time < cometLifetime);
-  cometStreaks.forEach((line, index) => {
-    const head = cometPoints[cometPoints.length - 1 - index];
-    const tail = cometPoints[cometPoints.length - 2 - index];
-    if (!head || !tail) {
-      line.setAttribute("opacity", "0");
-      return;
-    }
-    const strength = Math.max(0, 1 - (now - head.time) / cometLifetime);
-    const taper = 1 - index / cometParticleCount;
-    line.setAttribute("x1", tail.x);
-    line.setAttribute("y1", tail.y);
-    line.setAttribute("x2", head.x);
-    line.setAttribute("y2", head.y);
-    line.setAttribute("stroke-width", `${(2 + strength * 8) * taper}`);
-    line.setAttribute("opacity", `${strength * taper * .68}`);
-  });
-  cometParticles.forEach((circle, index) => {
-    const point = cometPoints[cometPoints.length - 1 - index];
-    if (!point) {
-      circle.setAttribute("opacity", "0");
-      return;
-    }
-    const strength = Math.max(0, 1 - (now - point.time) / cometLifetime);
-    circle.setAttribute("cx", point.x);
-    circle.setAttribute("cy", point.y);
-    circle.setAttribute("r", `${12 + strength * 24}`);
-    circle.setAttribute("opacity", `${Math.pow(strength, 1.5) * (1 - index / cometParticleCount)}`);
-  });
-  wordmarkFrame = cometPoints.length ? requestAnimationFrame(paintComet) : 0;
-}
-
-function moveWordmark(event) {
-  if (!motionEnabled(event) || !wordmarkSvg.value || !event.target?.classList?.contains("geoview-hit")) return;
-  ensureCometParticles();
-  const matrix = wordmarkSvg.value.getScreenCTM();
-  if (!matrix) return;
-  const cursor = wordmarkSvg.value.createSVGPoint();
-  cursor.x = event.clientX;
-  cursor.y = event.clientY;
-  const point = cursor.matrixTransform(matrix.inverse());
-  const now = performance.now();
-  const previous = cometPoints[cometPoints.length - 1];
-  const distance = previous ? Math.hypot(point.x - previous.x, point.y - previous.y) : 0;
-  const steps = previous ? Math.min(12, Math.max(1, Math.ceil(distance / 13))) : 1;
-  for (let index = 1; index <= steps; index += 1) {
-    const fraction = index / steps;
-    cometPoints.push({
-      x: previous ? previous.x + (point.x - previous.x) * fraction : point.x,
-      y: previous ? previous.y + (point.y - previous.y) * fraction : point.y,
-      time: now - (steps - index) * 6,
-    });
-  }
-  if (cometPoints.length > cometParticleCount) cometPoints.splice(0, cometPoints.length - cometParticleCount);
-  if (!wordmarkFrame) wordmarkFrame = requestAnimationFrame(paintComet);
 }
 
 function goToPage(index) {
@@ -311,16 +191,9 @@ function handlePageKeydown(event) {
   }
 }
 
-onMounted(() => {
-  document.fonts.ready.then(fitWordmark);
-});
-
 onUnmounted(() => {
   realAnalysisAbort?.abort();
-  clearTimeout(realAnimationTimer);
   cppAnalysisAbort?.abort();
-  clearTimeout(cppAnimationTimer);
-  if (wordmarkFrame) cancelAnimationFrame(wordmarkFrame);
   clearTimeout(pageTurnTimer);
 });
 </script>
@@ -356,9 +229,6 @@ onUnmounted(() => {
       <section class="map-column" aria-label="生活圈地图">
         <div class="map-frame">
           <div class="map-topline">
-            <div class="map-head-left">
-              <span class="map-title"><span class="map-title-mark"></span>新江湾城 · 四路围合演示区 <small>{{ mapMode === "real" ? "真实区域 · 百度采样路线" : "专家模式 · C++ 等时圈" }}</small></span>
-            </div>
             <button v-if="mapMode === 'real'" type="button" class="analyze-button map-analyze-button real-mode-action" :class="{ 'is-running': realAnalysisState === 'running', 'is-complete': realAnalysisState === 'complete' }" :disabled="!realCandidate || realAnalysisState === 'running'" @click="runRealAnalysis">
               <span class="button-label">{{ !realCandidate ? '先在地图选点' : realAnalysisState === 'running' ? '正在绘制路线…' : realAnalysisState === 'complete' ? '重新生成示意' : '生成真实区域分析' }}</span><span class="button-arrow" aria-hidden="true">{{ realAnalysisState === 'complete' ? '✓' : realAnalysisState === 'running' ? '◌' : '↗' }}</span>
             </button>
@@ -378,51 +248,49 @@ onUnmounted(() => {
                 :analysis-result="mapMode === 'synthetic' ? cppAnalysisResult : realAnalysisResult"
                 :zoom-tier="mapZoomTier" :overview-request-id="mapOverviewRequestId"
                 :show-blind-zones="showBlindZones"
+                :poi-focus-request="mapMode === 'synthetic' ? cppPoiFocusRequest : null"
                 :selection-disabled="mapMode === 'synthetic' && cppAnalysisState === 'running'"
                 @select="mapMode === 'synthetic' ? chooseCppPoint($event) : chooseRealPoint($event)" />
             </Transition>
             <!-- Replay a light reveal without remounting the shared base map. -->
             <div :key="mapMode" class="map-mode-wash" aria-hidden="true"></div>
-            <div class="map-mode-switch" role="group" aria-label="地图展示模式"
-              :style="{ '--mode-index': showBlindZones ? 2 : mapModes.findIndex(mode => mode.id === mapMode), '--mode-count': mapModes.length }"
+            <div class="map-layer-controls"
               @pointerdown.stop @click.stop @dblclick.stop>
-              <span class="map-mode-indicator" aria-hidden="true"></span>
-              <button v-for="mode in mapModes" :key="mode.id" type="button" :title="mode.description"
-                :aria-pressed="mode.id === 'blind' ? showBlindZones : mapMode === mode.id" :class="{ active: mode.id === 'blind' ? showBlindZones : mapMode === mode.id }"
-                @click="switchMapMode(mode.id)">{{ mode.label }}</button>
-            </div>
-            <div class="map-compass" aria-hidden="true"><span>北</span><i></i></div>
-            <div class="map-zoom-wrap" :class="{ collapsed: mapScaleCollapsed }">
-              <button type="button" class="map-zoom-toggle"
-                :aria-expanded="String(!mapScaleCollapsed)"
-                :title="mapScaleCollapsed ? '展开比例尺' : '收起比例尺'"
-                @click.stop="toggleMapScale">{{ mapScaleCollapsed ? '▶' : '◀' }}</button>
-            <div v-if="!mapScaleCollapsed" class="map-zoom-control" role="group" aria-label="地图比例尺">
-              <span class="map-zoom-heading" aria-hidden="true">比例尺</span>
-              <button
-                v-for="tier in mapZoomTiers"
-                :key="tier.id"
-                type="button"
-                :title="tier.description"
-                :aria-label="tier.description"
-                :aria-pressed="mapZoomTier === tier.id"
-                :class="{ active: mapZoomTier === tier.id }"
-                @click="setMapZoomTier(tier.id)"
-              ><strong>{{ tier.label }}</strong><small>{{ tier.hint }}</small></button>
-              <button v-if="mapMode === 'synthetic' && cppAnalysisResult" type="button"
-                aria-label="显示全圈及圈内 POI" :aria-pressed="mapZoomTier === 'result'"
-                :class="{ active: mapZoomTier === 'result' }" @click="setMapZoomTier('result')">
-                <strong>全圈</strong><small>适配</small>
+              <div class="map-mode-switch" role="group" aria-label="地图展示模式"
+                :style="{ '--mode-index': mapModes.findIndex(mode => mode.id === mapMode), '--mode-count': mapModes.length }">
+                <span class="map-mode-indicator" aria-hidden="true"></span>
+                <button v-for="mode in mapModes" :key="mode.id" type="button" :title="mode.description"
+                  :aria-pressed="mapMode === mode.id" :class="{ active: mapMode === mode.id }"
+                  @click="switchMapMode(mode.id)">{{ mode.label }}</button>
+              </div>
+              <button type="button" class="map-round-control map-blind-toggle" role="switch" aria-label="盲区显示"
+                :aria-checked="showBlindZones" :class="{ 'is-on': showBlindZones }"
+                @click="toggleBlindZones">
+                <svg class="map-control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" />
+                  <circle cx="12" cy="12" r="2.6" />
+                </svg>
+                <span class="map-control-tooltip map-blind-tooltip" aria-hidden="true">盲区显示</span>
               </button>
-              <span class="map-zoom-hint" aria-hidden="true">{{ ['small', 'result'].includes(mapZoomTier) ? '固定' : '可拖动' }}</span>
             </div>
-            </div>
+            <button type="button" class="map-round-control living-footer-toggle" aria-label="LIVING CIRCLE 装饰"
+              :aria-expanded="!livingFooterCollapsed" :aria-pressed="!livingFooterCollapsed"
+              :class="{ 'is-on': !livingFooterCollapsed }" aria-controls="living-wordmark-panel"
+              @pointerdown.stop @dblclick.stop @click.stop="toggleLivingFooter">
+              <svg class="map-control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 7V5h14v2M12 5v14M8.5 19h7" />
+              </svg>
+              <span class="map-control-tooltip" aria-hidden="true">{{ livingFooterCollapsed ? '显示装饰' : '隐藏装饰' }}</span>
+            </button>
+            <div class="map-compass" aria-hidden="true"><span>北</span><i></i></div>
           </div>
 
           <div class="map-bottomline real-mode">
             <span v-if="mapMode === 'real'"><span class="line-signal"></span>{{ realAnalysisState === 'error' ? realAnalysisError : realAnalysisState === 'running' ? '正在生成百度采样等时圈，请稍候' : realAnalysisResult ? '百度采样等时圈与代表路线已显示' : realCandidate ? '已选起点 · 点击右上角生成真实区域分析' : '四路围合范围 · 点击地图选点' }}</span>
             <span v-else-if="mapMode === 'synthetic'"><span class="line-signal"></span>{{ cppAnalysisState === 'error' ? cppAnalysisError : cppAnalysisState === 'running' ? 'Python → C++ 正在计算 15 分钟路网等时圈' : cppAnalysisResult ? 'C++ 等时圈与可达街段已显示 · 路网仍为合成数据' : cppCandidate ? '已选起点 · 点击右上角计算等时圈' : '专家模式 · 合成路网，点击地图选点' }}</span>
-            <span><span class="line-signal"></span>{{ showBlindZones ? (realAnalysisResult?.blindZoneStatus === 'confirmed' ? `红色区域表示 10 米分辨率服务盲区候选 · 服务半径 1 公里` : realAnalysisResult?.blindZoneStatus === 'unknown' ? 'POI 清单不完整，暂不把缺失数据判为盲区' : '当前没有可确认的服务盲区') : '点击“盲区显示”切换服务覆盖候选层' }}</span>
+            <span><span class="line-signal"></span>{{ showBlindZones ? (realAnalysisResult?.blindZoneStatus === 'confirmed' ? `红色区域表示 10 米分辨率服务盲区候选 · 服务半径 1 公里` : realAnalysisResult?.blindZoneStatus === 'unknown' ? 'POI 清单不完整，暂不把缺失数据判为盲区' : '当前没有可确认的服务盲区') : '点击眼睛图标切换服务覆盖候选层' }}</span>
             <span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">边界与 SVG 数据 © OpenStreetMap contributors · ODbL</a></span>
           </div>
           <div v-if="mapMode === 'real' && realAnalysisResult" class="real-route-legend" aria-label="真实区域路线图例">
@@ -434,14 +302,6 @@ onUnmounted(() => {
       </section>
     </main>
     <footer class="living-footer" :class="{ collapsed: livingFooterCollapsed }" aria-label="LIVING CIRCLE">
-      <button
-        type="button"
-        class="living-footer-toggle"
-        :aria-expanded="String(!livingFooterCollapsed)"
-        aria-controls="living-wordmark-panel"
-        :title="livingFooterCollapsed ? '展开 LIVING CIRCLE 动画' : '收起 LIVING CIRCLE 动画'"
-        @click="toggleLivingFooter"
-      >{{ livingFooterCollapsed ? '▲' : '▼' }}</button>
       <div class="living-meta" aria-hidden="true">
         <span>{{ mapMode === 'real' ? 'REAL AREA PREVIEW / XINJIANGWANCHENG' : 'C++ ISOCHRONE / SYNTHETIC ROAD GRAPH' }}</span>
         <span>向下滚动 · 查看生活圈报告 ↓</span>
@@ -524,7 +384,7 @@ onUnmounted(() => {
         </section>
         <section v-if="cppAnalysisResult" class="panel-section">
           <PoiInventoryPanel :result="cppAnalysisResult" :category="cppPoiCategory"
-            @category="cppPoiCategory = $event" @refresh="runCppAnalysis(true)" />
+            @category="cppPoiCategory = $event" @refresh="runCppAnalysis(true)" @select="showCppPoiOnMap" />
         </section>
         <section class="panel-section">
           <div class="section-head"><span class="section-index">03</span><h2>数据与精度说明</h2></div>
@@ -536,29 +396,7 @@ onUnmounted(() => {
       </aside>
         </div>
       </div>
-      <div
-        ref="wordmarkEl"
-        class="geoview-footer"
-        aria-hidden="true"
-        @pointerenter="moveWordmark"
-        @pointermove="moveWordmark"
-      >
-        <svg ref="wordmarkSvg" class="geoview-art" viewBox="0 0 1000 180" preserveAspectRatio="xMidYMax meet" focusable="false">
-          <defs>
-            <clipPath id="geoview-letter-clip" clipPathUnits="userSpaceOnUse">
-              <text class="geoview-clip-text" x="0" y="160">GEOVIEW</text>
-            </clipPath>
-            <radialGradient id="geoview-comet-gradient">
-              <stop offset="0" stop-color="#d9fff1" stop-opacity="1" />
-              <stop offset=".24" stop-color="#6ecdae" stop-opacity=".88" />
-              <stop offset="1" stop-color="#55b795" stop-opacity="0" />
-            </radialGradient>
-          </defs>
-          <g ref="cometLayer" class="geoview-comet" clip-path="url(#geoview-letter-clip)"></g>
-          <text ref="wordmarkText" class="geoview-outline-text" x="0" y="160">GEOVIEW</text>
-          <text class="geoview-hit" x="0" y="160">GEOVIEW</text>
-        </svg>
-      </div>
+      <NeighborhoodFooter />
     </section>
 
     <nav class="page-pagination" aria-label="页面导航">

@@ -5,7 +5,10 @@ import boundaryWgs from "./data/demoBoundary.wgs84.json";
 import preparedMapAsset from "./data/demoMap.bd09.json";
 import { preparedMapCenter, preparedMapGeometry, sampleLocalArea, sampleLocalPath } from "./mapAsset.js";
 import { baiduMapStyle } from "./baiduMapStyle";
-import { baiduZoomForTier, clampMapPan, markerScaleForTier, zoomedFit } from "./mapZoom";
+import {
+  baiduZoomForFactor, clampMapPan, clampMapZoomFactor,
+  MAX_MAP_ZOOM_FACTOR, zoomFactor, zoomedFit,
+} from "./mapZoom";
 import {
   DISPLAY_PADDING_METERS,
   expandedLocalBounds,
@@ -16,7 +19,6 @@ import {
   wgsToLocal,
 } from "./mapGeometry";
 import "./realMap.css";
-import PoiInventoryPanel from "./PoiInventoryPanel.vue";
 import { poiAccessLabel, poiCategoryStyles, visiblePois } from "./poiFacilities.js";
 import { cppOverviewFit, cppOverviewInsets, cppOverviewPoints } from "./cppOverview.js";
 
@@ -25,6 +27,7 @@ const props = defineProps({
   analysisResult: { type: Object, default: null },
   zoomTier: { type: String, default: "medium" },
   overviewRequestId: { type: Number, default: 0 },
+  poiFocusRequest: { type: Object, default: null },
   analysisMode: { type: String, default: "preview" },
   selectionDisabled: { type: Boolean, default: false },
   showBlindZones: { type: Boolean, default: false },
@@ -37,7 +40,6 @@ const fallbackOrigin = [121.505, 31.333];
 const fallbackRing = boundaryWgsRing.map((point) => wgsToLocal(point, fallbackOrigin));
 const displayCornersLocal = expandedLocalBounds(fallbackRing);
 const fallbackBoundary = geometryToSvgPath(boundaryWgs.geometry, (point) => wgsToLocal(point, fallbackOrigin));
-const regionCenterWgs = [121.505, 31.333];
 
 const stageEl = ref(null);
 const baiduEl = ref(null);
@@ -54,48 +56,68 @@ const displayCornersBd09 = shallowRef(null);
 const regionCenterBd09 = shallowRef(null);
 const mapAlignment = shallowRef(null);
 const viewport = ref({ width: 1, height: 1 });
+// A container resize reveals more map; it is not a request to change scale.
+const fallbackFitViewport = shallowRef(null);
+const fallbackOverviewViewport = shallowRef(null);
 const liveBoundaryPath = ref("");
 const projectionVersion = ref(0);
 const hoverInside = ref(true);
 const probeVisible = ref(false);
 const fallbackAnimated = ref(false);
 const fallbackPan = ref({ x: 0, y: 0 });
+const viewZoomFactor = ref(zoomFactor(props.zoomTier));
+const manualZoom = ref(false);
 // Freeze the camera's overview input until the user explicitly requests a
 // refit. Clearing/replacing analysis layers must not move the map.
 const overviewResult = shallowRef(props.zoomTier === "result" ? props.analysisResult : null);
 const fallbackDragging = ref(false);
-const poiCategory = ref("all");
 const selectedPoi = ref(null);
 let map;
 let BMap;
 let observer;
 let frame;
 let probeFrame;
+let wheelFrame;
 let noticeTimer;
 let fittedZoom;
+let baseFittedZoom;
+let baseFittedViewport;
 let fittedCenter;
 let fallbackDrag;
 let suppressFallbackClick = false;
 let lastNativeDragAt = 0;
 let destroyed = false;
 let mapSetupPromise;
+let pendingPoiFocusRequest = null;
 
 const fallbackActive = computed(() => mapState.value !== "ready");
-const candidateMarkerScale = computed(() => markerScaleForTier(props.zoomTier));
-const fallbackFit = computed(() => fitLocalPoints(
-  displayCornersLocal, viewport.value.width, viewport.value.height, 0.04,
-));
+const fallbackFit = computed(() => {
+  const size = fallbackFitViewport.value ?? viewport.value;
+  const fit = fitLocalPoints(displayCornersLocal, size.width, size.height, 0.04);
+  return { ...fit,
+    translateX: fit.translateX + (viewport.value.width - size.width) / 2,
+    translateY: fit.translateY + (viewport.value.height - size.height) / 2 };
+});
 const fallbackView = computed(() => {
-  const overview = props.zoomTier === "result" && props.analysisMode === "cpp"
-    ? cppOverviewFit(overviewResult.value, viewport.value.width, viewport.value.height) : null;
-  const fitted = overview ?? zoomedFit(
+  const overviewSize = fallbackOverviewViewport.value ?? fallbackFitViewport.value ?? viewport.value;
+  const overview = !manualZoom.value && props.zoomTier === "result" && props.analysisMode === "cpp"
+    ? cppOverviewFit(overviewResult.value, overviewSize.width, overviewSize.height) : null;
+  const fitted = zoomedFit(
     fallbackFit.value,
     viewport.value.width,
     viewport.value.height,
     props.zoomTier,
     props.candidate?.coordType === "wgs84ll"
       ? wgsToLocal([props.candidate.lng, props.candidate.lat], fallbackOrigin) : null,
+    manualZoom.value ? viewZoomFactor.value : zoomFactor(props.zoomTier),
   );
+  if (overview) {
+    const scale = fallbackFit.value.scale * clampMapZoomFactor(overview.scale / fallbackFit.value.scale);
+    const ratio = scale / overview.scale;
+    fitted.scale = scale;
+    fitted.translateX = viewport.value.width / 2 + (overview.translateX - overviewSize.width / 2) * ratio;
+    fitted.translateY = viewport.value.height / 2 + (overview.translateY - overviewSize.height / 2) * ratio;
+  }
   return {
     ...fitted,
     translateX: fitted.translateX + fallbackPan.value.x,
@@ -161,7 +183,7 @@ function circlePath(center, radius, project) {
 function routeDelay(segment, result) {
   const progress = segment.startProgress ?? (segment.startDistance ?? 0) /
     (result.animationMaxDistance ?? result.displayArea?.radius ?? 900);
-  return `${0.45 + Math.max(0, Math.min(1, progress)) * 2.05}s`;
+  return `${0.08 + Math.max(0, Math.min(1, progress)) * 0.48}s`;
 }
 
 function localAreaPath(result) {
@@ -235,29 +257,82 @@ const projectedResult = computed(() => {
 });
 const poiMarkers = computed(() => {
   projectionVersion.value;
-  return visiblePois(props.analysisResult, poiCategory.value).flatMap((poi) => {
-    if (mapState.value === "ready" && map && BMap && poi.bd09) {
-      const pixel = mapPointToOverlayPixel(poi.bd09);
+  return visiblePois(props.analysisResult).flatMap((poi) => {
+    if (mapState.value === "ready" && map && BMap) {
+      const coordinate = finitePoint(poi.bd09) ? poi.bd09
+        : finitePoint(poi.point) ? localToBd09(poi.point) : null;
+      if (!finitePoint(coordinate)) return [];
+      const pixel = mapPointToOverlayPixel(coordinate);
       return [{ ...poi, pixel: [pixel.x, pixel.y] }];
     }
-    if (!poi.point) return [];
+    const point = poiLocalPoint(poi);
+    if (!point) return [];
     const { scale, translateX, translateY } = fallbackView.value;
-    return [{ ...poi, pixel: [translateX + poi.point[0] * scale, translateY + poi.point[1] * scale] }];
-  });
+    return [{ ...poi, pixel: [translateX + point[0] * scale, translateY + point[1] * scale] }];
+  }).sort((a, b) => Number(a.id === selectedPoi.value?.id) - Number(b.id === selectedPoi.value?.id));
 });
-const stateMessage = computed(() => props.analysisMode === "cpp" ? ({
-  loading: "正在载入百度底图 · 使用本地边界数据…",
-  "no-key": "专家模式 · SVG 底图与 C++ 合成路网",
-  error: `百度底图暂不可用 · ${mapError.value || "请检查网络或 AK"}`,
-  ready: boundaryState.value === "ready" ? "专家模式 · C++ 合成路网等时圈，未实地核实"
-    : `底图已载入 · 选区暂不可用：${boundaryError.value}`,
-})[mapState.value] : ({
-  loading: "正在载入百度底图 · 使用本地边界数据…",
-  "no-key": "真实区域 · SVG 底图与采样路线预览",
-  error: `百度底图暂不可用 · ${mapError.value || "请检查网络或 AK"}`,
-  ready: boundaryState.value === "ready" ? "真实区域 · 百度采样等时圈与步行路线"
-    : `底图已载入 · 选区暂不可用：${boundaryError.value}`,
-})[mapState.value]);
+
+function finitePoint(point) {
+  return Array.isArray(point) && point.length === 2 && point.every(Number.isFinite);
+}
+
+function poiLocalPoint(poi) {
+  return finitePoint(poi.point) ? poi.point : finitePoint(poi.bd09) ? bd09ToLocal(poi.bd09) : null;
+}
+
+function focusRequestedPoi() {
+  const request = pendingPoiFocusRequest;
+  if (!request || props.analysisMode !== "cpp") return;
+  const poi = visiblePois(props.analysisResult).find(entry => entry.id === request.id);
+  if (!poi) {
+    pendingPoiFocusRequest = null;
+    selectedPoi.value = null;
+    return;
+  }
+  // The map stays mounted while the report is shown. Wait for real dimensions
+  // (or SDK initialization) without starting another analysis or changing zoom.
+  if (viewport.value.width <= 1 || viewport.value.height <= 1) return;
+  if (mapState.value === "ready" && map && BMap) {
+    const coordinate = finitePoint(poi.bd09) ? poi.bd09
+      : finitePoint(poi.point) ? localToBd09(poi.point) : null;
+    if (!finitePoint(coordinate)) {
+      pendingPoiFocusRequest = null;
+      selectedPoi.value = null;
+      showNotice("该设施缺少可用的地图坐标，暂时无法定位。");
+      return;
+    }
+    const level = map.getZoom();
+    if (!Number.isFinite(level)) return;
+    map.centerAndZoom(new BMap.Point(...coordinate), level,
+      { noAnimation: true, callback: scheduleProjection });
+    scheduleProjection();
+    pendingPoiFocusRequest = null;
+  } else {
+    // BD-09-only cached POIs can also be displayed on the SVG fallback using
+    // the prepared calibration. Never treat their coordinates as WGS-84.
+    if (!mapAlignment.value && finitePoint(poi.bd09)) loadPreparedBoundary();
+    const point = poiLocalPoint(poi);
+    if (!point) {
+      pendingPoiFocusRequest = null;
+      selectedPoi.value = null;
+      showNotice("该设施缺少可用的地图坐标，暂时无法定位。");
+      return;
+    }
+    const { scale, translateX, translateY } = fallbackView.value;
+    fallbackPan.value = {
+      x: fallbackPan.value.x + viewport.value.width / 2 - (translateX + point[0] * scale),
+      y: fallbackPan.value.y + viewport.value.height / 2 - (translateY + point[1] * scale),
+    };
+    // Retain a pending request only while the native SDK is still loading.
+    if (mapState.value !== "loading") pendingPoiFocusRequest = null;
+  }
+  selectedPoi.value = poi;
+  nextTick(() => {
+    if (!destroyed && selectedPoi.value?.id === poi.id) {
+      stageEl.value?.querySelector(".real-poi-marker.is-selected")?.focus({ preventScroll: true });
+    }
+  });
+}
 
 function showNotice(message) {
   notice.value = message;
@@ -294,8 +369,17 @@ function scheduleProjection() {
 function fitBaiduViewport(animate = false) {
   if (!map || !BMap || !displayCornersBd09.value) return;
   const margin = Math.max(16, Math.round(Math.min(viewport.value.width, viewport.value.height) * 0.04));
-  const overview = props.zoomTier === "result" && props.analysisMode === "cpp"
+  const overview = !manualZoom.value && props.zoomTier === "result" && props.analysisMode === "cpp"
     ? cppOverviewPoints(overviewResult.value) : [];
+  // A requested result overview needs one fit, not another fit of the same
+  // base region first. Its established scale baseline remains unchanged.
+  const base = overview.length && baseFittedViewport ? baseFittedViewport
+    : map.getViewport(displayCornersBd09.value.map(([lng, lat]) => new BMap.Point(lng, lat)), {
+    margins: [margin, margin, margin, margin],
+  });
+  if (!Number.isFinite(base?.zoom) || !base.center) return;
+  baseFittedViewport = base;
+  baseFittedZoom = base.zoom;
   const points = overview.length ? [
     ...overview.map(localToBd09), ...visiblePois(overviewResult.value).map(poi => poi.bd09),
   ].filter(point => Array.isArray(point) && point.length === 2 && point.every(Number.isFinite))
@@ -304,10 +388,9 @@ function fitBaiduViewport(animate = false) {
   // Calculate only: setViewport schedules a camera change, so immediately
   // reading getZoom/getCenter after it captures the previous (already scaled)
   // view. Reusing that value makes each tier switch multiply the zoom again.
-  const fitted = map.getViewport(points.map(([lng, lat]) => new BMap.Point(lng, lat)), {
-    margins: overview.length ? [inset.top, inset.right, inset.bottom, inset.left]
-      : [margin, margin, margin, margin],
-  });
+  const fitted = overview.length ? map.getViewport(points.map(([lng, lat]) => new BMap.Point(lng, lat)), {
+    margins: [inset.top, inset.right, inset.bottom, inset.left],
+  }) : base;
   if (!Number.isFinite(fitted?.zoom) || !fitted.center) return;
   fittedZoom = fitted.zoom;
   fittedCenter = fitted.center;
@@ -320,14 +403,16 @@ function applyBaiduZoom(animate = true) {
   // Scale presets must not disable the primary left-button map gesture.
   map.enableDragging?.();
   const candidate = props.candidate?.coordType === "bd09ll" ? props.candidate : null;
-  const center = props.zoomTier === "large" && candidate
-    ? new BMap.Point(candidate.lng, candidate.lat) : fittedCenter;
-  const zoom = baiduZoomForTier(
-    fittedZoom,
-    props.zoomTier,
-    map.getMinZoom?.() ?? 3,
-    map.getMaxZoom?.() ?? 21,
+  const center = manualZoom.value ? (map.getCenter() ?? fittedCenter)
+    : props.zoomTier === "large" && candidate
+      ? new BMap.Point(candidate.lng, candidate.lat) : fittedCenter;
+  const zoom = baiduZoomForFactor(
+    manualZoom.value ? baseFittedZoom : fittedZoom,
+    manualZoom.value ? viewZoomFactor.value : zoomFactor(props.zoomTier),
+    Math.max(baseFittedZoom, map.getMinZoom?.() ?? 3),
+    Math.min(baseFittedZoom + Math.log2(MAX_MAP_ZOOM_FACTOR), map.getMaxZoom?.() ?? 21),
   );
+  viewZoomFactor.value = clampMapZoomFactor(2 ** (zoom - baseFittedZoom));
   if (animate && mapState.value === "ready" && map.flyTo &&
     !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     try {
@@ -339,6 +424,38 @@ function applyBaiduZoom(animate = true) {
     map.centerAndZoom(center, zoom, { noAnimation: true, callback: scheduleProjection });
   }
   scheduleProjection();
+}
+
+function handleMapWheel(event) {
+  if (event.ctrlKey || !Number.isFinite(event.deltaY) || event.deltaY === 0 ||
+    Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+  // Consume vertical wheel gestures even at either limit, so they never turn pages.
+  event.preventDefault();
+  const delta = event.deltaY * (event.deltaMode === 1 ? 16
+    : event.deltaMode === 2 ? viewport.value.height : 1);
+  const previous = fallbackActive.value && !manualZoom.value && props.zoomTier === "result"
+    ? clampMapZoomFactor(fallbackView.value.scale / fallbackFit.value.scale) : viewZoomFactor.value;
+  const next = clampMapZoomFactor(previous * 2 ** (-Math.max(-240, Math.min(240, delta)) / 400));
+  if (Math.abs(next - previous) < 1e-6) return;
+
+  // Preserve the fallback camera center when leaving an explicitly fitted overview.
+  const before = fallbackView.value;
+  const center = [(viewport.value.width / 2 - before.translateX) / before.scale,
+    (viewport.value.height / 2 - before.translateY) / before.scale];
+  viewZoomFactor.value = next;
+  manualZoom.value = true;
+  if (fallbackActive.value) {
+    const after = fallbackView.value;
+    fallbackPan.value = {
+      x: fallbackPan.value.x + viewport.value.width / 2 - (after.translateX + center[0] * after.scale),
+      y: fallbackPan.value.y + viewport.value.height / 2 - (after.translateY + center[1] * after.scale),
+    };
+  }
+  // Only one camera write per frame, including rapid mouse/trackpad wheel input.
+  if (!wheelFrame) wheelFrame = requestAnimationFrame(() => {
+    wheelFrame = 0;
+    if (!destroyed && mapState.value === "ready") applyBaiduZoom(false);
+  });
 }
 
 function loadPreparedBoundary() {
@@ -395,7 +512,7 @@ function handleMapClick(event) {
 
 function handleFallbackClick(event) {
   if (!fallbackActive.value || suppressFallbackClick ||
-    event.target.closest("button, a, .real-map-actions, .real-map-note, .real-map-toast, .real-poi-marker, .real-poi-panel, .real-poi-popover")) return;
+    event.target.closest("button, a, .real-map-toast, .real-poi-marker, .real-poi-popover")) return;
   const local = fallbackPointFromClient(event.clientX, event.clientY);
   if (!local) return;
   const [lng, lat] = localToWgs(local, fallbackOrigin);
@@ -412,7 +529,7 @@ function fallbackPointFromClient(clientX, clientY) {
 function beginFallbackDrag(event) {
   if (!fallbackActive.value ||
     (event.pointerType === "mouse" && event.button !== 0) ||
-    event.target.closest("button, a, .real-map-actions, .real-map-note, .real-map-toast, .real-poi-marker, .real-poi-panel, .real-poi-popover")) return;
+    event.target.closest("button, a, .real-map-toast, .real-poi-marker, .real-poi-popover")) return;
   contextEl.value?.getAnimations().forEach((animation) => animation.finish());
   fallbackDrag = {
     pointerId: event.pointerId,
@@ -455,23 +572,11 @@ function handlePointerMove(event) {
   if (!fallbackDragging.value) moveProbe(event);
 }
 
-function selectRegionCenter() {
-  if (mapState.value === "ready") {
-    if (boundaryState.value !== "ready" || !regionCenterBd09.value) {
-      showNotice("选区数据尚未准备好，暂不能在百度底图上选点。");
-      return;
-    }
-    selectPoint(regionCenterBd09.value[0], regionCenterBd09.value[1], "bd09ll");
-  } else {
-    selectPoint(regionCenterWgs[0], regionCenterWgs[1], "wgs84ll");
-  }
-}
-
 function moveProbe(event) {
   if (!stageEl.value || !probeEl.value || props.selectionDisabled ||
     (event.pointerType && event.pointerType !== "mouse") || event.buttons > 0 ||
     !window.matchMedia("(hover: hover) and (pointer: fine)").matches ||
-    event.target?.closest("button, a, .real-map-actions, .real-map-note, .real-map-toast, .real-poi-marker, .real-poi-panel, .real-poi-popover")) {
+    event.target?.closest("button, a, .real-map-toast, .real-poi-marker, .real-poi-popover")) {
     leaveProbe();
     return;
   }
@@ -531,12 +636,11 @@ async function initializeBaidu() {
     map = new BMap.Map(baiduEl.value, { enableMapClick: false });
     map.centerAndZoom(new BMap.Point(...regionCenterBd09.value), 14);
     fittedZoom = map.getZoom();
+    baseFittedZoom = fittedZoom;
     fittedCenter = map.getCenter();
     map.enableDragging?.();
-    // The page shell also listens for wheel events to turn pages. The root
-    // stage stops propagation (see template below), while Baidu handles the
-    // wheel itself for continuous map zooming.
-    map.enableScrollWheelZoom?.();
+    // A single bounded controller handles both the native map and SVG fallback.
+    map.disableScrollWheelZoom?.();
     map.disableDoubleClickZoom?.();
     map.disableKeyboard?.();
     map.disablePinchToZoom?.();
@@ -565,15 +669,19 @@ async function initializeBaidu() {
 }
 
 function updateSize() {
-  // Do not refit/reload tiles when the retained map is hidden in local mode.
+  // ResizeObserver runs throughout the footer animation. Preserve the user's
+  // zoom and dragged centre; only redraw the viewport-aligned SVG layers.
   if (!stageEl.value?.clientWidth || !stageEl.value.clientHeight) return;
+  if (!fallbackFitViewport.value) fallbackFitViewport.value = {
+    width: stageEl.value.clientWidth, height: stageEl.value.clientHeight,
+  };
   if (stageEl.value.clientWidth === viewport.value.width &&
     stageEl.value.clientHeight === viewport.value.height) return;
   viewport.value = {
     width: Math.max(1, stageEl.value.clientWidth),
     height: Math.max(1, stageEl.value.clientHeight),
   };
-  if (mapState.value === "ready") fitBaiduViewport();
+  if (mapState.value === "ready") scheduleProjection();
 }
 
 function handleNativeDragEnd() {
@@ -582,24 +690,31 @@ function handleNativeDragEnd() {
 }
 
 watch([() => props.zoomTier, () => props.overviewRequestId], () => {
+  if (wheelFrame) cancelAnimationFrame(wheelFrame);
+  wheelFrame = 0;
+  manualZoom.value = false;
+  viewZoomFactor.value = zoomFactor(props.zoomTier);
   overviewResult.value = props.zoomTier === "result" ? props.analysisResult : null;
+  fallbackOverviewViewport.value = { ...viewport.value };
   fallbackPan.value = { x: 0, y: 0 };
   if (mapState.value === "ready") fitBaiduViewport(true);
 });
 watch(() => props.candidate, () => {
+  pendingPoiFocusRequest = null;
   selectedPoi.value = null;
-  if (props.zoomTier === "large") {
+  if (props.zoomTier === "large" && !manualZoom.value) {
     fallbackPan.value = { x: 0, y: 0 };
     if (mapState.value === "ready") applyBaiduZoom();
   } else if (mapState.value === "ready") scheduleProjection();
 });
 watch(() => props.analysisResult, () => {
+  pendingPoiFocusRequest = null;
   selectedPoi.value = null;
   if (mapState.value === "ready") scheduleProjection();
 });
 watch(() => props.analysisMode, () => {
+  pendingPoiFocusRequest = null;
   selectedPoi.value = null;
-  poiCategory.value = "all";
   notice.value = "";
   leaveProbe();
   overviewResult.value = props.zoomTier === "result" ? props.analysisResult : null;
@@ -608,6 +723,13 @@ watch(() => props.analysisMode, () => {
 watch(() => props.selectionDisabled, (disabled) => {
   if (disabled) leaveProbe();
 });
+watch(() => props.poiFocusRequest, (request) => {
+  pendingPoiFocusRequest = request;
+  focusRequestedPoi();
+}, { flush: "post", immediate: true });
+watch([mapState, viewport], () => {
+  if (pendingPoiFocusRequest) focusRequestedPoi();
+}, { flush: "post" });
 onMounted(() => {
   updateSize();
   observer = new ResizeObserver(updateSize);
@@ -616,7 +738,10 @@ onMounted(() => {
     if (!destroyed) fallbackAnimated.value = true;
   }));
   if (browserAk) setupBaidu();
-  else loadFallbackContext();
+  else {
+    loadPreparedBoundary();
+    loadFallbackContext();
+  }
 });
 onUnmounted(() => {
   destroyed = true;
@@ -624,6 +749,7 @@ onUnmounted(() => {
   clearTimeout(noticeTimer);
   if (frame) cancelAnimationFrame(frame);
   if (probeFrame) cancelAnimationFrame(probeFrame);
+  if (wheelFrame) cancelAnimationFrame(wheelFrame);
   if (map) {
     map.removeEventListener("click", handleMapClick);
     map.removeEventListener("dragend", handleNativeDragEnd);
@@ -650,7 +776,7 @@ onUnmounted(() => {
     @pointercancel="endFallbackDrag"
     @lostpointercapture="endFallbackDrag"
     @pointerleave="leaveProbe"
-    @wheel.stop
+    @wheel.capture.stop="handleMapWheel"
   >
     <div ref="baiduEl" class="real-baidu-map" :class="{ visible: mapState === 'ready' }" aria-hidden="true"></div>
 
@@ -689,8 +815,8 @@ onUnmounted(() => {
         </g>
       </g>
       <g v-if="fallbackCandidate" :style="{ transform: fallbackCandidateTransform }" class="real-candidate-mark" aria-hidden="true">
-        <g class="real-candidate-glyph" :style="{ transform: `scale(${candidateMarkerScale})` }">
-          <circle r="8" class="real-candidate-halo" /><circle r="4" class="real-candidate-dot" />
+        <g class="real-candidate-glyph">
+          <circle r="6" class="real-candidate-halo" /><circle r="3.5" class="real-candidate-dot" />
         </g>
       </g>
     </svg>
@@ -716,8 +842,8 @@ onUnmounted(() => {
         <path v-if="analysisResult.accessLink?.length > 2" :d="liveDemoResult.access" class="real-demo-access" />
       </g>
       <g v-if="liveCandidate" :transform="`translate(${liveCandidate.x} ${liveCandidate.y})`" class="real-candidate-mark">
-        <g class="real-candidate-glyph" :style="{ transform: `scale(${candidateMarkerScale})` }">
-          <circle r="8" class="real-candidate-halo" /><circle r="4" class="real-candidate-dot" />
+        <g class="real-candidate-glyph">
+          <circle r="6" class="real-candidate-halo" /><circle r="3.5" class="real-candidate-dot" />
         </g>
       </g>
     </svg>
@@ -725,16 +851,20 @@ onUnmounted(() => {
     <svg v-if="analysisMode === 'cpp' && analysisResult" class="real-poi-layer"
       :viewBox="`0 0 ${viewport.width} ${viewport.height}`" role="group" aria-label="等时圈内基础设施候选点位">
       <g v-for="poi in poiMarkers" :key="poi.id" class="real-poi-marker"
+        :class="{ 'is-selected': selectedPoi?.id === poi.id }" :style="{ '--poi-color': poiCategoryStyles[poi.category].color }"
         :transform="`translate(${poi.pixel[0]} ${poi.pixel[1]})`" tabindex="0" role="button"
+        :aria-pressed="selectedPoi?.id === poi.id"
         :aria-label="`${poiCategoryStyles[poi.category].label}：${poi.name}`"
         @pointerdown.stop @click.stop="selectedPoi = poi" @keydown.enter.stop="selectedPoi = poi" @keydown.space.prevent.stop="selectedPoi = poi">
         <title>{{ poi.name }} · {{ poiAccessLabel(poi) }}</title>
+        <g v-if="selectedPoi?.id === poi.id" class="real-poi-selection" aria-hidden="true">
+          <circle r="19" class="real-poi-selection-ring" />
+          <circle :key="poiFocusRequest?.sequence ?? poi.id" r="25" class="real-poi-selection-pulse" />
+        </g>
         <circle r="11" :stroke="poiCategoryStyles[poi.category].color" />
         <text text-anchor="middle" dominant-baseline="central" :fill="poiCategoryStyles[poi.category].color">{{ poiCategoryStyles[poi.category].glyph }}</text>
       </g>
     </svg>
-    <PoiInventoryPanel v-if="analysisMode === 'cpp' && analysisResult" class="real-poi-panel"
-      compact :result="analysisResult" :category="poiCategory" @category="poiCategory = $event; selectedPoi = null" />
     <div v-if="selectedPoi" class="real-poi-popover" role="status" @pointerdown.stop @click.stop>
       <button type="button" aria-label="关闭设施详情" @click.stop="selectedPoi = null">×</button>
       <strong>{{ selectedPoi.name }}</strong>
@@ -743,14 +873,6 @@ onUnmounted(() => {
       <small v-if="selectedPoi.address">{{ selectedPoi.address }}</small>
     </div>
 
-    <div class="real-map-note">
-      <span class="real-note-signal" aria-hidden="true"></span>
-      <span>{{ stateMessage }}</span>
-    </div>
-    <div class="real-map-actions">
-      <p>虚线内可选起点，外围可显示{{ analysisMode === 'cpp' ? '等时圈和街段' : '等时圈、采样路线和 POI 服务路线' }}<br /><strong>点击区内位置，记录候选起点</strong></p>
-      <button type="button" :disabled="selectionDisabled || (mapState === 'ready' && boundaryState !== 'ready')" @click.stop="selectRegionCenter">选区域中心</button>
-    </div>
     <div v-if="analysisResult?.coordinateSystem === 'preview-local-v1'" class="real-demo-legend" aria-label="合成示意图例">
       <span><i :class="cppSyntheticResult ? 'legend-area' : 'legend-circle'"></i>{{ cppSyntheticResult ? 'C++ 路网等时圈 · 近似面' : '固定半径示意' }}</span><span><i class="legend-route"></i>{{ cppSyntheticResult ? 'C++ 可达街段' : '临时路网路线' }}</span><span v-if="analysisResult?.accessLink"><i class="legend-access"></i>估算接入 · 未核实</span>
     </div>

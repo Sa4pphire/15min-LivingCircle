@@ -4,16 +4,63 @@ export const mapZoomTiers = [
   { id: "small", label: "小", hint: "1.5×", description: "小比例尺，1.5 倍放大", factor: 1.5 },
 ];
 
+// Multipliers are relative to the fitted full-area view, not SDK zoom levels.
+export const MIN_MAP_ZOOM_FACTOR = 1;
+export const MAX_MAP_ZOOM_FACTOR = 10;
+
+export function clampMapZoomFactor(factor) {
+  return Math.max(MIN_MAP_ZOOM_FACTOR, Math.min(MAX_MAP_ZOOM_FACTOR,
+    Number.isFinite(factor) ? factor : MIN_MAP_ZOOM_FACTOR));
+}
+
 export function zoomFactor(tier) {
   return mapZoomTiers.find((item) => item.id === tier)?.factor ?? 1;
+}
+
+// A discrete wheel step shares the button tiers; it never changes native SDK
+// zoom directly. Accumulate trackpad pixels, then allow the 420 ms camera
+// animation to settle before accepting the next step.
+export function createMapWheelStepper() {
+  let distance = 0;
+  let lastEventAt = -Infinity;
+  let nextStepAt = -Infinity;
+  return {
+    reset() {
+      distance = 0;
+      lastEventAt = -Infinity;
+      nextStepAt = -Infinity;
+    },
+    step(tier, event, now, pageHeight = 800) {
+      const deltaY = event.deltaY;
+      if (event.ctrlKey || !Number.isFinite(deltaY) || deltaY === 0 ||
+        Math.abs(event.deltaX ?? 0) > Math.abs(deltaY)) return null;
+      const delta = deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? pageHeight : 1);
+      if (now < nextStepAt) {
+        lastEventAt = now;
+        distance = 0;
+        return null;
+      }
+      if (now - lastEventAt > 180 || Math.sign(delta) !== Math.sign(distance)) distance = 0;
+      lastEventAt = now;
+      distance += delta;
+      if (Math.abs(distance) < 48) return null;
+      distance = 0;
+      nextStepAt = now + 460;
+      const index = mapZoomTiers.findIndex(item => item.id === tier);
+      // "Full circle" is a fitted view, not a fourth fixed zoom tier.
+      if (index < 0) return delta < 0 ? "medium" : "small";
+      const next = Math.max(0, Math.min(mapZoomTiers.length - 1, index + (delta < 0 ? -1 : 1)));
+      return mapZoomTiers[next].id;
+    },
+  };
 }
 
 export function markerScaleForTier(tier) {
   return zoomFactor(tier) / zoomFactor("medium");
 }
 
-export function zoomedFit(fit, width, height, tier, focus = null) {
-  const scale = fit.scale * zoomFactor(tier);
+export function zoomedFit(fit, width, height, tier, focus = null, factor = zoomFactor(tier)) {
+  const scale = fit.scale * clampMapZoomFactor(factor);
   const baseCenter = [
     (width / 2 - fit.translateX) / fit.scale,
     (height / 2 - fit.translateY) / fit.scale,
@@ -40,6 +87,10 @@ export function clampMapPan(value, limit) {
 }
 
 export function baiduZoomForTier(fittedZoom, tier, minZoom = 3, maxZoom = 21) {
-  const requested = fittedZoom + Math.log2(zoomFactor(tier));
+  return baiduZoomForFactor(fittedZoom, zoomFactor(tier), minZoom, maxZoom);
+}
+
+export function baiduZoomForFactor(fittedZoom, factor, minZoom = 3, maxZoom = 21) {
+  const requested = fittedZoom + Math.log2(clampMapZoomFactor(factor));
   return Math.min(maxZoom, Math.max(minZoom, requested));
 }

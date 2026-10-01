@@ -26,7 +26,7 @@ def main() -> None:
     root.set("viewBox", f"{left} {top} {size} {size}")
     root.set("width", "1000")
     root.set("height", "1000")
-    root.find(NS + "title").text = "蓝色圈选路口：转弯与过街校对（未实地核实）"
+    root.find(NS + "title").text = f"{record.get('name', args.junction_id)}：转弯与过街校对（未实地核实）"
     for group in root.findall(NS + "g"):
         for item in list(group):
             if item.tag == NS + "circle":

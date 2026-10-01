@@ -13,7 +13,7 @@ import sys
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "backend"))
 
-from app.synthetic_converter import convert_preview_graph  # noqa: E402
+from app.synthetic_converter import convert_preview_graph, with_preview_annotations  # noqa: E402
 
 
 def main() -> None:
@@ -28,6 +28,7 @@ def main() -> None:
     graph = json.loads(source.read_text(encoding="utf-8"))
     origin = json.loads(context.read_text(encoding="utf-8"))["originWgs84"]
     annotations = json.loads(args.annotations.read_text(encoding="utf-8"))
+    graph = with_preview_annotations(graph, annotations)
     if (annotations.get("schemaVersion") != 1 or
             annotations.get("coordinateSystem") != "engine-local-meters" or
             not isinstance(annotations.get("crossings"), list) or

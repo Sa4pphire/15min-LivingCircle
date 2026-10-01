@@ -20,6 +20,14 @@ out/
 data/cache/*
 !data/cache/.gitkeep
 
+# Road-network review output is reproducible; keep source graph/annotations instead.
+/data/networks/*.svg
+/data/networks/synthetic-preview.*-report.json
+/data/networks/synthetic-preview.crossroad-*.json
+/frontend/public/demo-connectivity-*.svg
+/frontend/public/demo-road-graph.svg
+/frontend/public/walking-*.svg
+
 .idea/
 .vscode/
 .DS_Store
