@@ -120,8 +120,9 @@ def build_blind_zone_grid(
     facilities: list[dict[str, Any]],
     origin: tuple[float, float],
     *,
-    cell_size_meters: float = 250.0,
+    cell_size_meters: float = 10.0,
     service_radius_meters: float = 1000.0,
+    inventory_complete: bool = True,
 ) -> dict[str, Any]:
     if geometry.get("type") != "MultiPolygon":
         raise ValueError("盲区网格需要 MultiPolygon 等时圈")
@@ -132,7 +133,16 @@ def build_blind_zone_grid(
         for point in ring
     ]
     if not points or cell_size_meters <= 0 or service_radius_meters <= 0:
-        return {"type": "FeatureCollection", "features": []}
+        return {"type": "FeatureCollection", "features": [],
+                "properties": {"status": "empty", "resolutionMeters": cell_size_meters}}
+    if not inventory_complete:
+        # An incomplete provider response cannot prove a service blind area.
+        return {"type": "FeatureCollection", "features": [],
+                "properties": {
+                    "status": "unknown",
+                    "resolutionMeters": cell_size_meters,
+                    "reason": "POI inventory is incomplete",
+                }}
     min_x = math.floor(min(float(point[0]) for point in points) / cell_size_meters)
     max_x = math.ceil(max(float(point[0]) for point in points) / cell_size_meters)
     min_y = math.floor(min(float(point[1]) for point in points) / cell_size_meters)
@@ -154,38 +164,65 @@ def build_blind_zone_grid(
         if all(math.isfinite(value) for value in point):
             poi_points[category].append(point)
 
-    features = []
-    for ix in range(min_x, max_x + 1):
-        for iy in range(min_y, max_y + 1):
+    # First classify 10 m cells.  Adjacent cells with the same missing
+    # categories are coalesced into horizontal strips, so the response keeps
+    # 10 m boundary resolution without rendering a distracting coarse grid.
+    row_runs: list[tuple[int, int, int, tuple[str, ...]]] = []
+    for iy in range(min_y, max_y + 1):
+        runs: list[tuple[int, int, tuple[str, ...]]] = []
+        run_start: int | None = None
+        run_missing: tuple[str, ...] | None = None
+        for ix in range(min_x, max_x + 1):
             center = ((ix + 0.5) * cell_size_meters,
                       (iy + 0.5) * cell_size_meters)
             if not point_in_isochrone(center, geometry):
-                continue
-            missing = [
-                category for category in categories
-                if not any(math.dist(center, poi) <= service_radius_meters
-                           for poi in poi_points[category])
-            ]
-            if not missing:
-                continue
-            corners = [
-                (ix * cell_size_meters, iy * cell_size_meters),
-                ((ix + 1) * cell_size_meters, iy * cell_size_meters),
-                ((ix + 1) * cell_size_meters, (iy + 1) * cell_size_meters),
-                (ix * cell_size_meters, (iy + 1) * cell_size_meters),
-                (ix * cell_size_meters, iy * cell_size_meters),
-            ]
-            features.append({
-                "type": "Feature",
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": [[local_point_to_bd09(point, origin)
-                                      for point in corners]],
-                },
-                "properties": {
-                    "missingCategories": missing,
-                    "approximate": True,
-                    "serviceRadiusMeters": service_radius_meters,
-                },
-            })
-    return {"type": "FeatureCollection", "features": features}
+                current = None
+            else:
+                missing = tuple(
+                    category for category in categories
+                    if not any(math.dist(center, poi) <= service_radius_meters
+                               for poi in poi_points[category])
+                )
+                current = missing or None
+            if current != run_missing:
+                if run_start is not None and run_missing:
+                    runs.append((run_start, ix - 1, run_missing))
+                run_start = ix if current else None
+                run_missing = current
+        if run_start is not None and run_missing:
+            runs.append((run_start, max_x, run_missing))
+        for start, end, missing in runs:
+            row_runs.append((start, end, iy, missing))
+
+    features = []
+    for start, end, iy, missing in row_runs:
+        corners = [
+            (start * cell_size_meters, iy * cell_size_meters),
+            ((end + 1) * cell_size_meters, iy * cell_size_meters),
+            ((end + 1) * cell_size_meters, (iy + 1) * cell_size_meters),
+            (start * cell_size_meters, (iy + 1) * cell_size_meters),
+            (start * cell_size_meters, iy * cell_size_meters),
+        ]
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[local_point_to_bd09(point, origin)
+                                  for point in corners]],
+            },
+            "properties": {
+                "missingCategories": list(missing),
+                "approximate": True,
+                "resolutionMeters": cell_size_meters,
+                "serviceRadiusMeters": service_radius_meters,
+            },
+        })
+    return {
+        "type": "FeatureCollection",
+        "features": features,
+        "properties": {
+            "status": "confirmed",
+            "resolutionMeters": cell_size_meters,
+            "serviceRadiusMeters": service_radius_meters,
+        },
+    }

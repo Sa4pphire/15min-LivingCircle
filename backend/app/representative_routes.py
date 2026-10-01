@@ -62,7 +62,18 @@ async def collect_representative_routes(
     """返回可绘制路线，并过滤超过生活圈时限的目的地。"""
     routes: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
-    for facility in select_representative_pois(facilities, origin, per_category=per_category):
+    # The nearest POIs are not necessarily walkable within the time budget.
+    # Keep a bounded reserve from each category so a slow/failed candidate does
+    # not make the whole category disappear from the map.
+    reserve = max(per_category, per_category * 3)
+    candidates = select_representative_pois(
+        facilities, origin, per_category=reserve,
+    )
+    successful_by_category: dict[str, int] = {}
+    for facility in candidates:
+        category = str(facility.get("category") or "unknown")
+        if successful_by_category.get(category, 0) >= per_category:
+            continue
         try:
             route = await client.walking_route(
                 origin,
@@ -80,6 +91,10 @@ async def collect_representative_routes(
                 "durationSeconds": duration,
             })
             continue
+        if not isinstance(route.get("segments"), list):
+            failures.append({"uid": facility.get("uid"), "error": "route has no segments"})
+            continue
+        successful_by_category[category] = successful_by_category.get(category, 0) + 1
         for index, points in enumerate(route["segments"]):
             routes.append({
                 "id": f"poi:{facility.get('uid', index)}:{index}",

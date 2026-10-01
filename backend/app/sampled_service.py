@@ -128,11 +128,20 @@ async def run_sampled_analysis(
     result["poiPartial"] = poi_result["partial"]
     result["poiSearchRadiusMeters"] = search_radius
     result["poiCandidateCount"] = len(candidate_features)
+    inventory_complete = (
+        not poi_result["partial"]
+        and all(poi_result["categoryStatus"].get(category) == "complete"
+                for category in ("market", "pharmacy", "primary_school"))
+    )
     result["blindZones"] = build_blind_zone_grid(
         region_geometry or result["isochroneMeters"],
         candidate_features,
         bd09_center,
+        cell_size_meters=10.0,
+        inventory_complete=inventory_complete,
     )
+    result["blindZoneStatus"] = result["blindZones"].get("properties", {}).get("status")
+    result["blindZoneResolutionMeters"] = 10.0
     result["routeSegments"] = routes
     result["routeFailures"] = route_failures
     result["routeCount"] = len({

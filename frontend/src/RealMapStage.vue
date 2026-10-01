@@ -135,13 +135,13 @@ function bd09ToLocal(point) {
   return mapAlignment.value?.toLocal(point) ?? null;
 }
 
-// The route/area SVG is an external overlay. Baidu exposes a separate pixel
-// origin for that container; using pointToPixel here shifts the whole layer
-// when the map viewport and overlay panes are not identical. Keep the
-// pointToPixel fallback for older SDK shims and unit-test doubles.
+// The route/area SVG is a sibling of the map container, not a child of a
+// Baidu overlay pane. Its origin is the map viewport, so use pointToPixel.
+// pointToOverlayPixel is only for overlays mounted inside BMap's pane and
+// would introduce a pane offset here.
 function mapPointToOverlayPixel(point) {
   if (!map || !BMap) return { x: 0, y: 0 };
-  const projector = map.pointToOverlayPixel ?? map.pointToPixel;
+  const projector = map.pointToPixel ?? map.pointToOverlayPixel;
   const pixel = projector.call(map, new BMap.Point(point[0], point[1]));
   return { x: pixel.x, y: pixel.y };
 }
@@ -317,8 +317,8 @@ function fitBaiduViewport(animate = false) {
 
 function applyBaiduZoom(animate = true) {
   if (!map || !BMap || !Number.isFinite(fittedZoom) || !fittedCenter) return;
-  if (["small", "result"].includes(props.zoomTier)) map.disableDragging?.();
-  else map.enableDragging?.();
+  // Scale presets must not disable the primary left-button map gesture.
+  map.enableDragging?.();
   const candidate = props.candidate?.coordType === "bd09ll" ? props.candidate : null;
   const center = props.zoomTier === "large" && candidate
     ? new BMap.Point(candidate.lng, candidate.lat) : fittedCenter;
@@ -410,7 +410,7 @@ function fallbackPointFromClient(clientX, clientY) {
 }
 
 function beginFallbackDrag(event) {
-  if (!fallbackActive.value || ["small", "result"].includes(props.zoomTier) ||
+  if (!fallbackActive.value ||
     (event.pointerType === "mouse" && event.button !== 0) ||
     event.target.closest("button, a, .real-map-actions, .real-map-note, .real-map-toast, .real-poi-marker, .real-poi-panel, .real-poi-popover")) return;
   contextEl.value?.getAnimations().forEach((animation) => animation.finish());
@@ -490,7 +490,7 @@ function moveProbe(event) {
       hoverInside.value = false;
       return;
     }
-    const point = (map.overlayPixelToPoint ?? map.pixelToPoint).call(
+    const point = (map.pixelToPoint ?? map.overlayPixelToPoint).call(
       map,
       new BMap.Pixel(x, y),
     );
@@ -532,7 +532,7 @@ async function initializeBaidu() {
     map.centerAndZoom(new BMap.Point(...regionCenterBd09.value), 14);
     fittedZoom = map.getZoom();
     fittedCenter = map.getCenter();
-    map.disableDragging?.();
+    map.enableDragging?.();
     // The page shell also listens for wheel events to turn pages. The root
     // stage stops propagation (see template below), while Baidu handles the
     // wheel itself for continuous map zooming.
@@ -640,7 +640,7 @@ onUnmounted(() => {
   <div
     ref="stageEl"
     class="real-map-stage"
-    :class="{ 'is-outside': !hoverInside, 'can-pan': !['small', 'result'].includes(zoomTier), 'is-panning': fallbackDragging, 'can-animate': fallbackAnimated, 'has-cpp-result': cppSyntheticResult }"
+    :class="{ 'is-outside': !hoverInside, 'can-pan': fallbackActive, 'is-panning': fallbackDragging, 'can-animate': fallbackAnimated, 'has-cpp-result': cppSyntheticResult }"
     role="group"
     aria-label="四路围合演示区域地图，可点击区域内位置设置候选起点"
     @click="handleFallbackClick"

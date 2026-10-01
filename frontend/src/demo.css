@@ -188,7 +188,10 @@ h1, h2, p { margin-top: 0; }
 .street-hover-card strong { color: #2b5147; font-size: 12px; }
 .map-compass { position: absolute; right: 20px; top: 17px; display: grid; justify-items: center; gap: 1px; color: #637e72; font-size: 10px; font-weight: 700; pointer-events: none; }
 .map-compass i { display: block; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 11px solid #448b77; }
-.map-zoom-control { position: absolute; z-index: 8; right: 58px; top: 50%; transform: translateY(-50%); display: grid; justify-items: center; gap: 3px; padding: 6px; background: rgba(251, 253, 252, .93); box-shadow: 0 4px 18px rgba(33, 66, 53, .1); backdrop-filter: blur(8px); }
+.map-zoom-wrap { position: absolute; z-index: 8; right: 58px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 3px; }
+.map-zoom-toggle { flex: none; width: 22px; height: 30px; padding: 0; border: 1px solid rgba(18, 60, 54, .2); border-radius: 4px 0 0 4px; background: rgba(251, 253, 252, .93); color: #174f42; font-size: 10px; line-height: 1; cursor: pointer; box-shadow: 0 4px 12px rgba(33, 66, 53, .08); }
+.map-zoom-toggle:hover { background: #e1f0e7; }
+.map-zoom-control { display: grid; justify-items: center; gap: 3px; padding: 6px; background: rgba(251, 253, 252, .93); box-shadow: 0 4px 18px rgba(33, 66, 53, .1); backdrop-filter: blur(8px); }
 .map-zoom-heading { padding: 2px 0 4px; color: #668779; font-size: 10px; font-weight: 600; }
 .map-zoom-hint { padding: 3px 0 1px; color: #668779; font-size: 9px; white-space: nowrap; }
 .map-zoom-control button { display: grid; align-content: center; justify-items: center; gap: 1px; width: 43px; height: 43px; border: 0; background: transparent; color: #3e6c5e; cursor: pointer; transition: background .16s ease, color .16s ease, transform .12s ease; }
@@ -394,7 +397,8 @@ h2 { font-size: 16px; line-height: 1.2; font-weight: 700; margin: 0; letter-spac
   .map-top-note { display: none; }
   .map-canvas { height: clamp(390px, 66vh, 500px); }
   .map-compass { display: none; }
-  .map-zoom-control { right: 41px; padding: 4px; gap: 2px; }
+  .map-zoom-wrap { right: 41px; }
+  .map-zoom-control { padding: 4px; gap: 2px; }
   .map-zoom-control button { width: 38px; height: 39px; }
   .map-legend { left: 8px; right: 8px; bottom: 9px; font-size: 9px; gap: 5px 8px; padding: 8px; }
   .facility-popover { right: 8px; bottom: 53px; width: 200px; }

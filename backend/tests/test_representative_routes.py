@@ -81,3 +81,22 @@ def test_route_over_threshold_is_not_reported_as_reachable() -> None:
         "error": "route exceeds threshold",
         "durationSeconds": 901.0,
     }]
+
+
+def test_route_collection_tries_reserve_after_slow_nearest_poi() -> None:
+    class FakeClient:
+        async def walking_route(self, origin, destination, *, destination_uid=None):
+            if destination_uid == "slow":
+                return {"distanceMeters": 2000.0, "durationSeconds": 901.0,
+                        "segments": [[[121.513, 31.337], [121.52, 31.337]]]}
+            return {"distanceMeters": 500.0, "durationSeconds": 300.0,
+                    "segments": [[[121.513, 31.337], [121.514, 31.337]]]}
+
+    routes, failures = asyncio.run(collect_representative_routes(
+        FakeClient(), (121.513, 31.337), [
+            {"uid": "slow", "category": "market", "lng": 121.514, "lat": 31.337},
+            {"uid": "good", "category": "market", "lng": 121.515, "lat": 31.337},
+        ], per_category=1, max_duration_seconds=900.0,
+    ))
+    assert [route["poiUid"] for route in routes] == ["good"]
+    assert failures[0]["uid"] == "slow"

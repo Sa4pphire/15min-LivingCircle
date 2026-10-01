@@ -274,7 +274,7 @@ for (const mode of ["preview", "cpp"]) {
       props.zoomTier = tier;
       await nextTick();
       assert.equal(commands.at(-1).level, zoom.baiduZoomForTier(13, tier), tier);
-      assert.equal(draggable(), tier !== "small");
+      assert.equal(draggable(), true);
     }
     assert.equal(legacyFitCalls(), 0);
     assert.equal(stage.fittedZoom, 13);

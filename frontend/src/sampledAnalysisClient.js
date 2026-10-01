@@ -49,6 +49,9 @@ function normalizeSampledReport(report, candidate) {
     routeSegments,
     samplingRouteSegments,
     blindZones: report.blindZones ?? { type: "FeatureCollection", features: [] },
+    blindZoneStatus: report.blindZoneStatus ?? report.blindZones?.properties?.status ?? "unknown",
+    blindZoneResolutionMeters: report.blindZoneResolutionMeters
+      ?? report.blindZones?.properties?.resolutionMeters ?? null,
     facilities: report.facilities ?? {
       type: "FeatureCollection",
       features: [],

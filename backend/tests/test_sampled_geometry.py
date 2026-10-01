@@ -28,6 +28,21 @@ def test_build_blind_zone_grid_marks_missing_service_categories() -> None:
     assert set(result["features"][0]["properties"]["missingCategories"]) == {
         "market", "pharmacy", "primary_school",
     }
+    assert result["features"][0]["properties"]["resolutionMeters"] == 100.0
+
+
+def test_incomplete_poi_inventory_does_not_claim_blind_area() -> None:
+    geometry = {
+        "type": "MultiPolygon",
+        "coordinates": [[[[-50.0, -50.0], [50.0, -50.0], [50.0, 50.0],
+                           [-50.0, 50.0], [-50.0, -50.0]]]],
+    }
+    result = build_blind_zone_grid(
+        geometry, [], (121.5, 31.3), inventory_complete=False,
+    )
+    assert result["features"] == []
+    assert result["properties"]["status"] == "unknown"
+    assert result["properties"]["resolutionMeters"] == 10.0
 
 
 # 验证中心点的局部坐标仍然是原始 BD-09 中心点

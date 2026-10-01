@@ -26,6 +26,7 @@ const mapModes = [
 const mapZoomTier = ref("medium");
 const mapOverviewRequestId = ref(0);
 const livingFooterCollapsed = ref(false);
+const mapScaleCollapsed = ref(false);
 const realCandidate = ref(null);
 const realAnalysisResult = ref(null);
 const realAnalysisState = ref("idle");
@@ -141,6 +142,10 @@ function switchMapMode(mode) {
 
 function toggleLivingFooter() {
   livingFooterCollapsed.value = !livingFooterCollapsed.value;
+}
+
+function toggleMapScale() {
+  mapScaleCollapsed.value = !mapScaleCollapsed.value;
 }
 
 function setMapZoomTier(tier) {
@@ -387,7 +392,12 @@ onUnmounted(() => {
                 @click="switchMapMode(mode.id)">{{ mode.label }}</button>
             </div>
             <div class="map-compass" aria-hidden="true"><span>北</span><i></i></div>
-            <div class="map-zoom-control" role="group" aria-label="地图比例尺">
+            <div class="map-zoom-wrap" :class="{ collapsed: mapScaleCollapsed }">
+              <button type="button" class="map-zoom-toggle"
+                :aria-expanded="String(!mapScaleCollapsed)"
+                :title="mapScaleCollapsed ? '展开比例尺' : '收起比例尺'"
+                @click.stop="toggleMapScale">{{ mapScaleCollapsed ? '▶' : '◀' }}</button>
+            <div v-if="!mapScaleCollapsed" class="map-zoom-control" role="group" aria-label="地图比例尺">
               <span class="map-zoom-heading" aria-hidden="true">比例尺</span>
               <button
                 v-for="tier in mapZoomTiers"
@@ -406,18 +416,19 @@ onUnmounted(() => {
               </button>
               <span class="map-zoom-hint" aria-hidden="true">{{ ['small', 'result'].includes(mapZoomTier) ? '固定' : '可拖动' }}</span>
             </div>
+            </div>
           </div>
 
           <div class="map-bottomline real-mode">
             <span v-if="mapMode === 'real'"><span class="line-signal"></span>{{ realAnalysisState === 'error' ? realAnalysisError : realAnalysisState === 'running' ? '正在生成百度采样等时圈，请稍候' : realAnalysisResult ? '百度采样等时圈与代表路线已显示' : realCandidate ? '已选起点 · 点击右上角生成真实区域分析' : '四路围合范围 · 点击地图选点' }}</span>
             <span v-else-if="mapMode === 'synthetic'"><span class="line-signal"></span>{{ cppAnalysisState === 'error' ? cppAnalysisError : cppAnalysisState === 'running' ? 'Python → C++ 正在计算 15 分钟路网等时圈' : cppAnalysisResult ? 'C++ 等时圈与可达街段已显示 · 路网仍为合成数据' : cppCandidate ? '已选起点 · 点击右上角计算等时圈' : '专家模式 · 合成路网，点击地图选点' }}</span>
-            <span><span class="line-signal"></span>{{ showBlindZones ? '红色网格表示待核查服务盲区候选 · 仅基于当前缓存 POI' : '点击“盲区显示”切换服务覆盖候选层' }}</span>
+            <span><span class="line-signal"></span>{{ showBlindZones ? (realAnalysisResult?.blindZoneStatus === 'confirmed' ? `红色区域表示 10 米分辨率服务盲区候选 · 服务半径 1 公里` : realAnalysisResult?.blindZoneStatus === 'unknown' ? 'POI 清单不完整，暂不把缺失数据判为盲区' : '当前没有可确认的服务盲区') : '点击“盲区显示”切换服务覆盖候选层' }}</span>
             <span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">边界与 SVG 数据 © OpenStreetMap contributors · ODbL</a></span>
           </div>
           <div v-if="mapMode === 'real' && realAnalysisResult" class="real-route-legend" aria-label="真实区域路线图例">
             <span><i class="legend-sampled-route"></i>采样边界路线 {{ realAnalysisResult.summary.samplingRouteCount }}</span>
             <span><i class="legend-poi-route"></i>POI 服务路线 {{ realAnalysisResult.summary.poiRouteCount }}<small v-if="realAnalysisResult.summary.poiRouteCount === 0">（暂无 15 分钟内有效路线）</small></span>
-            <span v-if="showBlindZones"><i class="legend-blind-zone"></i>候选服务盲区</span>
+            <span v-if="showBlindZones && realAnalysisResult?.blindZoneStatus === 'confirmed'"><i class="legend-blind-zone"></i>10 米分辨率服务盲区候选</span>
           </div>
         </div>
       </section>

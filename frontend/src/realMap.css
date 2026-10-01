@@ -54,7 +54,7 @@
 .real-candidate-glyph { transform-box: fill-box; transform-origin: center; transition: transform .42s cubic-bezier(.2, .75, .2, 1); }
 .real-map-note { position: absolute; z-index: 4; top: 65px; left: 19px; display: flex; align-items: center; gap: 8px; max-width: min(430px, calc(100% - 38px)); padding: 9px 12px; background: rgba(251, 253, 252, .92); color: #476f62; font-size: 11px; line-height: 1.4; box-shadow: 0 3px 15px rgba(27, 69, 57, .06); }
 .real-note-signal { flex: none; width: 6px; height: 6px; border-radius: 50%; background: #6eb28c; }
-.real-map-actions { position: absolute; z-index: 4; right: 22px; bottom: 22px; display: grid; gap: 9px; justify-items: start; max-width: min(245px, 60vw); padding: 15px 17px; background: rgba(251, 253, 252, .94); color: #31574c; box-shadow: 0 5px 24px rgba(33, 66, 53, .11); }
+.real-map-actions { position: absolute; z-index: 4; left: 19px; top: 112px; display: grid; gap: 9px; justify-items: start; max-width: min(245px, 60vw); padding: 15px 17px; background: rgba(251, 253, 252, .94); color: #31574c; box-shadow: 0 5px 24px rgba(33, 66, 53, .11); }
 .real-map-actions p { margin: 0; font-size: 11px; line-height: 1.6; }
 .has-cpp-result .real-map-actions p { display: none; }
 .real-map-actions strong { font-size: 12px; font-weight: 650; }
@@ -88,13 +88,13 @@
 .real-map-probe.outside .real-probe-ring { border-style: dashed; background: rgba(209, 118, 78, .055); box-shadow: none; }
 .real-map-toast { position: absolute; z-index: 7; left: 50%; bottom: 84px; max-width: calc(100% - 35px); margin: 0; padding: 9px 13px; transform: translateX(-50%); background: #173c3a; color: #f1fbf4; font-size: 11px; text-align: center; box-shadow: 0 4px 18px rgba(18, 60, 54, .18); }
 @media (max-width: 1100px) {
-  .real-map-actions { bottom: 84px; }
+  .real-map-actions { top: 106px; }
   .real-demo-legend { bottom: 84px; }
   .real-poi-popover { bottom: 164px; }
 }
 @media (max-width: 600px) {
   .real-map-note { top: 58px; left: 10px; max-width: calc(100% - 20px); padding: 7px 9px; font-size: 10px; }
-  .real-map-actions { right: 9px; bottom: 80px; padding: 10px 12px; max-width: 210px; }
+  .real-map-actions { left: 10px; top: 98px; padding: 10px 12px; max-width: 210px; }
   .real-map-actions p { font-size: 10px; }
   .real-map-probe { display: none; }
   .real-demo-legend { left: 8px; bottom: 80px; max-width: calc(100% - 235px); padding: 6px; gap: 4px 8px; font-size: 9px; }
