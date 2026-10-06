@@ -61,7 +61,11 @@ bool has_non_whitespace(const std::string_view input) {
 }
 
 std::string health_json() {
-  return R"({"status":"ok","engine":"isochrone_engine","schemaVersion":2})";
+#ifdef NDEBUG
+  return R"({"status":"ok","engine":"isochrone_engine","schemaVersion":2,"buildMode":"Release","facilitiesOnly":true})";
+#else
+  return R"({"status":"ok","engine":"isochrone_engine","schemaVersion":2,"buildMode":"Debug","facilitiesOnly":true})";
+#endif
 }
 
 std::string error_json(const std::string_view code,
@@ -209,6 +213,34 @@ std::string serialize_engine_result(const EngineResult& result) {
     }
     output << ']';
   }
+  if (result.facility_route) {
+    const auto& route = *result.facility_route;
+    output << ",\"facilityRoute\":{\"facilityId\":\"" << escape_json(route.facility_id)
+           << "\",\"entranceId\":";
+    if (route.entrance_id) output << '"' << escape_json(*route.entrance_id) << '"';
+    else output << "null";
+    output << ",\"connected\":" << (route.connected ? "true" : "false")
+           << ",\"withinThreshold\":" << (route.within_threshold ? "true" : "false")
+           << ",\"travelTimeSeconds\":";
+    if (route.travel_time_seconds) output << *route.travel_time_seconds;
+    else output << "null";
+    output << ",\"lengthMeters\":" << route.length_meters
+           << ",\"crossingWaitSeconds\":" << route.crossing_wait_seconds
+           << ",\"pathMeters\":";
+    write_path(route.path);
+    output << ",\"segments\":[";
+    for (std::size_t i = 0; i < route.segments.size(); ++i) {
+      if (i) output << ',';
+      const auto& segment = route.segments[i];
+      output << "{\"edgeId\":\"" << escape_json(segment.edge_id)
+             << "\",\"kind\":\"" << escape_json(segment.kind)
+             << "\",\"travelTimeSeconds\":" << segment.travel_time_seconds
+             << ",\"pathMeters\":";
+      write_path(segment.path);
+      output << '}';
+    }
+    output << "]}";
+  }
   output << ",\"diagnostics\":{\"reachableNodeCount\":"
          << result.reachable_node_count
          << ",\"reachableCrossingCount\":"
@@ -221,7 +253,17 @@ std::string serialize_engine_result(const EngineResult& result) {
     if (i) output << ',';
     output << '"' << escape_json(result.warnings[i]) << '"';
   }
-  output << "]}}}";
+  output << "],\"timingsMs\":{";
+  for (std::size_t i = 0; i < result.stage_timings_ms.size(); ++i) {
+    if (i) output << ',';
+    output << '"' << escape_json(result.stage_timings_ms[i].first) << "\":"
+           << result.stage_timings_ms[i].second;
+  }
+#ifdef NDEBUG
+  output << "},\"buildMode\":\"Release\"}}}";
+#else
+  output << "},\"buildMode\":\"Debug\"}}}";
+#endif
   return output.str();
 }
 

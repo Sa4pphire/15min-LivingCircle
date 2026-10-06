@@ -27,7 +27,7 @@
 
 本轮直接复用现有建模文件，先检查“读文件 → 构造起点参数 → C++ → Python 转换”的结果是否一致，不需要等待或补充真实数据。15 分钟合成演示和 3 分钟局部实验共用 `SYNTHETIC_NETWORK_PATH`；只有明确要换独立局部图时才设置 `LOCAL_EXPERIMENT_NETWORK_PATH`。以后数据经核实后才能移除合成标记。修改契约时同步样例及相关测试。
 
-可运行 `pytest backend/tests` 做 Python↔C++ 往返测试（需先构建引擎）。CI 会分别构建 Debug、Release C++ 并运行测试。真实路网到位后，最后确认引擎计算加进程启动不超过 Python 现有的 25 秒超时。
+测试文件仅保留本地，不随仓库发布；若本机已有测试，可运行 `pytest backend/tests` 做 Python↔C++ 往返验证（需先构建引擎）。CI 只检查 Debug/Release C++ 编译及健康输出、Python 语法、前端与镜像构建，不代替算法验收。真实路网到位后，最后确认引擎计算加进程启动不超过 Python 现有的 25 秒超时。
 
 ## 局部路网实验的独立对接
 

@@ -49,7 +49,8 @@ class PoiService:
         self.client.enable_cache(shared_cache)
         self.stats = self.client.cache_stats
 
-    async def search(self, center: CenterPoint, radius: int, category_ids, *, refresh=False, bounds=None):
+    async def search(self, center: CenterPoint, radius: int, category_ids, *, refresh=False, bounds=None,
+                     cache_only=False):
         before = dict(self.stats)
         query_center, query_radius = _grid_query(center, radius)
         order = list(dict.fromkeys(category_ids))
@@ -58,6 +59,7 @@ class PoiService:
         seeds = {}
         if not refresh:
             for key in order:
+                await asyncio.sleep(0)  # Cache scans must not block geometry pollers.
                 for number in range(max(1, min(8, settings.poi_max_pages))):
                     try:
                         page = await self.client.search_poi_page(
@@ -72,11 +74,11 @@ class PoiService:
                                 record["categories"].append(key)
         records, info = await search_tiles(self.client, {key: CATEGORIES[key] for key in order},
                                           center, radius, settings, bounds=bounds, refresh=refresh,
-                                          seed_records=list(seeds.values()))
+                                          seed_records=list(seeds.values()), cache_only=cache_only)
         info.update({key: value - before[key] for key, value in self.stats.items()})
         return records, info
 
-    async def frame(self, metadata):
+    async def frame(self, metadata, *, cache_only=False):
         """Align BD-09 candidates to the meter graph with cached FORWARD calibration.
 
         No unsupported Baidu->GPS API is called. The affine plane is approximate,
@@ -93,7 +95,8 @@ class PoiService:
                         (point[1] - origin["lat"]) * METERS_PER_DEGREE]
             return project, "native_bd09_local_meters"
         anchors = [_to_map_coordinate(point, origin) for point in ([0, 0], [1000, 0], [0, 1000])]
-        converted = await self.client.convert_coordinates([tuple(point) for point in anchors], "wgs84ll")
+        converted = await self.client.convert_coordinates([tuple(point) for point in anchors], "wgs84ll",
+                                                         cache_only=cache_only)
         a, east, north = converted
         ex, ey = east[0] - a[0], east[1] - a[1]
         nx, ny = north[0] - a[0], north[1] - a[1]
@@ -150,7 +153,7 @@ class AccessIndex:
 
 
 async def enrich_engine_pois(payload: dict, metadata: dict, center: CenterPoint, *, refresh=False,
-                             engine_result=None):
+                             engine_result=None, cache_only=False):
     """No graph-file mutation: enrich this request only. Offline mode still works."""
     category_map = {item["id"]: dict(item) for item in payload.get("serviceCategories", [])}
     for key in CATEGORIES:
@@ -179,9 +182,9 @@ async def enrich_engine_pois(payload: dict, metadata: dict, center: CenterPoint,
             bounds = [west, south, east, north]
         records, info = await service.search(center, math.ceil(2 * payload["thresholdSeconds"] *
                                                               payload["walkingSpeedMetersPerSecond"]), CATEGORIES,
-                                             refresh=refresh, bounds=bounds)
+                                             refresh=refresh, bounds=bounds, cache_only=cache_only)
         if records:
-            project, alignment = await asyncio.wait_for(service.frame(metadata), timeout=5)
+            project, alignment = await asyncio.wait_for(service.frame(metadata, cache_only=cache_only), timeout=5)
             info["alignment"] = alignment
             index = AccessIndex(payload["edges"], max(0, min(5, settings.poi_snap_meters)))
             facilities = list(payload.get("facilities", []))

@@ -4,6 +4,14 @@
 .venv
 **/__pycache__
 **/.pytest_cache
+**/.pytest-*
+backend/tests
+cpp-engine/tests
+frontend/tests
+data/networks/*.svg
+frontend/public/demo-connectivity-*.svg
+frontend/public/demo-road-graph.svg
+frontend/public/walking-*.svg
 frontend/node_modules
 frontend/dist
 cpp-engine/build

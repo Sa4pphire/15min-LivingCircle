@@ -56,7 +56,9 @@ def _terminal(number, page):
 
 
 async def search_tiles(client, registry, center, radius, config, *, bounds=None,
-                       refresh=False, seed_records=()):
+                       refresh=False, seed_records=(), cache_only=False):
+    if cache_only and refresh:
+        raise ValueError("cache-only POI searches cannot force a refresh")
     tiles, plan = plan_tiles(center, radius, config, bounds)
     pages = max(1, min(8, config.poi_max_pages))
     order = list(registry)
@@ -99,6 +101,7 @@ async def search_tiles(client, registry, center, radius, config, *, bounds=None,
 
     if not refresh:
         for query in queries:
+            await asyncio.sleep(0)
             for number in range(pages):
                 try:
                     page = await read(query, number, True)
@@ -145,11 +148,12 @@ async def search_tiles(client, registry, center, radius, config, *, bounds=None,
             if next_missing(query) is not None:
                 queue.append(query)
 
-    tasks = [asyncio.create_task(worker()) for _ in range(max(1, min(4, config.baidu_max_concurrency)))]
+    tasks = [] if cache_only else [asyncio.create_task(worker()) for _ in range(max(1, min(4, config.baidu_max_concurrency)))]
     timed_out = False
     try:
-        _, pending = await asyncio.wait(tasks, timeout=max(0, config.poi_budget_seconds))
-        timed_out = bool(pending)
+        if tasks:
+            _, pending = await asyncio.wait(tasks, timeout=max(0, config.poi_budget_seconds))
+            timed_out = bool(pending)
     finally:
         for task in tasks:
             if not task.done():
@@ -214,6 +218,7 @@ async def search_tiles(client, registry, center, radius, config, *, bounds=None,
         "plannedQueries": len(queries), "completedQueries": sum(o["completedQueries"] for o in outcomes),
         "cachedSeedCount": len(seed_records), "cacheBackend": "shared_baidu_json", "cacheFirst": not refresh,
         "cacheTtlHours": config.poi_cache_ttl_hours, "emptyCacheTtlHours": config.poi_empty_cache_ttl_hours,
+        "cacheOnly": cache_only, "refreshRequired": cache_only and (partial or unavailable),
         "oldestFetchedAt": min(client.cache_fetched_times) if client.cache_fetched_times else None,
         "categories": outcomes, "inventoryVerified": False, **client.cache_stats,
     }

@@ -4,6 +4,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "isochrone/types.hpp"
@@ -92,6 +93,11 @@ struct EngineInput {
   std::vector<FacilityAccess> facilities;
   std::vector<ServiceCategory> service_categories;
   std::optional<LocalExperiment> local_experiment;
+  // Optional, backward-compatible on-demand route using the same split graph.
+  std::optional<std::string> route_facility_id;
+  bool route_only{false};
+  // POI enrichment: compute all facility times, without surfaces or coverage.
+  bool facilities_only{false};
 };
 
 struct ReachableEdge {
@@ -113,6 +119,25 @@ struct FacilityTravelTime {
   bool reachable{};
   std::string category;
   std::optional<std::string> best_entrance_id;
+};
+
+struct RouteSegment {
+  std::string edge_id;
+  std::string kind;
+  std::vector<Point> path;
+  double travel_time_seconds{};
+};
+
+struct FacilityRoute {
+  std::string facility_id;
+  std::optional<std::string> entrance_id;
+  bool connected{};
+  bool within_threshold{};
+  std::optional<double> travel_time_seconds;
+  double length_meters{};
+  double crossing_wait_seconds{};
+  std::vector<Point> path;
+  std::vector<RouteSegment> segments;
 };
 
 struct GrayZone {
@@ -151,6 +176,8 @@ struct EngineResult {
   std::size_t closed_road_face_count{};
   std::size_t road_closure_filled_cell_count{};
   std::vector<std::string> warnings;
+  std::optional<FacilityRoute> facility_route;
+  std::vector<std::pair<std::string, double>> stage_timings_ms;
 };
 
 [[nodiscard]] const char* edge_kind_name(EdgeKind kind);

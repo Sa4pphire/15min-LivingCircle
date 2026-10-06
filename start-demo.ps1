@@ -4,6 +4,7 @@ param(
     [ValidateSet('run', 'start', 'stop', 'restart', 'status', 'check')]
     [string]$Action = 'run',
     [switch]$BuildEngine,
+    [ValidateSet('Debug', 'Release')][string]$EngineConfiguration = 'Debug',
     [string]$LocalNetworkPath,
     [ValidateRange(1024, 65535)][int]$BackendPort = 8000,
     [ValidateRange(1024, 65535)][int]$FrontendPort = 5173
@@ -225,17 +226,20 @@ function Resolve-Engine {
         Get-Item -LiteralPath (Join-Path $repoRoot 'cpp-engine/CMakeLists.txt')
     )
     $latestSource = ($sources | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1).LastWriteTimeUtc
-    $buildRoot = Join-Path $repoRoot 'cpp-engine/build/demo-launcher'
+    $buildRoot = Join-Path $repoRoot "cpp-engine/build/demo-launcher/$EngineConfiguration"
     $candidatePaths = @(
+        (Join-Path $repoRoot "cpp-engine/build/poi-route/$EngineConfiguration/isochrone_engine.exe"),
         (Join-Path $buildRoot 'isochrone_engine.exe'),
         (Join-Path $buildRoot 'cmake/isochrone_engine.exe'),
-        (Join-Path $buildRoot 'cmake/Release/isochrone_engine.exe'),
-        (Join-Path $repoRoot 'cpp-engine/build/isochrone_engine.exe'),
-        (Join-Path $repoRoot 'cpp-engine/build/Release/isochrone_engine.exe')
+        (Join-Path $buildRoot "cmake/$EngineConfiguration/isochrone_engine.exe"),
+        (Join-Path $repoRoot "cpp-engine/build/$EngineConfiguration/isochrone_engine.exe")
     )
     if ($env:CPP_ENGINE_PATH) { $candidatePaths += Get-FullRepoPath $env:CPP_ENGINE_PATH }
     $candidate = $candidatePaths | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
-        ForEach-Object { Get-Item -LiteralPath $_ } | Sort-Object LastWriteTimeUtc -Descending |
+        Where-Object {
+            try { (& $_ --health | ConvertFrom-Json).buildMode -eq $EngineConfiguration }
+            catch { $false }
+        } | ForEach-Object { Get-Item -LiteralPath $_ } | Sort-Object LastWriteTimeUtc -Descending |
         Select-Object -First 1
     if (-not $BuildEngine -and $candidate -and $candidate.LastWriteTimeUtc -ge $latestSource) {
         return $candidate.FullName
@@ -245,12 +249,12 @@ function Resolve-Engine {
     $cmake = Get-Command cmake -ErrorAction SilentlyContinue
     if ($cmake) {
         $cmakeBuild = Join-Path $buildRoot 'cmake'
-        Write-Host 'Building the engine with CMake (isolated launcher build directory)...'
+        Write-Host "Building the $EngineConfiguration engine with CMake (isolated launcher build directory)..."
         Start-LoggedProcess $cmake.Source @('-S', (Join-Path $repoRoot 'cpp-engine'), '-B',
-            $cmakeBuild, '-DCMAKE_BUILD_TYPE=Release') $repoRoot 'cmake-configure' -Wait | Out-Null
-        Start-LoggedProcess $cmake.Source @('--build', $cmakeBuild, '--config', 'Release',
+            $cmakeBuild, "-DCMAKE_BUILD_TYPE=$EngineConfiguration") $repoRoot 'cmake-configure' -Wait | Out-Null
+        Start-LoggedProcess $cmake.Source @('--build', $cmakeBuild, '--config', $EngineConfiguration,
             '--target', 'isochrone_engine') $repoRoot 'cmake-build' -Wait | Out-Null
-        foreach ($path in @((Join-Path $cmakeBuild 'Release/isochrone_engine.exe'),
+        foreach ($path in @((Join-Path $cmakeBuild "$EngineConfiguration/isochrone_engine.exe"),
                             (Join-Path $cmakeBuild 'isochrone_engine.exe'))) {
             if (Test-Path -LiteralPath $path -PathType Leaf) { return $path }
         }
@@ -263,7 +267,8 @@ function Resolve-Engine {
     $standard = if ($major -ge 10) { '-std=c++20' } else { '-std=c++2a' }
     $output = Join-Path $buildRoot 'isochrone_engine.exe'
     $pending = Join-Path $buildRoot 'isochrone_engine.pending.exe'
-    $arguments = @($standard, '-O2', '-DNDEBUG', '-Wall', '-Wextra', '-Wpedantic',
+    $flags = if ($EngineConfiguration -eq 'Debug') { @('-O0', '-g') } else { @('-O2', '-DNDEBUG') }
+    $arguments = @($standard) + $flags + @('-Wall', '-Wextra', '-Wpedantic',
         '-I', (Join-Path $repoRoot 'cpp-engine/include'))
     $arguments += @(Get-ChildItem -LiteralPath (Join-Path $repoRoot 'cpp-engine/src') -File -Filter '*.cpp' |
         Sort-Object Name | Select-Object -ExpandProperty FullName)

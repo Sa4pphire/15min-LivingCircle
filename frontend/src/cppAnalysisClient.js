@@ -87,6 +87,9 @@ export function normalizeCppReport(report, origin) {
     poiFacilities: poiCandidates(report),
     poiCategories: report.poiCategories ?? [],
     poiInfo: report.metadata.poi ?? null,
+    timingsMs: report.metadata.timingsMs ?? {},
+    engineBuildMode: report.metadata.engineBuildMode ?? "unknown",
+    geometryRevision: report.metadata.geometryRevision ?? null,
     summary: {
       routeSegmentCount: routeSegments.length,
       originSnapMeters: accessMeters,
@@ -106,7 +109,17 @@ async function responseJson(response) {
   return data;
 }
 
-export async function requestCppMapAnalysis({ origin, includePois = true, refreshPois = false }, { signal, fetchImpl = fetch } = {}) {
+function pollDelay(signal) {
+  return new Promise((resolve, reject) => {
+    const abort = () => { clearTimeout(timer); reject(new DOMException("Analysis cancelled", "AbortError")); };
+    const timer = setTimeout(() => { signal?.removeEventListener("abort", abort); resolve(); }, 250);
+    if (signal?.aborted) return abort();
+    signal?.addEventListener("abort", abort, { once: true });
+  });
+}
+
+export async function requestCppMapAnalysis({ origin, includePois = true, refreshPois = false },
+  { signal, fetchImpl = fetch, onResult, onProgress } = {}) {
   if (!Number.isFinite(origin?.x) || !Number.isFinite(origin?.y)) {
     throw new Error("INVALID_ANALYSIS_ORIGIN");
   }
@@ -119,13 +132,76 @@ export async function requestCppMapAnalysis({ origin, includePois = true, refres
   }));
   if (!accepted.analysisId) throw new Error("MISSING_ANALYSIS_ID");
   const deadline = Date.now() + 60_000;
+  let latestResult;
+  let latestRevision = -1;
   while (Date.now() < deadline) {
     if (signal?.aborted) throw new DOMException("Analysis cancelled", "AbortError");
     const state = await responseJson(await fetchImpl(
-      `/api/v1/analyses/${encodeURIComponent(accepted.analysisId)}`, { signal }));
-    if (state.status === "completed") return normalizeCppReport(state.result, origin);
+      `/api/v1/analyses/${encodeURIComponent(accepted.analysisId)}${latestRevision >= 0 ? `?afterRevision=${latestRevision}` : ""}`, { signal }));
+    if (signal?.aborted) throw new DOMException("Analysis cancelled", "AbortError");
+    onProgress?.({ stage: state.progress?.stage, poiStatus: state.poiStatus,
+      timingsMs: state.timingsMs ?? {}, status: state.status });
+    if (state.result && latestRevision !== (state.resultRevision ?? 1)) {
+      const normalized = normalizeCppReport(state.result, origin);
+      // Enrichment updates POIs, not the viewport or already computed map ink.
+      if (latestResult && normalized.geometryRevision !== null &&
+          normalized.geometryRevision === latestResult.geometryRevision) {
+        normalized.displayArea = latestResult.displayArea;
+        normalized.routeSegments = latestResult.routeSegments;
+        normalized.accessLink = latestResult.accessLink;
+      }
+      latestResult = { ...normalized, analysisId: accepted.analysisId };
+      latestRevision = state.resultRevision ?? 1;
+      onResult?.(latestResult, { complete: state.status === "completed", poiStatus: state.poiStatus });
+    }
+    if (state.status === "completed") {
+      if (!latestResult) throw new Error("MISSING_ANALYSIS_RESULT");
+      return latestResult;
+    }
     if (state.status === "failed") throw new Error(state.error || "CPP_ANALYSIS_FAILED");
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await pollDelay(signal);
   }
   throw new Error("CPP_ANALYSIS_TIMEOUT");
+}
+
+export async function requestCppPoiRoute({ analysisId, poiId }, { signal, fetchImpl = fetch } = {}) {
+  if (typeof analysisId !== "string" || !analysisId || typeof poiId !== "string" || !poiId) {
+    throw new Error("MISSING_ROUTE_ANALYSIS_ID");
+  }
+  const route = await responseJson(await fetchImpl(
+    `/api/v1/analyses/${encodeURIComponent(analysisId)}/poi-route`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ poiId }), signal,
+    }));
+  if (route?.analysisId !== analysisId || route?.poiId !== poiId ||
+    route.algorithm !== "dijkstra" || route.coordType !== "wgs84ll" ||
+    !["ready", "unmapped", "unreachable"].includes(route.status)) {
+    throw new Error("INVALID_CPP_POI_ROUTE");
+  }
+  if (route.status !== "ready") return route;
+  const localizePath = geometry => {
+    if (geometry?.type !== "LineString" || !Array.isArray(geometry.coordinates) ||
+      geometry.coordinates.length < 2 || geometry.coordinates.some(point =>
+        !Array.isArray(point) || point.length !== 2 || !point.every(Number.isFinite))) {
+      throw new Error("INVALID_CPP_POI_ROUTE_GEOMETRY");
+    }
+    return geometry.coordinates.map(point => wgsToLocal(point, PREVIEW_ORIGIN_WGS84));
+  };
+  const points = localizePath(route.geometry);
+  if (!Array.isArray(route.segments) || !Number.isFinite(route.travelTimeSeconds) || route.travelTimeSeconds < 0) {
+    throw new Error("INVALID_CPP_POI_ROUTE");
+  }
+  let elapsed = 0;
+  const segments = route.segments.map((segment, index) => {
+    const points = localizePath(segment.geometry);
+    const seconds = segment.properties?.travelTimeSeconds;
+    if (!Number.isFinite(seconds) || seconds < 0 ||
+      !["origin_access", "facility_access", "sidewalk", "shared_way", "turn", "crossing"].includes(segment.properties?.kind)) {
+      throw new Error("INVALID_CPP_POI_ROUTE_SEGMENT");
+    }
+    const startProgress = elapsed / Math.max(1, route.travelTimeSeconds);
+    elapsed += seconds;
+    return { id: `${poiId}:${index}`, kind: segment.properties.kind, points, startProgress };
+  });
+  return { ...route, coordinateSystem: "preview-local-v1", points, segments };
 }

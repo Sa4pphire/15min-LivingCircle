@@ -14,9 +14,8 @@ RUN g++ --version && cmake --version
 WORKDIR /src/cpp-engine
 COPY cpp-engine/ ./
 COPY data/networks/synthetic-preview.json /src/data/networks/synthetic-preview.json
-RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build build --parallel \
-    && ctest --test-dir build --output-on-failure
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF \
+    && cmake --build build --parallel
 
 FROM python:3.12-slim-bookworm AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \

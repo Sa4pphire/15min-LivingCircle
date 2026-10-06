@@ -1,12 +1,14 @@
 #include "isochrone/json_io.hpp"
 
 #include <cctype>
+#include <charconv>
 #include <cmath>
 #include <cstdlib>
 #include <map>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace isochrone {
@@ -15,11 +17,11 @@ namespace {
 struct JsonValue {
   enum class Type { null_value, boolean, number, string, array, object };
   Type type{Type::null_value};
-  bool boolean{};
-  double number{};
-  std::string string;
-  std::vector<JsonValue> array;
-  std::map<std::string, JsonValue> object;
+  using Array = std::vector<JsonValue>;
+  using Object = std::map<std::string, JsonValue, std::less<>>;
+  // Numeric coordinates must not construct three unused STL containers each.
+  // This particularly matters with MSVC Debug iterator bookkeeping.
+  std::variant<std::monostate, bool, double, std::string, Array, Object> data;
 };
 
 class Parser {
@@ -86,7 +88,22 @@ class Parser {
 
   std::string quoted() {
     expect('"');
-    std::string output;
+    const std::size_t start = position_;
+    const char* cursor = source_.data() + position_;
+    const char* end = source_.data() + source_.size();
+    while (cursor != end && *cursor != '"' && *cursor != '\\') {
+      if (static_cast<unsigned char>(*cursor) < 0x20) {
+        position_ = static_cast<std::size_t>(cursor - source_.data());
+        fail("unescaped control character");
+      }
+      ++cursor;
+    }
+    position_ = static_cast<std::size_t>(cursor - source_.data());
+    if (cursor != end && *cursor == '"') {
+      ++position_;
+      return std::string(source_.substr(start, position_ - start - 1));
+    }
+    std::string output(source_.substr(start, position_ - start));
     while (position_ < source_.size()) {
       const unsigned char character =
           static_cast<unsigned char>(source_[position_++]);
@@ -146,9 +163,11 @@ class Parser {
     const char first = source_[position_];
     if (first == '"') {
       result.type = JsonValue::Type::string;
-      result.string = quoted();
+      result.data = quoted();
     } else if (first == '{') {
       result.type = JsonValue::Type::object;
+      result.data = JsonValue::Object{};
+      auto& object = std::get<JsonValue::Object>(result.data);
       ++position_;
       if (!take('}')) {
         do {
@@ -158,7 +177,7 @@ class Parser {
           }
           const std::string key = quoted();
           expect(':');
-          if (!result.object.emplace(key, value(depth + 1)).second) {
+          if (!object.emplace(key, value(depth + 1)).second) {
             fail("duplicate JSON object key");
           }
           if (take('}')) break;
@@ -167,10 +186,13 @@ class Parser {
       }
     } else if (first == '[') {
       result.type = JsonValue::Type::array;
+      result.data = JsonValue::Array{};
+      auto& values = std::get<JsonValue::Array>(result.data);
+      values.reserve(2);
       ++position_;
       if (!take(']')) {
         do {
-          result.array.push_back(value(depth + 1));
+          values.push_back(value(depth + 1));
           if (take(']')) break;
           expect(',');
         } while (true);
@@ -178,10 +200,11 @@ class Parser {
     } else if (first == 't') {
       literal("true");
       result.type = JsonValue::Type::boolean;
-      result.boolean = true;
+      result.data = true;
     } else if (first == 'f') {
       literal("false");
       result.type = JsonValue::Type::boolean;
+      result.data = false;
     } else if (first == 'n') {
       literal("null");
     } else if (first == '-' || std::isdigit(static_cast<unsigned char>(first))) {
@@ -220,8 +243,19 @@ class Parser {
                std::isdigit(static_cast<unsigned char>(source_[position_]))) ++position_;
       }
       result.type = JsonValue::Type::number;
-      result.number = std::stod(std::string(source_.substr(start, position_ - start)));
-      if (!std::isfinite(result.number)) fail("non-finite JSON number");
+      double parsed{};
+#if defined(_MSC_VER) || (defined(__GNUC__) && __GNUC__ >= 11)
+      const auto converted = std::from_chars(source_.data() + start,
+          source_.data() + position_, parsed, std::chars_format::general);
+      if (converted.ec != std::errc{} || converted.ptr != source_.data() + position_) {
+        fail("invalid or out-of-range JSON number");
+      }
+#else
+      // Older MinGW lacks floating-point from_chars.
+      parsed = std::stod(std::string(source_.substr(start, position_ - start)));
+#endif
+      if (!std::isfinite(parsed)) fail("non-finite JSON number");
+      result.data = parsed;
     } else {
       fail("invalid JSON value");
     }
@@ -236,8 +270,9 @@ const JsonValue& field(const JsonValue& parent, const char* key) {
   if (parent.type != JsonValue::Type::object) {
     throw std::invalid_argument("expected JSON object");
   }
-  const auto found = parent.object.find(key);
-  if (found == parent.object.end()) {
+  const auto& object = std::get<JsonValue::Object>(parent.data);
+  const auto found = object.find(key);
+  if (found == object.end()) {
     throw std::invalid_argument(std::string("missing field: ") + key);
   }
   return found->second;
@@ -247,36 +282,37 @@ const JsonValue* optional_field(const JsonValue& parent, const char* key) {
   if (parent.type != JsonValue::Type::object) {
     throw std::invalid_argument("expected JSON object");
   }
-  const auto found = parent.object.find(key);
-  return found == parent.object.end() ? nullptr : &found->second;
+  const auto& object = std::get<JsonValue::Object>(parent.data);
+  const auto found = object.find(key);
+  return found == object.end() ? nullptr : &found->second;
 }
 
 double number(const JsonValue& value) {
   if (value.type != JsonValue::Type::number) {
     throw std::invalid_argument("expected JSON number");
   }
-  return value.number;
+  return std::get<double>(value.data);
 }
 
 std::string string(const JsonValue& value) {
   if (value.type != JsonValue::Type::string) {
     throw std::invalid_argument("expected JSON string");
   }
-  return value.string;
+  return std::get<std::string>(value.data);
 }
 
 bool boolean(const JsonValue& value) {
   if (value.type != JsonValue::Type::boolean) {
     throw std::invalid_argument("expected JSON boolean");
   }
-  return value.boolean;
+  return std::get<bool>(value.data);
 }
 
 const std::vector<JsonValue>& array(const JsonValue& value) {
   if (value.type != JsonValue::Type::array) {
     throw std::invalid_argument("expected JSON array");
   }
-  return value.array;
+  return std::get<JsonValue::Array>(value.data);
 }
 
 Point point(const JsonValue& value) {
@@ -332,6 +368,8 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
   if (nodes.size() > 30'000 || edges.size() > 50'000) {
     throw std::invalid_argument("walking graph exceeds engine limits");
   }
+  result.nodes.reserve(nodes.size());
+  result.edges.reserve(edges.size());
   for (const auto& value : nodes) {
     result.nodes.push_back({string(field(value, "id")), point(value)});
   }
@@ -425,6 +463,15 @@ EngineInput parse_engine_input(std::string_view input) {
     }
   }
   parse_local_experiment(root, result);
+  if (const auto* target = optional_field(root, "routeFacilityId")) {
+    result.route_facility_id = string(*target);
+  }
+  if (const auto* route_only = optional_field(root, "routeOnly")) {
+    result.route_only = boolean(*route_only);
+  }
+  if (const auto* facilities_only = optional_field(root, "facilitiesOnly")) {
+    result.facilities_only = boolean(*facilities_only);
+  }
   if (const auto* threshold = optional_field(root, "thresholdSeconds")) {
     result.threshold_seconds = number(*threshold);
   } else if (result.local_experiment) {

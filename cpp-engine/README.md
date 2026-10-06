@@ -5,10 +5,11 @@
 ## 构建
 
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=OFF
 cmake --build build
-ctest --test-dir build --output-on-failure
 ```
+
+测试目录不随仓库发布，本地已有测试仍可保留。仅当本机有 `tests/CMakeLists.txt` 时，可用 `-DBUILD_TESTING=ON` 另行编译和运行 CTest；缺少测试目录不会阻止引擎构建。
 
 从仓库根目录可直接读取当前建模后的合成路网：
 

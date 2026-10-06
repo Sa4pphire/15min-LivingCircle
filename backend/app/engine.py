@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+from time import perf_counter
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,17 @@ def _engine_path() -> Path:
 
 
 async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
+    started = perf_counter()
+    # Keep annotations in Python; compact only the v2 wire representation.
+    # Meter coordinates retain their original precision.
+    edge_fields = {"id", "from", "to", "kind", "pathMeters", "streetBlockId",
+                   "side", "sharedWayType", "widthMeters", "waitSeconds"}
+    wire = {**payload, "edges": [
+        {key: value for key, value in edge.items() if key in edge_fields}
+        for edge in payload.get("edges", [])]}
+    encoded = json.dumps(wire, ensure_ascii=False, allow_nan=False,
+                         separators=(",", ":")).encode("utf-8")
+    encoded_at = perf_counter()
     engine_path = _engine_path()
     if not engine_path.is_file():
         raise EngineError(f"C++ 引擎不可用：{engine_path}")
@@ -34,13 +46,14 @@ async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
         )
     except OSError as exc:
         raise EngineError(f"无法启动 C++ 引擎：{exc}") from exc
-    encoded = json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8")
+    spawned_at = perf_counter()
     try:
         stdout, stderr = await asyncio.wait_for(process.communicate(encoded), timeout=25)
     except TimeoutError as exc:
         process.kill()
         await process.communicate()
         raise EngineError("C++ 引擎计算超时") from exc
+    received_at = perf_counter()
 
     try:
         response = json.loads(stdout.decode("utf-8"))
@@ -57,6 +70,15 @@ async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
                           f"{error.get('message', 'C++ 引擎计算失败')}")
     if not isinstance(response.get("result"), dict):
         raise EngineError("C++ 引擎缺少结果对象")
+    finished_at = perf_counter()
+    response["result"].setdefault("diagnostics", {})["invocation"] = {
+        "encodeMs": round((encoded_at - started) * 1000, 3),
+        "spawnMs": round((spawned_at - encoded_at) * 1000, 3),
+        "roundTripMs": round((received_at - spawned_at) * 1000, 3),
+        "decodeMs": round((finished_at - received_at) * 1000, 3),
+        "totalMs": round((finished_at - started) * 1000, 3),
+        "inputBytes": len(encoded), "outputBytes": len(stdout),
+    }
     return response["result"]
 
 

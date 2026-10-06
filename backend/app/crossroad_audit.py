@@ -163,6 +163,7 @@ def audit_explicit_junction(graph: dict, record: dict) -> dict:
         a, b = nodes[nid], nodes[other]
         entries.append({"id": nid, "point": [a["xMeters"], a["yMeters"]],
                         "kind": edge["kind"],
+                        **({'approachId':port.get('approachId')} if record.get('exteriorOnly') else {}),
                         "angle": math.degrees(math.atan2(b["yMeters"]-a["yMeters"],
                                                          b["xMeters"]-a["xMeters"])) % 360})
     if len({p["nodeId"] for p in record["ports"]}) != len(record["ports"]):
@@ -181,7 +182,23 @@ def audit_explicit_junction(graph: dict, record: dict) -> dict:
         issues.append('invalid_terminal_median_ports')
         terminal_names = []
     terminal_nodes = {known_ports[name] for name in terminal_names}
-    arms = sorted(group_directions(entries), key=_ray_angle)
+    if record.get('exteriorOnly'):
+        grouped=defaultdict(list)
+        known={a['id']:set(a['sourcePortIds']) for a in record.get('physicalApproaches',[])}
+        rays={a['id']:a.get('ray') for a in record.get('physicalApproaches',[])}
+        for p in record['ports']:
+            if p.get('approachId') not in known or p['id'] not in known.get(p.get('approachId'),set()):
+                issues.append('invalid_physical_approach_ownership')
+        for p in entries:
+            group=p.get('approachId');ray=rays.get(group)
+            if (not isinstance(ray,list) or len(ray)!=2 or
+                    sum(ray[i]*[math.cos(math.radians(p['angle'])),math.sin(math.radians(p['angle']))][i]
+                        for i in (0,1))<=0):
+                issues.append('physical_approach_faces_wrong_way')
+            grouped[group].append(p)
+        arms=sorted(grouped.values(),key=_ray_angle)
+        if any(len(a)>2 for a in arms):issues.append('arterial_approach_has_median_ports')
+    else:arms = sorted(group_directions(entries), key=_ray_angle)
     if len(arms) not in (3, 4):
         issues.append("ambiguous_port_directions")
         return {"id": record["id"], "pass": False, "issues": sorted(set(issues))}
@@ -303,7 +320,13 @@ def audit_crossroads(source: dict, graph: dict, baseline: dict) -> dict:
         elif not candidate["ordinaryRoad"]:
             nid = "shared:" + candidate["rawNodeIds"][0]
             incident = [e for e in graph["edges"] if nid in (e["from"], e["to"])]
-            candidate["status"] = "shared_junction_pass" if len(incident) == 4 and all(e["kind"] == "shared_way" for e in incident) else "shared_junction_failed"
+            if any(e.get('sourceCrossing') for e in incident):
+                # A sourced crosswalk is not a free shared junction; middle
+                # branches need side/island verification before approval.
+                candidate['status'] = 'needs_manual_review'
+                candidate['reason'] = 'source_crossing_branch_or_endpoint_review'
+            else:
+                candidate["status"] = "shared_junction_pass" if len(incident) == 4 and all(e["kind"] == "shared_way" for e in incident) else "shared_junction_failed"
         else:
             try:
                 expanded = expand_reviewed_junction(candidate["proposal"], base_nodes, baseline["edges"])

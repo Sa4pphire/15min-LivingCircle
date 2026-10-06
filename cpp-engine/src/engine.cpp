@@ -1,6 +1,7 @@
 #include "isochrone/engine.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <functional>
@@ -209,11 +210,16 @@ struct Interval {
 struct Arc {
   std::size_t to{};
   double cost{};
+  std::size_t edge_index{};
 };
 
 std::vector<double> shortest_times(
     const std::vector<std::vector<Arc>>& adjacency,
-    const std::vector<std::pair<std::size_t, double>>& sources) {
+    const std::vector<std::pair<std::size_t, double>>& sources,
+    std::vector<std::size_t>* previous_nodes = nullptr,
+    std::vector<std::size_t>* previous_edges = nullptr) {
+  if (previous_nodes) previous_nodes->assign(adjacency.size(), adjacency.size());
+  if (previous_edges) previous_edges->assign(adjacency.size(), adjacency.size());
   std::vector<double> times(adjacency.size(),
                             std::numeric_limits<double>::infinity());
   using Item = std::pair<double, std::size_t>;
@@ -231,6 +237,8 @@ std::vector<double> shortest_times(
     for (const Arc arc : adjacency[node]) {
       if (time + arc.cost < times[arc.to]) {
         times[arc.to] = time + arc.cost;
+        if (previous_nodes) (*previous_nodes)[arc.to] = node;
+        if (previous_edges) (*previous_edges)[arc.to] = arc.edge_index;
         queue.emplace(times[arc.to], arc.to);
       }
     }
@@ -912,7 +920,28 @@ void validate_graph(const EngineInput& input) {
 }
 
 EngineResult compute_reachability(const EngineInput& input) {
+  const auto started = std::chrono::steady_clock::now();
+  auto checkpoint = started;
+  EngineResult result;
+  const auto record_stage = [&](const char* name) {
+    const auto now = std::chrono::steady_clock::now();
+    result.stage_timings_ms.emplace_back(name,
+        std::chrono::duration<double, std::milli>(now - checkpoint).count());
+    checkpoint = now;
+  };
   validate_graph(input);
+  if (input.facilities_only && (input.local_experiment || input.route_facility_id ||
+                               input.route_only)) {
+    throw std::invalid_argument("facilitiesOnly cannot be combined with local or route requests");
+  }
+  if ((input.route_only && !input.route_facility_id) ||
+      (input.route_facility_id && std::none_of(
+          input.facilities.begin(), input.facilities.end(), [&](const auto& facility) {
+            return facility.id == *input.route_facility_id;
+          }))) {
+    throw std::invalid_argument("routeFacilityId must identify an input facility");
+  }
+  record_stage("graphValidation");
   const Snap snap = snap_origin(input);
   const double access_seconds = snap.distance_meters /
       input.walking_speed_meters_per_second;
@@ -920,7 +949,6 @@ EngineResult compute_reachability(const EngineInput& input) {
     throw OriginNotOnWalkway(
         "reaching the nearest walkway uses the entire time budget");
   }
-  EngineResult result;
   result.is_local_experiment = input.local_experiment.has_value();
   result.snapped_origin = snap.point;
   result.snap_distance_meters = snap.distance_meters;
@@ -931,6 +959,7 @@ EngineResult compute_reachability(const EngineInput& input) {
   if (snap.distance_meters > 10.0) {
     result.warnings.push_back("ORIGIN_SNAP_OVER_10_METERS");
   }
+  record_stage("originSnap");
 
   std::unordered_map<std::string, std::size_t> node_indices;
   std::vector<Point> graph_points;
@@ -967,6 +996,7 @@ EngineResult compute_reachability(const EngineInput& input) {
     bool has_path;
     std::size_t node;
     double extra_seconds;
+    std::vector<Point> access_path;
   };
   std::vector<EntranceBinding> bindings;
   for (std::size_t facility_index = 0;
@@ -981,7 +1011,7 @@ EngineResult compute_reachability(const EngineInput& input) {
           path_length(entrance.access_path);
       bindings.push_back({facility_index, entrance.id, entrance.access_edge_id,
           entrance.street_access_point, !entrance.access_path.empty(), node,
-          connector_length / input.walking_speed_meters_per_second});
+          connector_length / input.walking_speed_meters_per_second, entrance.access_path});
     };
     if (facility.entrances.empty()) {
       add_entrance({facility.id, facility.access_edge_id,
@@ -1015,14 +1045,20 @@ EngineResult compute_reachability(const EngineInput& input) {
 
   std::vector<std::vector<Arc>> adjacency(graph_points.size());
   bool blocked_crossing = false;
-  for (const auto& edge : edges) {
+  for (std::size_t edge_index = 0; edge_index < edges.size(); ++edge_index) {
+    const auto& edge = edges[edge_index];
     const double cost = edge.length / input.walking_speed_meters_per_second +
                         edge.wait_seconds;
-    adjacency[edge.from].push_back({edge.to, cost});
-    adjacency[edge.to].push_back({edge.from, cost});
+    adjacency[edge.from].push_back({edge.to, cost, edge_index});
+    adjacency[edge.to].push_back({edge.from, cost, edge_index});
   }
+  std::vector<std::size_t> previous_nodes, previous_edges;
+  record_stage("graphBuild");
   const std::vector<double> arrival = shortest_times(adjacency, {{
-      origin_index, access_seconds}});
+      origin_index, access_seconds}},
+      input.route_facility_id ? &previous_nodes : nullptr,
+      input.route_facility_id ? &previous_edges : nullptr);
+  record_stage("dijkstra");
   for (std::size_t i = 0; i < input.nodes.size(); ++i) {
     if (arrival[i] <= input.threshold_seconds) ++result.reachable_node_count;
   }
@@ -1037,6 +1073,7 @@ EngineResult compute_reachability(const EngineInput& input) {
     double best_time = std::numeric_limits<double>::infinity();
     std::string best_edge;
     std::optional<std::string> best_entrance;
+    const EntranceBinding* best_binding = nullptr;
     for (const EntranceBinding& binding : bindings) {
       if (binding.facility_index != i) continue;
       if (best_edge.empty()) best_edge = binding.access_edge_id;
@@ -1050,13 +1087,69 @@ EngineResult compute_reachability(const EngineInput& input) {
         best_time = candidate;
         best_edge = binding.access_edge_id;
         best_entrance = binding.id;
+        best_binding = &binding;
       }
     }
     result.facility_travel_times.push_back({facility.id, best_edge,
         std::isfinite(best_time) ? std::optional<double>{best_time} : std::nullopt,
         best_time <= input.threshold_seconds + kEpsilon,
         facility.category, best_entrance});
+    if (input.route_facility_id && facility.id == *input.route_facility_id) {
+      FacilityRoute route;
+      route.facility_id = facility.id;
+      route.entrance_id = best_entrance;
+      route.connected = std::isfinite(best_time);
+      route.within_threshold = best_time <= input.threshold_seconds + kEpsilon;
+      if (route.connected) {
+        route.travel_time_seconds = best_time;
+        const auto append = [&](std::string id, std::string kind,
+                                std::vector<Point> path, double seconds) {
+          if (path.size() < 2 || path_length(path) <= kEpsilon) return;
+          route.length_meters += path_length(path);
+          for (const Point point : path) {
+            if (route.path.empty() || distance(route.path.back(), point) > kEpsilon) {
+              route.path.push_back(point);
+            }
+          }
+          route.segments.push_back({std::move(id), std::move(kind), std::move(path), seconds});
+        };
+        if (best_time > kEpsilon) {
+          append("", "origin_access", {input.origin, snap.point}, access_seconds);
+          std::vector<std::pair<std::size_t, std::size_t>> traversed;
+          std::size_t node = best_binding->node;
+          while (node != origin_index) {
+            if (traversed.size() >= graph_points.size() || previous_nodes[node] >= graph_points.size()) {
+              throw std::runtime_error("invalid shortest-path predecessor chain");
+            }
+            traversed.push_back({previous_edges[node], previous_nodes[node]});
+            node = previous_nodes[node];
+          }
+          std::reverse(traversed.begin(), traversed.end());
+          for (const auto& [index, from] : traversed) {
+            const auto& edge = edges.at(index);
+            auto path = edge.path;
+            if (from == edge.to) std::reverse(path.begin(), path.end());
+            route.crossing_wait_seconds += edge.wait_seconds;
+            append(edge.source_id, edge_kind_name(edge.kind), std::move(path),
+                   edge.length / input.walking_speed_meters_per_second + edge.wait_seconds);
+          }
+          append("", "facility_access", {graph_points[best_binding->node], best_binding->street_point},
+                 distance(graph_points[best_binding->node], best_binding->street_point) /
+                     input.walking_speed_meters_per_second);
+          append("", "facility_access", best_binding->access_path,
+                 path_length(best_binding->access_path) / input.walking_speed_meters_per_second);
+        }
+        // A zero-distance route is still a valid LineString in downstream GeoJSON.
+        if (route.path.empty()) route.path = {input.origin, input.origin};
+      }
+      result.facility_route = std::move(route);
+    }
   }
+
+  // POI clicks need only graph traversal and path recovery, not rasterization,
+  // polygon buffering or per-category coverage analysis.
+  record_stage("facilityTimes");
+  if (input.route_only || input.facilities_only) return result;
 
   double reachable_street_length = 0.0;
   std::vector<TimedDisplayEdge> timed_edges;
@@ -1086,6 +1179,7 @@ EngineResult compute_reachability(const EngineInput& input) {
       }
     }
   }
+  record_stage("reachableEdges");
   if (!input.local_experiment) {
     RoadClosureFillStats closure_stats;
     result.display_polygons = isochrone_polygons(
@@ -1096,6 +1190,7 @@ EngineResult compute_reachability(const EngineInput& input) {
         input.display_min_hole_area_square_meters, closure_stats);
     result.closed_road_face_count = closure_stats.face_count;
     result.road_closure_filled_cell_count = closure_stats.filled_cell_count;
+    record_stage("displayGeometry");
 
     for (const ServiceCategory& category : input.service_categories) {
       GrayZone zone;
@@ -1218,6 +1313,7 @@ EngineResult compute_reachability(const EngineInput& input) {
   if (!input.local_experiment && result.display_polygons.empty()) {
     result.warnings.push_back("NO_DISPLAY_POLYGON");
   }
+  record_stage("coverage");
   return result;
 }
 

@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { buildDemoRoadGraph } from "../src/roadGraph.js";
 import { repairDemoRoadGraph } from "../src/roadGraphRepair.js";
+import { prepareTopologyFeatures, restoreSourceTopology } from "../src/roadGraphTopology.js";
 import { attachDividedRoadSections } from "../src/roadGraphSections.js";
 import { expandedLocalBounds, wgsToLocal } from "../src/mapGeometry.js";
 
@@ -15,6 +16,7 @@ const sidewalkSections = {
   schemaVersion: annotations.schemaVersion,
   coordinateSystem: annotations.dividedRoadSectionsCoordinateSystem,
   sections: annotations.dividedRoadSections,
+  majorSidewalkPolicy: annotations.majorSidewalkPolicy,
 };
 const origin = context.originWgs84;
 const rings = boundary.geometry.coordinates.map((ring) =>
@@ -22,7 +24,9 @@ const rings = boundary.geometry.coordinates.map((ring) =>
 const corners = expandedLocalBounds(rings[0]);
 const coverageRings = [[...corners, corners[0]]];
 const graph = attachDividedRoadSections(
-  repairDemoRoadGraph(buildDemoRoadGraph(context.features, rings, coverageRings)), sidewalkSections,
+  repairDemoRoadGraph(restoreSourceTopology(buildDemoRoadGraph(
+    prepareTopologyFeatures(context.features, annotations.sourceTopology), rings, coverageRings),
+    annotations.sourceTopology, annotations)), sidewalkSections,
 );
 // Engine-coordinate explicit path repairs are metadata, not new preview edges.
 graph.previewConnections = annotations.connections ?? [];

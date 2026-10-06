@@ -17,6 +17,62 @@ Python 向引擎标准输入写入一个 JSON 对象；引擎向标准输出写�
 
 Python 协作者可按 [对接清单](python-handoff.md) 逐项联调。
 
+## 按需设施计算
+
+### 设施耗时专用计算与性能诊断
+
+v2 可选 `facilitiesOnly: true`：仍校验路网、吸附起点、拆分所有设施入口并运行 Dijkstra，
+返回完整 `facilityTravelTimes`；不生成展示面、可达街段或类别灰区，其相关数组为空。
+不能同时指定 `localExperiment`、`routeFacilityId` 或 `routeOnly`。这些空数组不代表没有可达范围，
+Python 必须保留第一轮完整结果，并只合并设施耗时；未核齐类别继续返回“数据不足”。
+已核查类别需要重新计算覆盖关系，不能使用该模式复用过时灰区。
+
+`diagnostics.timingsMs` 记录原生阶段耗时，单位为毫秒；`inputParse` 包括 JSON 解析、类型转换与解析端校验。
+`graphValidation` 是计算入口校验，`originSnap`、`graphBuild`、`dijkstra`、`facilityTimes` 各自独立计时；
+完整模式另有 `reachableEdges`、`displayGeometry`、`coverage`，设施专用模式不含后三项。
+`diagnostics.buildMode` 与 `--health` 的 `buildMode` 指示 Debug/Release，不用于判定结果精度。
+Python 额外添加 `diagnostics.invocation`（编码、进程启动、通信、解码、总时长与字节数），总调用耗时包含原生各阶段。
+
+Python 分阶段状态保持 `status: running` 时可带 `result`，以 `resultRevision` 标识新结果；
+`poiStatus` 独立区分 `pending`、`ready`、`partial`、`unavailable` 和 `error`。
+`GET /api/v1/analyses/{id}?afterRevision=N` 在版本未变化时返回 `result: null`，客户端必须保留之前结果，
+完成状态仍正常轮询。默认不带参数的旧客户端继续获取完整结果。
+`metadata.geometryRevision` 未变化时，设施增量不应触发地图重新适配或重复描绘。
+
+### 单设施最短路径
+
+v2 输入可选 `routeFacilityId`（必须引用本次 `facilities[*].id`）和 `routeOnly: true`。
+起点与设施入口仍按现有规则拆入图；Dijkstra 在松弛时记录前驱边，随后回溯方向正确的折线。
+等待时间参与选路，不能按几何距离替代。多个入口仍取耗时最短的一个，路外起点接入和已提供的设施接入路径也计时。
+
+仅请求路径时跳过等时圈网格、面构建及类别灰区，不必重新分析整幅地图。
+输出额外的 `result.facilityRoute`：`facilityId`、`entranceId`、`connected`、`withinThreshold`、
+`travelTimeSeconds`、`lengthMeters`、`crossingWaitSeconds`、`pathMeters` 和有序 `segments`。
+每段包含 `edgeId`、`kind`、`pathMeters`、`travelTimeSeconds`；接入段用 `origin_access`／`facility_access`，
+其余沿用 `sidewalk`／`shared_way`／`turn`／`crossing`。零距离路径返回两个相同点及空段数组。
+不连通时无路径且耗时为 `null`；连通但超过阈值仍返回路线，`withinThreshold: false`。
+未请求路线时不增加该字段，已有等时圈调用保持兼容。
+
+网页调用 `POST /api/v1/analyses/{analysisId}/poi-route`，请求体为 `{"poiId":"报告中的 POI ID"}`。
+Python 保留最近 16 次完成的合成分析上下文，使用那次起点、路网及绑定入口，不相信客户端提供的坐标或边 ID，
+也不调用百度。返回地图坐标 `LineString` 和分段路线，前端再按同一标定映射到 SVG。
+状态为 `ready`／`unmapped`／`unreachable`。合成模式没有绑定入口时，在最近可步行边接入距离加 10 米的局部距离带内，
+最多生成 16 个候选投影点到 POI 的直线接入，去重共享端点。把候选作为同一设施的多个 `entrances`，
+一次 C++ Dijkstra 按“到候选的路网耗时＋最后接入耗时”选最优，不再仅按 POI 到道路的直线距离选路。
+最近边是普通人行道时，其他候选只限同一 `streetBlockId`、同一 `side`；最近边是共享通道时只扩展共享通道候选。
+接入直线不得横穿其他已建模的普通人行道，以免借候选跳过道路侧保护和过街等待。
+这只是有界局部候选的合成估算，不保证所有现实入口或几何最短路径，仍未核查建筑、围墙、水体和通行权限。
+已有绑定入口（包括百度导航点的未核实绑定）保持原规则，不被候选替换；多个已绑定入口仍由 C++ 比较总耗时。
+候选仅加入这一次路径请求，不改原图、已保存设施或正式覆盖统计；直线段长度 ÷ 步速计入总耗时。
+返回 `destinationAccessMode: "estimated_straight_line"`、`destinationAccessDistanceMeters` 和
+`UNVERIFIED_STRAIGHT_LINE_POI_ACCESS` 警告，前端必须用虚线标记“估算穿越地块，未核实”。
+`destinationAccessDistanceMeters` 是 C++ 实际选中入口的接入长度，不是几何最近候选的长度；
+合成估算另外返回 `destinationAccessCandidateCount` 和 `destinationAccessSelection: "minimum_total_time_local_candidates"`。
+绑定入口的路线仍为 `destinationAccessMode: "bound_entrance"`。没有有效局部坐标或可步行边才返回 `unmapped`；
+图上过街仍须走显式连接并计等待，不通过该估算规则新增图上换侧连接。
+上下文过期返回 HTTP 409 `ROUTE_CONTEXT_EXPIRED`，须重新计算等时圈。
+路线终点是绑定入口，不保证与百度 POI 的中心标记点重合；现有合成路网和入口仍标为未核实。
+
 ## 独立的局部路网实验（可选）
 
 `topologyStatus` 或某类 `localInventoryStatus` 缺失时默认 `incomplete`，未覆盖部分只列为未知；`boundaryNodeIds` 列表仍必须显式提供。局部模式不允许 `allowOffNetworkOrigin: true`，不能使用未核实的路外直线接入。

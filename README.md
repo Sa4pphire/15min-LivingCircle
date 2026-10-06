@@ -23,7 +23,7 @@
 | 前端 | Vue 3、JavaScript、Vite 7；可选百度 JSAPI 4 | 选点、任务状态、街段与近似面展示 |
 | 主服务 | Python 3.12、FastAPI、httpx | 数据加载、坐标转换、任务编排、引擎子进程和结果适配 |
 | 计算引擎 | C++20、CMake 3.20+ | 图校验、Dijkstra、设施入口耗时、街段截断及展示几何 |
-| 部署与质量检查 | Docker Compose、CTest、pytest、Node.js 内置测试、GitHub Actions | 构建、契约检查和自动化验证 |
+| 部署与构建检查 | Docker Compose、GitHub Actions | 引擎编译与健康检查、Python 语法检查、前端和镜像构建 |
 
 ```text
 Vue 页面
@@ -104,14 +104,14 @@ pwsh -File .\start-demo.ps1 -BuildEngine
 先构建引擎：
 
 ```powershell
-cmake -S cpp-engine -B cpp-engine/build -DCMAKE_BUILD_TYPE=Release
-cmake --build cpp-engine/build --config Release --target isochrone_engine
+cmake -S cpp-engine -B cpp-engine/build -DCMAKE_BUILD_TYPE=Debug
+cmake --build cpp-engine/build --config Debug --target isochrone_engine
 ```
 
-启动后端时，将 `CPP_ENGINE_PATH` 指向实际生成的文件。Visual Studio 等多配置生成器通常生成在 `build/Release/`；单配置生成器通常生成在 `build/`：
+本地启动脚本默认使用 Debug（如需正式构建可显式指定 `-EngineConfiguration Release`）。启动后端时，将 `CPP_ENGINE_PATH` 指向实际生成的文件。Visual Studio 等多配置生成器通常生成在 `build/Debug/`；单配置生成器通常生成在 `build/`：
 
 ```powershell
-$env:CPP_ENGINE_PATH = "cpp-engine/build/Release/isochrone_engine.exe"
+$env:CPP_ENGINE_PATH = "cpp-engine/build/Debug/isochrone_engine.exe"
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --reload
 ```
 
@@ -179,21 +179,20 @@ Vite 将 `/api` 请求代理到 `http://127.0.0.1:8000`。Linux/macOS 手动构�
 
 当前优先工作是完成真实样区标注、POI 与入口整理、正式 API/前端报告联调，以及真实路线对照和性能验收。小片局部实验只证明核查范围内的计算，不替代完整生活圈结果。具体要求见 [数据说明](data/networks/README.md)、[架构说明](docs/architecture.md) 和 [测试计划](docs/test-plan.md)。
 
-## 测试与协作
+## 构建检查与协作
 
-按需从根目录执行以下检查；修改 C++ 后先构建全部测试目标：
+发布仓库不包含测试文件；已有测试仅保留在开发者本地，并由 `.gitignore` 排除。按需从根目录执行以下构建检查：
 
 ```powershell
+cmake -S cpp-engine -B cpp-engine/build -DBUILD_TESTING=OFF
 cmake --build cpp-engine/build --config Release
-ctest --test-dir cpp-engine/build -C Release --output-on-failure
-.\.venv\Scripts\python.exe -m pytest backend/tests
-npm --prefix frontend test
+.\.venv\Scripts\python.exe -m compileall -q backend/app backend/scripts
 npm --prefix frontend run build
 ```
 
-运行 Python↔C++ 契约测试时，`CPP_ENGINE_PATH` 必须指向本轮编译的引擎。GitHub Actions 会构建并检查 Debug/Release C++、Python 契约、前端和 Docker 镜像；合成测试通过不等同于真实路网精度验收。
+GitHub Actions 检查 Debug/Release C++ 编译及健康输出、Python 语法、前端和 Docker 镜像构建，不再调用已移出仓库的测试。保有本地测试的开发者可按需运行；Python↔C++ 检查时，`CPP_ENGINE_PATH` 必须指向本轮编译的引擎。构建成功不等同于算法或真实路网精度验收。
 
-C++ 成员主责引擎与前端地图图层，Python 成员主责地图 API、任务编排、POI 和报告；`contracts/`、部署、CI 与演示材料共同维护。接口变更须同步样例、解析器、调用方和测试，贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+C++ 成员主责引擎与前端地图图层，Python 成员主责地图 API、任务编排、POI 和报告；`contracts/`、部署、CI 与演示材料共同维护。接口变更须同步样例、解析器、调用方及本地验证，贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可与数据来源
 

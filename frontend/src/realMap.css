@@ -1,5 +1,11 @@
 .real-map-stage { position: relative; width: 100%; height: 100%; overflow: hidden; background: #eaf0ec; cursor: crosshair; isolation: isolate; }
 .real-poi-layer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+.real-cpp-route-layer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+.real-cpp-route-casing, .real-cpp-selected-route { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.real-cpp-route-casing { stroke: #fbfdfc; stroke-width: 8; opacity: .92; }
+.real-cpp-selected-route { stroke: #327793; stroke-width: 4; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .7s ease-out var(--route-delay, 0s) forwards; }
+.real-cpp-selected-route.is-access { stroke: #b07754; stroke-dasharray: 4 5; stroke-dashoffset: 0; animation: real-circle-reveal .3s ease-out var(--route-delay, 0s) both; }
+.legend-cpp-route { background: #327793; }
 .real-poi-marker { pointer-events: auto; cursor: pointer; }
 .real-poi-marker circle { fill: #fbfdfb; stroke-width: 2; }
 .real-poi-marker text { font-size: 10px; font-weight: 700; pointer-events: none; }
@@ -12,7 +18,10 @@
 .real-poi-marker .real-poi-selection-pulse { fill: none; stroke: var(--poi-color); stroke-width: 2; transform-origin: 0 0; opacity: 0; animation: real-poi-locate .85s ease-out; }
 @keyframes real-poi-locate { from { transform: scale(.7); opacity: .8; } to { transform: scale(1.45); opacity: 0; } }
 .real-poi-popover { position: absolute; z-index: 6; right: 19px; bottom: 104px; width: min(260px, calc(100% - 38px)); padding: 16px; background: #fbfdfb; border-left: 3px solid #147d72; display: grid; gap: 7px; color: #173c3a; font-size: 12px; }
-.real-poi-popover > button { position: absolute; right: 5px; top: 4px; border: 0; background: transparent; font-size: 20px; cursor: pointer; }
+.real-poi-popover > button:not(.real-cpp-route-retry) { position: absolute; right: 5px; top: 4px; border: 0; background: transparent; font-size: 20px; cursor: pointer; }
+.real-cpp-route-retry { justify-self: start; border: 0; background: #e9f2ed; color: #173c3a; padding: 6px 10px; cursor: pointer; font-size: 11px; }
+.real-cpp-route-summary { color: #327793; }
+.real-poi-popover .real-cpp-route-warning { color: #8e623d; }
 .real-poi-popover strong { padding-right: 13px; }
 .real-poi-popover small { font-size: 10px; line-height: 1.6; color: #5a756b; }
 .real-map-stage.can-pan { cursor: grab; touch-action: none; }
@@ -70,6 +79,7 @@
 .real-demo-legend .legend-circle { height: 11px; width: 11px; border: 1.5px solid #147d72; border-radius: 50%; background: rgba(20, 125, 114, .1); }
 .real-demo-legend .legend-area { height: 11px; width: 14px; border: 1.5px solid #147d72; background: rgba(20, 125, 114, .1); clip-path: polygon(5% 42%, 28% 10%, 69% 18%, 100% 54%, 82% 95%, 34% 84%); }
 .real-demo-legend .legend-route { border-top: 3px solid #087e71; transform: translateY(2px); }
+.real-demo-legend .legend-cpp-route { height: 3px; }
 .real-demo-legend .legend-access { border-top: 2px dashed #d1764e; transform: translateY(2px); }
 .real-map-probe { position: absolute; z-index: 6; left: 0; top: 0; width: 0; height: 0; color: #147d72; opacity: 0; pointer-events: none; transform: translate3d(-100px,-100px,0); transition: opacity .12s ease; }
 .real-map-probe.visible { opacity: 1; }
@@ -95,6 +105,7 @@
   .real-baidu-map { transition: none; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .real-cpp-selected-route, .real-cpp-selected-route.is-access { animation: none; stroke-dashoffset: 0; opacity: 1; }
   .real-poi-marker .real-poi-selection-pulse { animation: none; }
   .real-context, .real-fallback-svg .real-candidate-mark { transition: none; }
   .real-demo-area, .real-demo-access, .real-demo-route, .real-sampled-route, .real-poi-route { animation: none; opacity: 1; }

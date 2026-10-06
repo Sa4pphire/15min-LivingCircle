@@ -247,7 +247,7 @@ class BaiduClient:
         self,
         points: list[tuple[float, float]],
         source_coord_type: str,
-        *, refresh: bool = False,
+        *, refresh: bool = False, cache_only: bool = False,
     ) -> list[tuple[float, float]]:
         if source_coord_type == "bd09ll" or not points:
             return list(points)
@@ -273,8 +273,11 @@ class BaiduClient:
                 "output": "json",
             },
             refresh=refresh,
+            cache_only=cache_only,
         )
 
+        if payload is None:
+            raise BaiduApiError("本地没有坐标校准缓存，请预采集或刷新 POI")
         result = payload.get("result")
         if not isinstance(result, list) or len(result) != len(points):
             raise BaiduApiError("坐标转换结果数量与输入不一致")

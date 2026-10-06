@@ -1,4 +1,5 @@
 #include <cmath>
+#include <chrono>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -82,11 +83,15 @@ int main(int argc, char* argv[]) {
     if (!isochrone::has_non_whitespace(input)) {
       throw std::invalid_argument("Engine input must be a JSON object.");
     }
+    const auto parse_started = std::chrono::steady_clock::now();
     const isochrone::EngineInput request = network_file
         ? isochrone::parse_synthetic_network(input, origin, origin_edge_id, local_experiment)
         : isochrone::parse_engine_input(input);
+    const double input_parse_ms = std::chrono::duration<double, std::milli>(
+        std::chrono::steady_clock::now() - parse_started).count();
     isochrone::EngineResult result =
         isochrone::compute_reachability(request);
+    result.stage_timings_ms.emplace_back("inputParse", input_parse_ms);
     if (network_file) {
       result.warnings.push_back("SYNTHETIC_NETWORK_NOT_REAL_WORLD");
       if (local_experiment && request.service_categories.empty()) {

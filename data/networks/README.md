@@ -10,8 +10,8 @@
 
 `synthetic-preview.json` 由 `python backend/scripts/export_synthetic_preview.py` 从前端的
 `demoRoadGraph.local.json` 生成，并应用 `synthetic-preview.annotations.json` 中的人工校对记录。
-当前导出文件有 10,640 个节点、11,314 条边：主干道以两侧
-`sidewalk` 建模，已标注的 7 个双车道路段范围只保留外侧人行道；其余 `roadLocal`／`roadPath` 暂按 `shared_way` 处理。主干道交点处的共享道路
+当前导出文件有 7,175 个节点、8,071 条边：所有主干道源段由
+`majorSidewalkPolicy` 统一指定外侧人行道。相向双车道按物理道路保留两条外侧 `sidewalk`，单幅道路保留左右两侧；旧 7 个局部遮罩已被全图规则取代。其余 `roadLocal`／`roadPath` 暂按 `shared_way` 处理，跨越主干道两侧的原中心连接改为带等待过街。主干道交点处的共享道路
 分支使用独立端点，不直接从道路一侧免费通到另一侧；推断及人工标注的过街连接
 均**未经实地核实**，默认等待时间为 20 秒。图的推断连接也未经核实；
 文件中的 `synthetic: true` 不得移除。
@@ -21,6 +21,14 @@
 路网修正统一维护在 `synthetic-preview.annotations.json`：`junctions` 记录显式路口，
 `crossings` 记录过街，`dividedRoadSections` 记录双车道的局部外侧人行道规则，
 `connections` 记录已明确标注、仍未核实的共享步道补连。
+`majorSidewalkPolicy` 覆盖所有主干道源边并记录各段保留侧、车道对应及层级；它是用户要求的合成简化模型，不代表现场核实。详见
+[全图主干道两侧模型](major-sidewalk-model.md)。
+`sourceTopology` 记录原始 OSM 权限、共享节点及短连接恢复证据；源图生成时过滤已知禁止步行边，恢复有共享源节点 ID 支持的连接。2026-10-05 国泓路周边试点见
+[源拓扑校对记录](source-topology-review.md)；2026-10-06 已扩展到全部现有道路的源权限与共享节点核查，见
+[全图十字路口校对](source-topology-global-review.md)。两轮均不是实地核实；复杂路口和未恢复的主干道接入仍列为待核查。
+来源明确标为 `footway=crossing` 的步道转为 `crossing`，使用引擎默认等待，不能作为免费共享通道或 POI 接入边。
+纯形状点合并为一条折线，避免重复等待；横道中间存在真实分支时保留分段等待并标明 `crossingReviewRequired`，不假定存在安全岛。
+撤销的旧标注保留在 `retiredJunctions`／`retiredConnections`，被替换的引用保留在 `sourceTopology.edgeReferenceMigrations`。
 `synthetic-preview.json` 和前端路网中的标注元数据是生成结果，不另行维护一套修正规则。
 旧 `frontend/src/data/demoSidewalkSections.local.json` 仅保留为历史参考，不再由生成脚本读取。
 

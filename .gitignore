@@ -5,6 +5,12 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+# Local test scratch directories are not project data.
+.pytest-*/
+# Tests remain local; the published repository contains runtime sources/data.
+/backend/tests/
+/cpp-engine/tests/
+/frontend/tests/
 .ruff_cache/
 .coverage
 htmlcov/

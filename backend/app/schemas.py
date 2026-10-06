@@ -34,6 +34,10 @@ class PoiSearchRequest(BaseModel):
     refresh: bool = False
 
 
+class PoiRouteRequest(BaseModel):
+    poiId: str = Field(min_length=1, max_length=255)
+
+
 class AnalysisAccepted(BaseModel):
     analysisId: str
     status: Literal["queued"]
@@ -51,6 +55,9 @@ class AnalysisState(BaseModel):
     progress: Progress
     result: dict | None = None
     error: str | None = None
+    resultRevision: int = 0
+    poiStatus: Literal["not_requested", "pending", "ready", "partial", "unavailable", "error"] = "not_requested"
+    timingsMs: dict[str, float] = Field(default_factory=dict)
 
 
 class EngineHealth(BaseModel):

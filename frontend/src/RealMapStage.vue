@@ -28,11 +28,12 @@ const props = defineProps({
   zoomTier: { type: String, default: "medium" },
   overviewRequestId: { type: Number, default: 0 },
   poiFocusRequest: { type: Object, default: null },
+  poiRoute: { type: Object, default: null },
   analysisMode: { type: String, default: "preview" },
   selectionDisabled: { type: Boolean, default: false },
   showBlindZones: { type: Boolean, default: false },
 });
-const emit = defineEmits(["select"]);
+const emit = defineEmits(["select", "poi-select", "poi-dismiss"]);
 
 const browserAk = import.meta.env.VITE_BAIDU_BROWSER_AK?.trim();
 const boundaryWgsRing = boundaryWgs.geometry.coordinates[0];
@@ -213,11 +214,7 @@ const liveDemoResult = computed(() => {
       ? circlePath(result.displayArea.center, result.displayArea.radius, project)
       : geometryToSvgPath(result.coordinateSystem === "preview-local-v1"
         ? sampleLocalArea(result.displayArea.geometry) : result.displayArea.geometry, project),
-    routes: (props.analysisMode === "cpp" ? result.routeSegments ?? [] : []).map((segment) => ({
-      id: segment.id,
-      d: linePath(projectPath(segment.points)),
-      delay: routeDelay(segment, result),
-    })),
+    routes: [],
     poiRoutes: (props.analysisMode === "preview" ? result.routeSegments ?? [] : []).map((segment) => ({
       id: segment.id,
       d: linePath(projectPath(segment.points)),
@@ -247,7 +244,7 @@ const projectedResult = computed(() => {
   };
   return {
     area: projectGeometry(result.isochrone?.geometry),
-    walkways: (result.reachableWalkways?.features ?? []).map((feature) =>
+    walkways: (props.analysisMode === "cpp" ? [] : result.reachableWalkways?.features ?? []).map((feature) =>
       projectGeometry(feature.geometry)),
     gaps: (result.blindZoneWalkways?.features ?? []).map((feature) =>
       projectGeometry(feature.geometry)),
@@ -271,6 +268,35 @@ const poiMarkers = computed(() => {
     return [{ ...poi, pixel: [translateX + point[0] * scale, translateY + point[1] * scale] }];
   }).sort((a, b) => Number(a.id === selectedPoi.value?.id) - Number(b.id === selectedPoi.value?.id));
 });
+const selectedPoiRoute = computed(() => props.analysisMode === "cpp" &&
+  props.poiRoute?.poiId === selectedPoi.value?.id ? props.poiRoute : null);
+const selectedRoutePaths = computed(() => {
+  projectionVersion.value;
+  const route = selectedPoiRoute.value;
+  if (route?.status !== "ready") return [];
+  return route.segments.map(segment => {
+    const points = mapState.value === "ready" && map && BMap
+      ? sampleLocalPath(segment.points).map(point => {
+        const pixel = mapPointToOverlayPixel(localToBd09(point));
+        return [pixel.x, pixel.y];
+      }) : segment.points.map(point => {
+        const { scale, translateX, translateY } = fallbackView.value;
+        return [translateX + point[0] * scale, translateY + point[1] * scale];
+      });
+    return { ...segment, d: linePath(points), delay: `${segment.startProgress * .65}s`,
+      access: ["origin_access", "facility_access"].includes(segment.kind) };
+  });
+});
+
+function selectPoi(poi) {
+  selectedPoi.value = poi;
+  emit("poi-select", poi);
+}
+
+function dismissPoi() {
+  selectedPoi.value = null;
+  emit("poi-dismiss");
+}
 
 function finitePoint(point) {
   return Array.isArray(point) && point.length === 2 && point.every(Number.isFinite);
@@ -707,9 +733,11 @@ watch(() => props.candidate, () => {
     if (mapState.value === "ready") applyBaiduZoom();
   } else if (mapState.value === "ready") scheduleProjection();
 });
-watch(() => props.analysisResult, () => {
-  pendingPoiFocusRequest = null;
-  selectedPoi.value = null;
+watch(() => props.analysisResult, (next, previous) => {
+  if (!next?.analysisId || next.analysisId !== previous?.analysisId) {
+    pendingPoiFocusRequest = null;
+    selectedPoi.value = null;
+  }
   if (mapState.value === "ready") scheduleProjection();
 });
 watch(() => props.analysisMode, () => {
@@ -810,8 +838,8 @@ onUnmounted(() => {
         <g v-if="fallbackDemoResult" class="real-demo-result" aria-hidden="true">
           <circle v-if="analysisMode !== 'cpp' && fallbackDemoResult.displayArea.type === 'circle'" :cx="fallbackDemoResult.displayArea.center.x" :cy="fallbackDemoResult.displayArea.center.y" :r="fallbackDemoResult.displayArea.radius" class="real-demo-area" />
           <path v-else-if="fallbackDemoResult.displayArea.type === 'polygon'" :d="localAreaPath(fallbackDemoResult)" class="real-demo-area" fill-rule="evenodd" />
-          <path v-for="segment in fallbackDemoResult.routeSegments" :key="segment.id" :d="linePath(segment.points)" class="real-demo-route" pathLength="1" :style="{ '--route-delay': routeDelay(segment, fallbackDemoResult) }" />
-          <path v-if="fallbackDemoResult.accessLink?.length > 2" :d="linePath(fallbackDemoResult.accessLink.points)" class="real-demo-access" />
+          <path v-for="segment in analysisMode === 'cpp' ? [] : fallbackDemoResult.routeSegments" :key="segment.id" :d="linePath(segment.points)" class="real-demo-route" pathLength="1" :style="{ '--route-delay': routeDelay(segment, fallbackDemoResult) }" />
+          <path v-if="analysisMode !== 'cpp' && fallbackDemoResult.accessLink?.length > 2" :d="linePath(fallbackDemoResult.accessLink.points)" class="real-demo-access" />
         </g>
       </g>
       <g v-if="fallbackCandidate" :style="{ transform: fallbackCandidateTransform }" class="real-candidate-mark" aria-hidden="true">
@@ -839,7 +867,7 @@ onUnmounted(() => {
         <path v-for="segment in liveDemoResult.routes" :key="segment.id" :d="segment.d" class="real-demo-route" pathLength="1" :style="{ '--route-delay': segment.delay }" />
         <path v-for="segment in liveDemoResult.samplingRoutes" :key="`sample-${segment.id}`" :d="segment.d" class="real-sampled-route" pathLength="1" :style="{ '--route-delay': segment.delay }" />
         <path v-for="segment in liveDemoResult.poiRoutes" :key="`poi-${segment.id}`" :d="segment.d" class="real-poi-route" pathLength="1" :style="{ '--route-delay': segment.delay }" />
-        <path v-if="analysisResult.accessLink?.length > 2" :d="liveDemoResult.access" class="real-demo-access" />
+        <path v-if="analysisMode !== 'cpp' && analysisResult.accessLink?.length > 2" :d="liveDemoResult.access" class="real-demo-access" />
       </g>
       <g v-if="liveCandidate" :transform="`translate(${liveCandidate.x} ${liveCandidate.y})`" class="real-candidate-mark">
         <g class="real-candidate-glyph">
@@ -848,6 +876,15 @@ onUnmounted(() => {
       </g>
     </svg>
 
+    <svg v-if="selectedRoutePaths.length" class="real-cpp-route-layer"
+      :viewBox="`0 0 ${viewport.width} ${viewport.height}`" aria-hidden="true">
+      <g :key="`${selectedPoiRoute.poiId}:${selectedPoiRoute.sequence}`">
+        <path v-for="segment in selectedRoutePaths" :key="`casing-${segment.id}`" :d="segment.d" class="real-cpp-route-casing" />
+        <path v-for="segment in selectedRoutePaths" :key="segment.id" :d="segment.d"
+          class="real-cpp-selected-route" :class="{ 'is-access': segment.access }"
+          :pathLength="segment.access ? undefined : 1" :style="{ '--route-delay': segment.delay }" />
+      </g>
+    </svg>
     <svg v-if="analysisMode === 'cpp' && analysisResult" class="real-poi-layer"
       :viewBox="`0 0 ${viewport.width} ${viewport.height}`" role="group" aria-label="等时圈内基础设施候选点位">
       <g v-for="poi in poiMarkers" :key="poi.id" class="real-poi-marker"
@@ -855,7 +892,7 @@ onUnmounted(() => {
         :transform="`translate(${poi.pixel[0]} ${poi.pixel[1]})`" tabindex="0" role="button"
         :aria-pressed="selectedPoi?.id === poi.id"
         :aria-label="`${poiCategoryStyles[poi.category].label}：${poi.name}`"
-        @pointerdown.stop @click.stop="selectedPoi = poi" @keydown.enter.stop="selectedPoi = poi" @keydown.space.prevent.stop="selectedPoi = poi">
+        @pointerdown.stop @click.stop="selectPoi(poi)" @keydown.enter.stop="selectPoi(poi)" @keydown.space.prevent.stop="selectPoi(poi)">
         <title>{{ poi.name }} · {{ poiAccessLabel(poi) }}</title>
         <g v-if="selectedPoi?.id === poi.id" class="real-poi-selection" aria-hidden="true">
           <circle r="19" class="real-poi-selection-ring" />
@@ -866,15 +903,27 @@ onUnmounted(() => {
       </g>
     </svg>
     <div v-if="selectedPoi" class="real-poi-popover" role="status" @pointerdown.stop @click.stop>
-      <button type="button" aria-label="关闭设施详情" @click.stop="selectedPoi = null">×</button>
+      <button type="button" aria-label="关闭设施详情" @click.stop="dismissPoi">×</button>
       <strong>{{ selectedPoi.name }}</strong>
       <span>{{ poiCategoryStyles[selectedPoi.category].label }} · 百度 POI</span>
-      <small>{{ poiAccessLabel(selectedPoi) }}</small>
+      <small v-if="selectedPoiRoute?.destinationAccessMode !== 'estimated_straight_line'">{{ poiAccessLabel(selectedPoi) }}</small>
+      <small v-if="selectedPoiRoute?.status === 'loading'">正在计算 Dijkstra 最短路径…</small>
+      <template v-else-if="selectedPoiRoute?.status === 'ready'">
+        <strong class="real-cpp-route-summary">{{ (selectedPoiRoute.travelTimeSeconds / 60).toFixed(1) }} 分钟 · {{ Math.round(selectedPoiRoute.lengthMeters) }} 米</strong>
+        <small>过街等待 {{ Math.round(selectedPoiRoute.crossingWaitSeconds) }} 秒 · {{ selectedPoiRoute.destinationAccessMode === 'estimated_straight_line' ? '路线终点为 POI 点位' : '路线终点为绑定入口' }}</small>
+        <small v-if="selectedPoiRoute.destinationAccessMode === 'estimated_straight_line'" class="real-cpp-route-warning">直线穿越地块约 {{ Math.round(selectedPoiRoute.destinationAccessDistanceMeters) }} 米 · 未核实，未考虑建筑／围墙</small>
+        <small v-if="!selectedPoiRoute.withinThreshold">该路径超过 15 分钟，展示面内的点不一定路网可达。</small>
+      </template>
+      <small v-else-if="selectedPoiRoute?.message">{{ selectedPoiRoute.message }}</small>
+      <button v-if="selectedPoiRoute?.status === 'error'" type="button" class="real-cpp-route-retry" @click.stop="selectPoi(selectedPoi)">重试路线</button>
       <small v-if="selectedPoi.address">{{ selectedPoi.address }}</small>
     </div>
 
     <div v-if="analysisResult?.coordinateSystem === 'preview-local-v1'" class="real-demo-legend" aria-label="合成示意图例">
-      <span><i :class="cppSyntheticResult ? 'legend-area' : 'legend-circle'"></i>{{ cppSyntheticResult ? 'C++ 路网等时圈 · 近似面' : '固定半径示意' }}</span><span><i class="legend-route"></i>{{ cppSyntheticResult ? 'C++ 可达街段' : '临时路网路线' }}</span><span v-if="analysisResult?.accessLink"><i class="legend-access"></i>估算接入 · 未核实</span>
+      <span><i :class="cppSyntheticResult ? 'legend-area' : 'legend-circle'"></i>{{ cppSyntheticResult ? 'C++ 路网等时圈 · 近似面' : '固定半径示意' }}</span>
+      <span v-if="analysisMode === 'cpp'"><i class="legend-cpp-route"></i>{{ selectedPoiRoute?.status === 'ready' ? '选中设施的 Dijkstra 路径' : '点击设施查看最短路径' }}</span>
+      <span v-else><i class="legend-route"></i>临时路网路线</span>
+      <span v-if="selectedPoiRoute?.status === 'ready' && selectedRoutePaths.some(segment => segment.access)"><i class="legend-access"></i>估算接入 · 未核实</span>
     </div>
     <div ref="probeEl" class="real-map-probe" :class="{ visible: probeVisible, outside: !hoverInside }" aria-hidden="true">
       <span class="real-probe-ring"></span><small class="real-probe-caption">{{ mapState === 'ready' && boundaryState !== 'ready' ? '选区未就绪' : hoverInside ? '选起点' : '区外' }}</small>

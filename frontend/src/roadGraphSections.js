@@ -29,5 +29,22 @@ export function attachDividedRoadSections(graph, specification) {
       throw new Error("INVALID_DIVIDED_ROAD_SECTION");
     seen.add(section.id);
   }
-  return { ...graph, dividedRoadSections: structuredClone(specification.sections) };
+  const policy=specification.majorSidewalkPolicy;
+  if(policy!==undefined) {
+    const major=new Map(graph.edges.filter(e=>e.kind==='roadMajor').map(e=>[e.id,e]));
+    if(policy.schemaVersion!==1 || policy.mode!=='exterior_only' ||
+       policy.coordinateSystem!==graph.coordinateSystem ||
+       policy.verificationStatus!=='user_requested_synthetic_simplification' ||
+       typeof policy.source!=='string' || !policy.source || !Array.isArray(policy.selections) ||
+       policy.selections.length!==major.size ||
+       new Set(policy.selections.map(s=>s.sourceEdgeId)).size!==major.size ||
+       policy.selections.some(s=>!major.has(s.sourceEdgeId) ||
+         major.get(s.sourceEdgeId).sourceWayId!==s.sourceWayId ||
+         !Array.isArray(s.sides) || !s.sides.length || s.sides.length>2 ||
+         new Set(s.sides).size!==s.sides.length || s.sides.some(side=>!['left','right'].includes(side)))) {
+      throw new Error('INVALID_MAJOR_SIDEWALK_POLICY');
+    }
+  }
+  return { ...graph, dividedRoadSections: structuredClone(specification.sections),
+           ...(policy ? {majorSidewalkPolicy:structuredClone(policy)} : {}) };
 }

@@ -1,10 +1,10 @@
 <script setup>
-import { onUnmounted, ref } from "vue";
+import { onUnmounted, ref, watch } from "vue";
 import RealMapStage from "./RealMapStage.vue";
 import PoiInventoryPanel from "./PoiInventoryPanel.vue";
 import NeighborhoodFooter from "./NeighborhoodFooter.vue";
 import { visiblePois } from "./poiFacilities.js";
-import { requestCppMapAnalysis } from "./cppAnalysisClient.js";
+import { requestCppMapAnalysis, requestCppPoiRoute } from "./cppAnalysisClient.js";
 import { requestSampledMapAnalysis } from "./sampledAnalysisClient.js";
 
 
@@ -33,6 +33,9 @@ const cppAnalysisState = ref("idle");
 const cppAnalysisError = ref("");
 const cppPoiCategory = ref("all");
 const cppPoiFocusRequest = ref(null);
+const cppPoiRoute = ref(null);
+let cppPoiRouteAbort;
+let cppPoiRouteSequence = 0;
 let cppPoiFocusSequence = 0;
 let cppAnalysisAbort;
 const livingLetters = Array.from("LIVING CIRCLE");
@@ -74,6 +77,7 @@ async function runRealAnalysis() {
 
 function chooseCppPoint(point) {
   if (cppAnalysisState.value === "running") return;
+  clearCppPoiRoute();
   cppPoiFocusRequest.value = null;
   cppAnalysisAbort?.abort();
   cppCandidate.value = point;
@@ -85,6 +89,7 @@ function chooseCppPoint(point) {
 
 async function runCppAnalysis(refreshPois = false) {
   if (!cppCandidate.value?.local || cppAnalysisState.value === "running") return;
+  clearCppPoiRoute();
   cppPoiFocusRequest.value = null;
   cppAnalysisAbort?.abort();
   const controller = new AbortController();
@@ -95,13 +100,18 @@ async function runCppAnalysis(refreshPois = false) {
   try {
     const result = await requestCppMapAnalysis({ origin: cppCandidate.value.local,
       includePois: true, refreshPois: refreshPois === true },
-      { signal: controller.signal });
+      { signal: controller.signal,
+        onResult: (partial, { complete }) => {
+          if (controller.signal.aborted) return;
+          cppAnalysisResult.value = partial;
+          cppAnalysisState.value = complete ? "complete" : "enriching";
+        } });
     if (controller.signal.aborted) return;
     cppAnalysisResult.value = result;
     cppAnalysisState.value = "complete";
   } catch (error) {
     if (controller.signal.aborted) return;
-    cppAnalysisState.value = "error";
+    cppAnalysisState.value = cppAnalysisResult.value ? "complete" : "error";
     cppAnalysisError.value = String(error?.message).includes("ORIGIN_NOT_ON_WALKWAY")
       ? "到最近合成路段已耗尽步行预算，请在道路附近重新选点。"
       : "C++ 分析未完成，请确认 Python 后端和 C++ 引擎已启动。";
@@ -116,7 +126,47 @@ function showCppPoiOnMap(poi) {
   switchMapMode("synthetic");
   cppPoiFocusRequest.value = { id: target.id, sequence: ++cppPoiFocusSequence };
   goToPage(0);
+  void selectCppPoi(target);
 }
+
+function clearCppPoiRoute() {
+  cppPoiRouteAbort?.abort();
+  cppPoiRouteAbort = null;
+  cppPoiRouteSequence += 1;
+  cppPoiRoute.value = null;
+}
+
+async function selectCppPoi(poi) {
+  const target = visiblePois(cppAnalysisResult.value).find(entry => entry.id === poi?.id);
+  if (!target || mapMode.value !== "synthetic") return;
+  clearCppPoiRoute();
+  const analysisId = cppAnalysisResult.value.analysisId;
+  if (!analysisId) {
+    cppPoiRoute.value = { poiId: target.id, status: "error", message: "请重新计算等时圈后再规划设施路径。" };
+    return;
+  }
+  const sequence = cppPoiRouteSequence;
+  const controller = new AbortController();
+  cppPoiRouteAbort = controller;
+  cppPoiRoute.value = { poiId: target.id, status: "loading" };
+  let timedOut = false;
+  const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 30_000);
+  try {
+    const route = await requestCppPoiRoute({ analysisId, poiId: target.id }, { signal: controller.signal });
+    if (sequence !== cppPoiRouteSequence || controller.signal.aborted) return;
+    cppPoiRoute.value = { ...route, sequence };
+  } catch (error) {
+    if (sequence !== cppPoiRouteSequence || (controller.signal.aborted && !timedOut)) return;
+    cppPoiRoute.value = { poiId: target.id, status: "error",
+      message: timedOut ? "路径计算超时，请稍后重试。" : String(error?.message).includes("ROUTE_CONTEXT_EXPIRED")
+        ? "该分析已过期，请重新计算等时圈。" : "路径暂时无法生成，请确认后端与最新 C++ 引擎已启动。" };
+  } finally {
+    clearTimeout(timeout);
+    if (sequence === cppPoiRouteSequence) cppPoiRouteAbort = null;
+  }
+}
+
+watch(mapMode, mode => { if (mode !== "synthetic") clearCppPoiRoute(); });
 
 function switchMapMode(mode) {
   if (!["real", "synthetic"].includes(mode)) return;
@@ -192,6 +242,7 @@ function handlePageKeydown(event) {
 }
 
 onUnmounted(() => {
+  clearCppPoiRoute();
   realAnalysisAbort?.abort();
   cppAnalysisAbort?.abort();
   clearTimeout(pageTurnTimer);
@@ -235,7 +286,7 @@ onUnmounted(() => {
             <button v-else-if="mapMode === 'synthetic'" type="button" class="analyze-button map-analyze-button real-mode-action"
               :class="{ 'is-running': cppAnalysisState === 'running', 'is-complete': cppAnalysisState === 'complete' }"
               :disabled="!cppCandidate || cppAnalysisState === 'running'" @click="runCppAnalysis">
-              <span class="button-label">{{ !cppCandidate ? '先在地图选点' : cppAnalysisState === 'running' ? 'C++ 计算中…' : cppAnalysisState === 'complete' ? '重新计算等时圈' : '计算 15 分钟等时圈' }}</span>
+              <span class="button-label">{{ !cppCandidate ? '先在地图选点' : cppAnalysisState === 'running' ? 'C++ 计算中…' : cppAnalysisResult ? '重新计算等时圈' : '计算 15 分钟等时圈' }}</span>
               <span class="button-arrow" aria-hidden="true">{{ cppAnalysisState === 'complete' ? '✓' : cppAnalysisState === 'running' ? '◌' : '↗' }}</span>
             </button>
           </div>
@@ -249,7 +300,9 @@ onUnmounted(() => {
                 :zoom-tier="mapZoomTier" :overview-request-id="mapOverviewRequestId"
                 :show-blind-zones="showBlindZones"
                 :poi-focus-request="mapMode === 'synthetic' ? cppPoiFocusRequest : null"
+                :poi-route="mapMode === 'synthetic' ? cppPoiRoute : null"
                 :selection-disabled="mapMode === 'synthetic' && cppAnalysisState === 'running'"
+                @poi-select="selectCppPoi" @poi-dismiss="clearCppPoiRoute"
                 @select="mapMode === 'synthetic' ? chooseCppPoint($event) : chooseRealPoint($event)" />
             </Transition>
             <!-- Replay a light reveal without remounting the shared base map. -->
@@ -289,7 +342,7 @@ onUnmounted(() => {
 
           <div class="map-bottomline real-mode">
             <span v-if="mapMode === 'real'"><span class="line-signal"></span>{{ realAnalysisState === 'error' ? realAnalysisError : realAnalysisState === 'running' ? '正在生成百度采样等时圈，请稍候' : realAnalysisResult ? '百度采样等时圈与代表路线已显示' : realCandidate ? '已选起点 · 点击右上角生成真实区域分析' : '四路围合范围 · 点击地图选点' }}</span>
-            <span v-else-if="mapMode === 'synthetic'"><span class="line-signal"></span>{{ cppAnalysisState === 'error' ? cppAnalysisError : cppAnalysisState === 'running' ? 'Python → C++ 正在计算 15 分钟路网等时圈' : cppAnalysisResult ? 'C++ 等时圈与可达街段已显示 · 路网仍为合成数据' : cppCandidate ? '已选起点 · 点击右上角计算等时圈' : '专家模式 · 合成路网，点击地图选点' }}</span>
+            <span v-else-if="mapMode === 'synthetic'" role="status"><span class="line-signal"></span>{{ cppAnalysisState === 'error' ? cppAnalysisError : cppAnalysisState === 'running' ? '正在计算路网等时圈' : cppAnalysisState === 'enriching' ? '等时圈已显示 · 正在补充设施，可继续选点' : cppAnalysisResult ? '等时圈已显示 · 点击设施查看路径（未核实）' : cppCandidate ? '已选起点 · 点击右上角计算等时圈' : '专家模式 · 合成路网，点击地图选点' }}</span>
             <span><span class="line-signal"></span>{{ showBlindZones ? (realAnalysisResult?.blindZoneStatus === 'confirmed' ? `红色区域表示 10 米分辨率服务盲区候选 · 服务半径 1 公里` : realAnalysisResult?.blindZoneStatus === 'unknown' ? 'POI 清单不完整，暂不把缺失数据判为盲区' : '当前没有可确认的服务盲区') : '点击眼睛图标切换服务覆盖候选层' }}</span>
             <span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">边界与 SVG 数据 © OpenStreetMap contributors · ODbL</a></span>
           </div>
@@ -372,18 +425,23 @@ onUnmounted(() => {
         <section class="panel-section">
           <div class="section-head"><span class="section-index">02</span><h2>15 分钟路网等时圈</h2></div>
           <p v-if="cppAnalysisState === 'error'" class="section-explain" role="alert">{{ cppAnalysisError }}</p>
-          <p v-else-if="cppAnalysisState === 'running'" class="section-explain" role="status">Python 正在把起点交给 C++ 引擎，结果返回后将绘制等时圈和可达街段。</p>
+          <p v-else-if="cppAnalysisState === 'running'" class="section-explain" role="status">正在计算等时圈，完成后先显示范围，再补充设施点。</p>
           <template v-else-if="cppAnalysisResult">
             <div class="summary-band">
               <div class="summary-primary"><strong>15<span>分钟</span></strong><small>路网步行阈值</small></div>
               <div class="summary-secondary"><strong class="summary-number">{{ cppAnalysisResult.summary.routeSegmentCount }}</strong><small>可达线段</small></div>
             </div>
             <p class="section-explain">距最近路段约 {{ Number(cppAnalysisResult.summary.originSnapMeters ?? 0).toFixed(1) }} 米，估算接入耗时 {{ Math.round(cppAnalysisResult.summary.originAccessSeconds ?? 0) }} 秒；剩余时间沿路网计算。虚线接入未核实，等时圈按 C++ 返回的多边形绘制。</p>
+            <p v-if="cppAnalysisResult.timingsMs.firstResult != null" class="section-explain" role="status">等时圈生成 {{ (cppAnalysisResult.timingsMs.firstResult / 1000).toFixed(2) }} 秒<span v-if="cppAnalysisResult.engineBuildMode !== 'unknown'">（{{ cppAnalysisResult.engineBuildMode }}）</span>；{{ cppAnalysisState === 'enriching' ? '设施正在补充，不影响地图操作。' : '设施更新不改变地图比例尺。' }}</p>
+            <details class="section-explain" v-if="cppAnalysisResult.timingsMs.cpp != null">
+              <summary>查看计算阶段耗时</summary>
+              <div v-for="(milliseconds, stage) in cppAnalysisResult.timingsMs" :key="stage">{{ stage }}：{{ Number(milliseconds).toFixed(1) }} 毫秒</div>
+            </details>
           </template>
-          <p v-else class="section-explain">点击右上角“计算 15 分钟等时圈”后，展示 C++ Dijkstra 计算的可达街段及近似 MultiPolygon 面。</p>
+          <p v-else class="section-explain">计算后展示等时圈面与设施点；点击设施后，单独绘制起点到绑定入口的 Dijkstra 最短路径。</p>
         </section>
         <section v-if="cppAnalysisResult" class="panel-section">
-          <PoiInventoryPanel :result="cppAnalysisResult" :category="cppPoiCategory"
+          <PoiInventoryPanel :result="cppAnalysisResult" :category="cppPoiCategory" :busy="cppAnalysisState === 'enriching'"
             @category="cppPoiCategory = $event" @refresh="runCppAnalysis(true)" @select="showCppPoiOnMap" />
         </section>
         <section class="panel-section">

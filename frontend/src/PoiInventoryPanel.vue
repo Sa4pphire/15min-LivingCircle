@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import { poiAccessLabel, poiCacheLabel, poiCategoryCounts, poiCategoryStyles, poiEmptyLabel, poiInfo, poiSearchProgress, visiblePois } from "./poiFacilities.js";
 
 const props = defineProps({ result: { type: Object, default: null },
+  busy: { type: Boolean, default: false },
   compact: { type: Boolean, default: false }, category: { type: String, default: "all" } });
 const emit = defineEmits(["category", "select", "refresh"]);
 const selected = ref(null);
@@ -11,6 +12,8 @@ const entries = computed(() => visiblePois(props.result, props.category));
 const categoryCounts = computed(() => poiCategoryCounts(props.result));
 const count = (key) => visiblePois(props.result, key).length;
 const status = computed(() => !info.value ? "尚未加载设施" :
+  info.value.status === "pending" ? "等时圈已显示，正在补充设施" :
+  info.value.cacheOnly && info.value.refreshRequired ? "本地设施缓存不足；可刷新 POI 或先预采集，不影响等时圈" :
   info.value.status === "unavailable" ? "设施检索不可用，请检查后端服务端 AK 与接口权限" :
     info.value.stalePages ? "使用旧缓存，设施信息待更新" :
       info.value.status === "partial" ? "检索清单不完整，不能据此判定设施匮乏" : "百度在线候选 POI · 非核实入口清单");
@@ -25,7 +28,7 @@ watch([() => props.result, () => props.category], () => { selected.value = null;
     </div>
     <div class="poi-heading" v-if="!compact">
       <h3>近似等时圈面内设施</h3>
-      <button type="button" @click="emit('refresh')">刷新 POI（调用 API）</button>
+      <button type="button" :disabled="busy || info?.status === 'pending'" @click="emit('refresh')">{{ busy ? '设施更新中…' : '刷新 POI（调用 API）' }}</button>
     </div>
     <div class="poi-filters" role="group" aria-label="设施类别筛选">
       <button type="button" :aria-pressed="category === 'all'" @click="emit('category', 'all')">全部 <b>{{ count('all') }}</b></button>
@@ -68,6 +71,7 @@ watch([() => props.result, () => props.category], () => { selected.value = null;
 .poi-heading { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; justify-content: space-between; }
 .poi-heading h3 { margin: 0 0 12px; font-size: 16px; }
 .poi-heading > button { border: 0; background: transparent; color: #316e61; font: inherit; font-size: 11px; cursor: pointer; text-decoration: underline; }
+.poi-heading > button:disabled { opacity: .55; cursor: wait; }
 .poi-compact-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 9px; margin-bottom: 6px; font-size: 10px; line-height: 1.5; }
 .poi-compact-heading span { color: #5a756b; }
 .poi-filters { display: flex; flex-wrap: wrap; gap: 6px; }

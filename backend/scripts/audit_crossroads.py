@@ -105,7 +105,7 @@ def main() -> None:
     topology = audit_network(graph)
     # The current local mask names a reviewed junction, so it cannot be
     # applied to the unreviewed candidate-discovery baseline.
-    baseline = convert_preview_graph({**raw, 'dividedRoadSections': []}, origin,
+    baseline = convert_preview_graph({**raw, 'dividedRoadSections': [], 'majorSidewalkPolicy':None}, origin,
                                      annotations['crossings'])
     report = audit_crossroads(raw, graph, baseline)
     report['beforeCurrentBatch'] = annotations.get('crossroadReviewBaseline')

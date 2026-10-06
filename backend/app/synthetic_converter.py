@@ -16,10 +16,62 @@ from .junction_annotations import (
 )
 from .divided_road_sections import apply_divided_road_sections
 from .preview_connections import apply_preview_connections
+from .major_sidewalks import apply_major_sidewalk_policy
 
 
 SIDEWALK_OFFSET_METERS = 3.0
 SHARED_WIDTH_METERS = {"roadLocal": 4.0, "roadPath": 2.0}
+
+
+def _coalesce_source_crossings(edges: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Keep one wait across shape vertices, but never erase an actual branch.
+
+    A branch in the middle of a tagged crossing needs island/side review. Until
+    then each distinct leg stays charged, rather than inventing a free transfer.
+    """
+    incident = defaultdict(list)
+    for edge in edges:
+        for endpoint in (edge['from'], edge['to']):
+            incident[endpoint].append(edge)
+    tagged = {e['id']: e for e in edges if e.get('sourceCrossing')}
+    remaining = dict(tagged)
+    output, records = [], []
+    while remaining:
+        first = remaining.pop(min(remaining))
+        path = first['pathMeters'][:]
+        start, end = first['from'], first['to']
+        ids = [first['id']]
+        for reverse in (False, True):
+            if reverse:
+                start, end, path = end, start, path[::-1]
+            while len(incident[end]) == 2:
+                candidate = next((e for e in incident[end] if e['id'] in remaining and
+                                  e.get('sourceWayId') == first['sourceWayId']), None)
+                if candidate is None:
+                    break
+                remaining.pop(candidate['id'])
+                segment = candidate['pathMeters']
+                if candidate['to'] == end:
+                    segment = segment[::-1]
+                    end = candidate['from']
+                else:
+                    end = candidate['to']
+                path.extend(segment[1:])
+                ids.append(candidate['id'])
+        if start == end:
+            raise ValueError('source crossing must not be a closed loop')
+        new_id = first['id'] if len(ids) == 1 else min(ids) + ':crossing-chain'
+        branch = any(len(incident[n]) > 2 and any(e.get('sourceCrossing') and
+                     e.get('sourceWayId') == first['sourceWayId'] and e['id'] not in ids
+                     for e in incident[n]) for n in (start, end))
+        output.append({**first, 'id': new_id, 'from': start, 'to': end, 'pathMeters': path,
+                       'sourceEdgeIds': sorted(ids),
+                       'crossingReviewRequired': branch})
+        records.append({'edgeId': new_id, 'sourceWayId': first['sourceWayId'],
+                        'sourceEdgeIds': sorted(ids), 'branchReviewRequired': branch,
+                        'waitPolicy': 'engine_default_per_leg',
+                        'verificationStatus': 'online_source_unverified_on_site'})
+    return [e for e in edges if e['id'] not in tagged] + output, records
 
 
 def with_preview_annotations(graph: dict[str, Any], annotations: dict[str, Any]) -> dict[str, Any]:
@@ -35,7 +87,8 @@ def with_preview_annotations(graph: dict[str, Any], annotations: dict[str, Any])
             ("dividedRoadSections" in annotations and
              annotations.get("dividedRoadSectionsCoordinateSystem") != "preview-local-v1")):
         raise ValueError("invalid divided-road annotation coordinate system or lists")
-    return {**graph, "dividedRoadSections": sections, "previewConnections": connections}
+    return {**graph, "dividedRoadSections": sections, "previewConnections": connections,
+            **({'majorSidewalkPolicy':annotations['majorSidewalkPolicy']} if 'majorSidewalkPolicy' in annotations else {})}
 
 
 def _xy(node: dict[str, Any]) -> tuple[float, float]:
@@ -186,6 +239,13 @@ def convert_preview_graph(
             raise ValueError("preview edge refers to a missing node")
         if edge["kind"] not in (*SHARED_WIDTH_METERS, "roadMajor", "inferredJunction"):
             raise ValueError(f"unsupported preview edge kind: {edge['kind']}")
+        tags = edge.get("sourceTags", {})
+        foot, access = tags.get("foot"), tags.get("access")
+        explicit_foot = foot in ("yes", "designated", "permissive")
+        if (foot in ("no", "private", "use_sidepath") or
+                (access in ("no", "private") and not explicit_foot) or
+                (tags.get("highway") == "cycleway" and not explicit_foot)):
+            raise ValueError(f"source graph contains a forbidden pedestrian edge: {edge['id']}")
 
     major_edges = [edge for edge in source_edges if edge["kind"] == "roadMajor"]
     major_at_node: dict[str, set[int]] = defaultdict(set)
@@ -252,6 +312,7 @@ def convert_preview_graph(
                 "id": f"{edge['id']}:{side}", "from": from_id, "to": to_id,
                 "kind": "sidewalk", "streetBlockId": f"major:{way}",
                 "side": side, "pathMeters": path,
+                "sourceMajorEdgeId": edge['id'],
             })
 
     def shared_endpoint(edge: dict[str, Any], node_id: str) -> str:
@@ -286,11 +347,16 @@ def convert_preview_graph(
             continue
         from_id = shared_endpoint(edge, edge["from"])
         to_id = shared_endpoint(edge, edge["to"])
+        source_crossing = edge.get('sourceTags', {}).get('footway') == 'crossing'
         edges.append({
             "id": edge["id"], "from": from_id, "to": to_id,
-            "kind": "shared_way", "streetBlockId": f"shared:{edge['sourceWayId']}",
-            "sharedWayType": "shared_alley", "widthMeters": SHARED_WIDTH_METERS[edge["kind"]],
+            "kind": "crossing" if source_crossing else "shared_way", "streetBlockId": f"shared:{edge['sourceWayId']}",
+            **({"sharedWayType": "shared_alley", "widthMeters": SHARED_WIDTH_METERS[edge["kind"]]}
+               if not source_crossing else {}),
             "pathMeters": [location(from_id), location(to_id)],
+            **({'sourceCrossing': True, 'sourceWayId': edge['sourceWayId'],
+                'sourceTags': edge['sourceTags'],
+                'verificationStatus': 'online_source_unverified_on_site'} if source_crossing else {}),
         })
         for endpoint, opposite in ((edge["from"], edge["to"]),
                                    (edge["to"], edge["from"])):
@@ -338,6 +404,8 @@ def convert_preview_graph(
         if kind == "crossing":
             synthetic_crossing_ids.append(edge["id"])
 
+    edges, source_crossing_records = _coalesce_source_crossings(edges)
+
     manual_records: list[dict[str, Any]] = []
     if crossing_annotations:
         edges, manual_records = _apply_crossing_annotations(nodes, edges, crossing_annotations)
@@ -372,8 +440,27 @@ def convert_preview_graph(
     # The shared source contains explicitly bounded local pilot sections.
     # Preserve all outside geometry and marked junctions; remove only the
     # selected inward-facing sidewalk spans, never a proximity-based guess.
-    edges, junction_records, divided_records = apply_divided_road_sections(
-        graph, nodes, edges, junction_records)
+    if graph.get('majorSidewalkPolicy'):
+        edges,junction_records,major_report=apply_major_sidewalk_policy(graph,nodes,edges,junction_records)
+        divided_records=[]
+        for record in junction_records:
+            for connector in record['connectors']:
+                synthetic_link_ids.append(connector['edgeId'])
+                if connector['kind']=='crossing':synthetic_crossing_ids.append(connector['edgeId'])
+        aliases=major_report['nodeAliases']
+        synthetic_link_ids.extend(major_report['convertedRoadInteriorConnectionIds'])
+        synthetic_crossing_ids.extend(major_report['convertedRoadInteriorConnectionIds'])
+        for record in manual_records:
+            for field,edge_field in (('nearNodeId','nearEdgeId'),('farNodeId','farEdgeId')):
+                if record[field] in aliases:
+                    record['original'+field[0].upper()+field[1:]]=record[field]
+                    record[field]=aliases[record[field]]
+                record['original'+edge_field[0].upper()+edge_field[1:]]=record[edge_field]
+                record[edge_field]=next(e['id'] for e in edges if e['kind']=='sidewalk' and record[field] in (e['from'],e['to']))
+    else:
+        edges, junction_records, divided_records = apply_divided_road_sections(
+            graph, nodes, edges, junction_records)
+        major_report=None
     edges, connection_records = apply_preview_connections(nodes, edges, graph.get("previewConnections", []))
     synthetic_link_ids.extend(record["connectorEdgeId"] for record in connection_records)
     remaining_ids = {edge['id'] for edge in edges}
@@ -387,7 +474,8 @@ def convert_preview_graph(
     if len({edge["id"] for edge in edges}) != len(edges):
         raise ValueError("converted network contains duplicate edge IDs")
     for edge in edges:
-        if edge["from"] == edge["to"] or _distance(*edge["pathMeters"]) < 0.05:
+        if edge["from"] == edge["to"] or sum(_distance(a,b) for a,b in
+                zip(edge['pathMeters'],edge['pathMeters'][1:])) < 0.05:
             raise ValueError(f"converted network contains a degenerate edge: {edge['id']}")
 
     selection = [[round(x, 3), round(-y, 3)] for x, y in graph["selectionBoundary"][0]]
@@ -412,5 +500,8 @@ def convert_preview_graph(
             "manualJunctionAnnotations": junction_records,
             "dividedRoadSections": divided_records,
             "manualPreviewConnections": connection_records,
+            "sourceCrossings": source_crossing_records,
+            **({'majorSidewalkSimplification':major_report} if major_report else {}),
+            **({"sourceTopology": graph["sourceTopology"]} if "sourceTopology" in graph else {}),
         },
     }

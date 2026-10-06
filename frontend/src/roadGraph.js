@@ -123,6 +123,7 @@ export function buildDemoRoadGraph(features, selectionRings, coverageRings = sel
           to,
           kind: feature.kind,
           sourceWayId: feature.id,
+          ...(feature.sourceTags ? { sourceTags: feature.sourceTags } : {}),
           length: Number(Math.hypot(b.x - a.x, b.y - a.y).toFixed(1)),
         });
       }

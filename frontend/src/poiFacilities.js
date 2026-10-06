@@ -41,6 +41,8 @@ export function poiInfo(result) {
 export function poiCacheLabel(result) {
   const info = poiInfo(result);
   if (!info) return "待加载";
+  if (info.status === "pending") return info.cacheOnly ? "读取本地缓存" : "更新设施中";
+  if (info.cacheOnly && info.status === "unavailable") return "本地缓存待补充";
   if (info.status === "unavailable") return "检索不可用";
   if (info.stalePages) return "旧缓存 · 待更新";
   if (info.apiRequests > 0) return `API ${info.apiRequests} 次 · 缓存 ${info.cacheHits ?? 0} 项`;
@@ -52,6 +54,7 @@ export function poiSearchProgress(result) {
   const info = poiInfo(result);
   if (!info || !Number.isFinite(info.plannedQueries)) return "";
   const progress = `检索 ${info.completedQueries ?? 0}/${info.plannedQueries} 个网格关键词`;
+  if (info.cacheOnly && info.refreshRequired) return `${progress} · 本次仅使用本地缓存，清单待补全。可刷新 POI 或先预采集，不将缺失数据判为匮乏。`;
   if (info.status === "ready") return `${progress} · 已完成当前检索计划，非设施普查`;
   if (info.quotaLimited) return `${progress} · 百度限流／配额限制。待限制恢复后再普通计算补查，缓存已保留；不要强制刷新。`;
   if (info.authFailed) return `${progress} · 百度鉴权／权限错误，请检查服务端 AK 配置；缓存已保留。`;
@@ -73,6 +76,7 @@ export function poiCategoryCounts(result) {
 }
 
 export function poiEmptyLabel(result, category = "all") {
+  if (poiInfo(result)?.status === "pending") return "等时圈已显示，设施正在补充；此时的空清单不表示没有设施。";
   if (poiInfo(result)?.status === "unavailable") {
     return "未取得设施数据，不将空结果解释为没有设施。";
   }
