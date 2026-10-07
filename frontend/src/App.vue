@@ -6,6 +6,7 @@ import NeighborhoodFooter from "./NeighborhoodFooter.vue";
 import { visiblePois } from "./poiFacilities.js";
 import { requestCppMapAnalysis, requestCppPoiRoute } from "./cppAnalysisClient.js";
 import { requestSampledMapAnalysis } from "./sampledAnalysisClient.js";
+import { mapZoomTiers } from "./mapZoom.js";
 
 
 const pageViewport = ref(null);
@@ -22,6 +23,7 @@ const mapModes = [
 const mapZoomTier = ref("medium");
 const mapOverviewRequestId = ref(0);
 const livingFooterCollapsed = ref(false);
+const mapScaleCollapsed = ref(false);
 const realCandidate = ref(null);
 const realAnalysisResult = ref(null);
 const realAnalysisState = ref("idle");
@@ -186,6 +188,15 @@ function toggleLivingFooter() {
   livingFooterCollapsed.value = !livingFooterCollapsed.value;
 }
 
+function toggleMapScale() {
+  mapScaleCollapsed.value = !mapScaleCollapsed.value;
+}
+
+function setMapZoomTier(tier) {
+  if (!mapZoomTiers.some(item => item.id === tier)) return;
+  mapZoomTier.value = tier;
+}
+
 function goToPage(index) {
   const targetPage = Math.min(1, Math.max(0, index));
   if (!pageViewport.value) return;
@@ -338,6 +349,23 @@ onUnmounted(() => {
               <span class="map-control-tooltip" aria-hidden="true">{{ livingFooterCollapsed ? '显示装饰' : '隐藏装饰' }}</span>
             </button>
             <div class="map-compass" aria-hidden="true"><span>北</span><i></i></div>
+            <div class="map-scale-wrap" :class="{ collapsed: mapScaleCollapsed }">
+              <button type="button" class="map-scale-toggle"
+                :aria-expanded="String(!mapScaleCollapsed)"
+                :title="mapScaleCollapsed ? '展开比例尺' : '收起比例尺'"
+                @click.stop="toggleMapScale">{{ mapScaleCollapsed ? '◀' : '▶' }}</button>
+              <div v-if="!mapScaleCollapsed" class="map-zoom-control" role="group" aria-label="地图比例尺">
+                <span class="map-zoom-heading" aria-hidden="true">比例尺</span>
+                <button v-for="tier in mapZoomTiers" :key="tier.id" type="button"
+                  :title="tier.description" :aria-label="tier.description"
+                  :aria-pressed="mapZoomTier === tier.id"
+                  :class="{ active: mapZoomTier === tier.id }"
+                  @click="setMapZoomTier(tier.id)">
+                  <strong>{{ tier.label }}</strong><small>{{ tier.hint }}</small>
+                </button>
+                <span class="map-zoom-hint" aria-hidden="true">可滚轮缩放 · 可拖动</span>
+              </div>
+            </div>
           </div>
 
           <div class="map-bottomline real-mode">

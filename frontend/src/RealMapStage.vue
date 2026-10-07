@@ -919,6 +919,11 @@ onUnmounted(() => {
       <small v-if="selectedPoi.address">{{ selectedPoi.address }}</small>
     </div>
 
+    <div class="real-map-actions" @pointerdown.stop @click.stop>
+      <p>虚线内可选起点，外围可显示{{ analysisMode === 'cpp' ? '等时圈和街段' : '等时圈、采样路线和 POI 服务路线' }}<br /><strong>点击区内位置，记录候选起点</strong></p>
+      <button type="button" :disabled="selectionDisabled || (mapState === 'ready' && boundaryState !== 'ready')" @click.stop="selectRegionCenter">选区域中心</button>
+    </div>
+
     <div v-if="analysisResult?.coordinateSystem === 'preview-local-v1'" class="real-demo-legend" aria-label="合成示意图例">
       <span><i :class="cppSyntheticResult ? 'legend-area' : 'legend-circle'"></i>{{ cppSyntheticResult ? 'C++ 路网等时圈 · 近似面' : '固定半径示意' }}</span>
       <span v-if="analysisMode === 'cpp'"><i class="legend-cpp-route"></i>{{ selectedPoiRoute?.status === 'ready' ? '选中设施的 Dijkstra 路径' : '点击设施查看最短路径' }}</span>
