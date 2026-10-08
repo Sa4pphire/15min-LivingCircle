@@ -1,6 +1,9 @@
 // Native Baidu coordinates stay BD-09. Preview points are the explicitly
 // approximate graph-meter alignment, NEVER unlabelled WGS-84 coordinates.
 export const poiCategoryStyles = {
+  market: { label: "市场", glyph: "市", color: "#c26d2c" },
+  pharmacy: { label: "药店", glyph: "药", color: "#9a4d67" },
+  primary_school: { label: "小学", glyph: "学", color: "#4d6da8" },
   education: { label: "学校", glyph: "校", color: "#2f6e91" },
   healthcare: { label: "医院", glyph: "医", color: "#a53e50" },
   shopping: { label: "商超", glyph: "购", color: "#795d18" },

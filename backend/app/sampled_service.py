@@ -11,7 +11,7 @@ from .route_sampling import collect_sampling_routes
 from .schemas import CenterPoint
 from .sampled_analysis import build_sampled_isochrone
 from .sampled_geometry import (
-    build_blind_zone_grid,
+    build_blind_zone_coverage,
     isochrone_search_radius_meters,
     point_in_isochrone,
 )
@@ -103,7 +103,8 @@ async def run_sampled_analysis(
             tuple(feature["geometry"]["coordinates"]), result["isochrone"],
         )
     ]
-    poi_result["facilities"]["features"] = inside_features
+    # Keep the complete three-category inventory for map symbols and blind
+    # coverage. Only POIs inside the isochrone are eligible route endpoints.
     route_pois = []
     for feature in inside_features:
         properties = feature["properties"]
@@ -133,7 +134,7 @@ async def run_sampled_analysis(
         and all(poi_result["categoryStatus"].get(category) == "complete"
                 for category in ("market", "pharmacy", "primary_school"))
     )
-    result["blindZones"] = build_blind_zone_grid(
+    result["blindZones"] = build_blind_zone_coverage(
         region_geometry or result["isochroneMeters"],
         candidate_features,
         bd09_center,
@@ -154,6 +155,7 @@ async def run_sampled_analysis(
         bd09_center,
         result["durationSamples"],
         threshold_seconds=threshold_seconds,
+        boundary_geometry=result["isochroneMeters"],
     )
     result["samplingRouteSegments"] = sample_routes
     result["samplingRouteFailures"] = sample_route_failures

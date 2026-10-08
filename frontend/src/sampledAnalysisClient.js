@@ -40,6 +40,23 @@ function normalizeSampledReport(report, candidate) {
   const routeCount = report.routeCount ?? new Set(
     routeSegments.map((segment) => segment.poiUid).filter(Boolean),
   ).size;
+  const poiFacilities = (report.facilities?.features ?? []).flatMap((feature) => {
+    const coordinates = feature.geometry?.coordinates;
+    const properties = feature.properties ?? {};
+    if (feature.geometry?.type !== "Point" || !Array.isArray(coordinates) ||
+        coordinates.length !== 2 || !coordinates.every(Number.isFinite) ||
+        !properties.uid || !properties.category) return [];
+    const localPoint = [
+      candidate.local.x + (coordinates[0] - candidate.lng) *
+        111320 * Math.cos(candidate.lat * Math.PI / 180),
+      candidate.local.y - (coordinates[1] - candidate.lat) * 111320,
+    ];
+    return [{ id: `sampled:${properties.category}:${properties.uid}`,
+      uid: properties.uid, name: properties.name ?? "服务点",
+      address: properties.address ?? "", category: properties.category,
+      categories: [properties.category], bd09: [...coordinates], point: localPoint,
+      insideDisplayPolygon: true, modelReachable: null }];
+  });
 
   return {
     source: "baidu-sampled-idw",
@@ -56,6 +73,7 @@ function normalizeSampledReport(report, candidate) {
       type: "FeatureCollection",
       features: [],
     },
+    poiFacilities,
     routeFailures: report.routeFailures ?? [],
     accessLink: null,
     summary: {

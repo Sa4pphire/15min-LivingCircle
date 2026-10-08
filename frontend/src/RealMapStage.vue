@@ -248,8 +248,10 @@ const projectedResult = computed(() => {
       projectGeometry(feature.geometry)),
     gaps: (result.blindZoneWalkways?.features ?? []).map((feature) =>
       projectGeometry(feature.geometry)),
-    blindZones: (props.showBlindZones ? result.blindZones?.features ?? [] : []).map((feature) =>
-      projectGeometry(feature.geometry)),
+    blindZones: (props.showBlindZones ? result.blindZones?.features ?? [] : []).map((feature) => ({
+      d: projectGeometry(feature.geometry),
+      missingCategories: feature.properties?.missingCategories ?? [],
+    })),
   };
 });
 const poiMarkers = computed(() => {
@@ -293,6 +295,11 @@ function selectPoi(poi) {
   emit("poi-select", poi);
 }
 
+function selectDisplayedPoi(poi) {
+  if (props.analysisMode === "cpp") selectPoi(poi);
+  else selectedPoi.value = poi;
+}
+
 function dismissPoi() {
   selectedPoi.value = null;
   emit("poi-dismiss");
@@ -300,6 +307,11 @@ function dismissPoi() {
 
 function finitePoint(point) {
   return Array.isArray(point) && point.length === 2 && point.every(Number.isFinite);
+}
+
+function blindZoneClass(missingCategories) {
+  const key = [...(missingCategories ?? [])].sort().join("+");
+  return `blind-missing-${key || "unknown"}`;
 }
 
 function poiLocalPoint(poi) {
@@ -859,7 +871,7 @@ onUnmounted(() => {
       <path v-if="projectedResult?.area" :d="projectedResult.area" class="real-analysis-area" fill-rule="evenodd" />
       <path v-for="(path, index) in projectedResult?.walkways ?? []" :key="`walk-${index}`" :d="path" class="real-analysis-walkway" />
       <path v-for="(path, index) in projectedResult?.gaps ?? []" :key="`gap-${index}`" :d="path" class="real-analysis-gap" />
-      <path v-for="(path, index) in projectedResult?.blindZones ?? []" :key="`blind-${index}`" :d="path" class="real-blind-zone" fill-rule="evenodd" />
+      <path v-for="(zone, index) in projectedResult?.blindZones ?? []" :key="`blind-${index}`" :d="zone.d" class="real-blind-zone" :class="blindZoneClass(zone.missingCategories)" fill-rule="evenodd" />
       <path :d="liveBoundaryPath" class="real-live-boundary-fill" fill-rule="evenodd" />
       <path :d="liveBoundaryPath" class="real-live-boundary-outline" />
       <g v-if="liveDemoResult" class="real-demo-result">
@@ -885,14 +897,14 @@ onUnmounted(() => {
           :pathLength="segment.access ? undefined : 1" :style="{ '--route-delay': segment.delay }" />
       </g>
     </svg>
-    <svg v-if="analysisMode === 'cpp' && analysisResult" class="real-poi-layer"
-      :viewBox="`0 0 ${viewport.width} ${viewport.height}`" role="group" aria-label="等时圈内基础设施候选点位">
+    <svg v-if="analysisResult" class="real-poi-layer"
+      :viewBox="`0 0 ${viewport.width} ${viewport.height}`" role="group" aria-label="地图服务点位">
       <g v-for="poi in poiMarkers" :key="poi.id" class="real-poi-marker"
         :class="{ 'is-selected': selectedPoi?.id === poi.id }" :style="{ '--poi-color': poiCategoryStyles[poi.category].color }"
         :transform="`translate(${poi.pixel[0]} ${poi.pixel[1]})`" tabindex="0" role="button"
         :aria-pressed="selectedPoi?.id === poi.id"
         :aria-label="`${poiCategoryStyles[poi.category].label}：${poi.name}`"
-        @pointerdown.stop @click.stop="selectPoi(poi)" @keydown.enter.stop="selectPoi(poi)" @keydown.space.prevent.stop="selectPoi(poi)">
+        @pointerdown.stop @click.stop="selectDisplayedPoi(poi)" @keydown.enter.stop="selectDisplayedPoi(poi)" @keydown.space.prevent.stop="selectDisplayedPoi(poi)">
         <title>{{ poi.name }} · {{ poiAccessLabel(poi) }}</title>
         <g v-if="selectedPoi?.id === poi.id" class="real-poi-selection" aria-hidden="true">
           <circle r="19" class="real-poi-selection-ring" />

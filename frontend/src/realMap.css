@@ -66,7 +66,14 @@
   .real-demo-route { fill: none; stroke: #087e71; stroke-width: 4.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .3s cubic-bezier(.22, .7, .3, 1) var(--route-delay, .08s) forwards; }
   .real-sampled-route { fill: none; stroke: #087e71; stroke-width: 3.6; stroke-linecap: round; stroke-linejoin: round; opacity: .82; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .3s cubic-bezier(.22, .7, .3, 1) var(--route-delay, .08s) forwards; }
   .real-poi-route { fill: none; stroke: #2d74c4; stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; opacity: .96; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .3s cubic-bezier(.22, .7, .3, 1) var(--route-delay, .08s) forwards; }
-  .real-blind-zone { fill: rgba(211, 72, 74, .22); stroke: rgba(183, 48, 55, .45); stroke-width: .8; vector-effect: non-scaling-stroke; }
+  .real-blind-zone { stroke-width: .9; vector-effect: non-scaling-stroke; }
+  .real-blind-zone.blind-missing-market { fill: rgba(224, 143, 45, .22); stroke: rgba(194, 109, 44, .58); }
+  .real-blind-zone.blind-missing-pharmacy { fill: rgba(166, 78, 112, .21); stroke: rgba(154, 77, 103, .58); }
+  .real-blind-zone.blind-missing-primary_school { fill: rgba(77, 109, 168, .20); stroke: rgba(77, 109, 168, .58); }
+  .real-blind-zone.blind-missing-market\+pharmacy,
+  .real-blind-zone.blind-missing-market\+primary_school,
+  .real-blind-zone.blind-missing-pharmacy\+primary_school { fill: rgba(133, 91, 167, .20); stroke: rgba(111, 77, 148, .58); }
+  .real-blind-zone.blind-missing-market\+pharmacy\+primary_school { fill: rgba(211, 72, 74, .25); stroke: rgba(183, 48, 55, .62); }
 .real-demo-access { fill: none; stroke: #d1764e; stroke-width: 2.5; stroke-dasharray: 4 4; stroke-linecap: round; vector-effect: non-scaling-stroke; animation: real-circle-reveal .3s ease-out .1s both; }
 @keyframes real-circle-reveal { from { opacity: 0; } to { opacity: 1; } }
 @keyframes real-route-draw { to { stroke-dashoffset: 0; } }
