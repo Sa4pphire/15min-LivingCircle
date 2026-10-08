@@ -34,6 +34,23 @@ def multipolygon_to_bd09(geometry: dict[str, Any], origin):
     ]}
 
 
+def local_geometry_to_bd09(geometry: dict[str, Any], origin):
+    """Convert a Shapely-mapped local Polygon/MultiPolygon to BD-09."""
+    geometry_type = geometry.get("type")
+    if geometry_type not in {"Polygon", "MultiPolygon"}:
+        raise ValueError("盲区几何必须是 Polygon 或 MultiPolygon")
+
+    def convert(value):
+        if (isinstance(value, (list, tuple)) and len(value) == 2 and
+                all(isinstance(item, (int, float)) for item in value)):
+            return local_point_to_bd09(value, origin)
+        if not isinstance(value, (list, tuple)):
+            raise ValueError("盲区几何坐标无效")
+        return [convert(item) for item in value]
+
+    return {"type": geometry_type, "coordinates": convert(geometry.get("coordinates"))}
+
+
 def isochrone_search_radius_meters(geometry: dict[str, Any]) -> int:
     if geometry.get("type") != "MultiPolygon":
         raise ValueError("等时圈几何必须是 MultiPolygon")
@@ -96,12 +113,12 @@ def build_blind_zone_coverage(
         return {"type": "FeatureCollection", "features": [],
                 "properties": {"status": "empty",
                                "resolutionMeters": cell_size_meters}}
-    if not inventory_complete:
-        return {"type": "FeatureCollection", "features": [],
-                "properties": {"status": "unknown",
-                               "resolutionMeters": cell_size_meters,
-                               "reason": "POI inventory is incomplete",
-                               "geometryMethod": "continuous-service-union"}}
+    # Keep rendering a candidate layer even when one or more POI pages were
+    # unavailable.  The geometry is then explicitly marked provisional so a
+    # missing page is never presented as proof that a service is absent.
+    inventory_status = "confirmed" if inventory_complete else "provisional"
+    inventory_reason = (None if inventory_complete else
+                        "POI inventory is incomplete; zones use returned POIs")
 
     categories = ("market", "pharmacy", "primary_school")
     scale_x = METERS_PER_DEGREE * math.cos(math.radians(float(origin[1])))
@@ -154,11 +171,14 @@ def build_blind_zone_coverage(
                     "geometryMethod": "continuous-service-union",
                 },
             })
+    properties = {"status": inventory_status,
+                  "resolutionMeters": cell_size_meters,
+                  "serviceRadiusMeters": service_radius_meters,
+                  "geometryMethod": "continuous-service-union"}
+    if inventory_reason:
+        properties["reason"] = inventory_reason
     return {"type": "FeatureCollection", "features": features,
-            "properties": {"status": "confirmed",
-                           "resolutionMeters": cell_size_meters,
-                           "serviceRadiusMeters": service_radius_meters,
-                           "geometryMethod": "continuous-service-union"}}
+            "properties": properties}
 
 
 def build_blind_zone_grid(*args, **kwargs):

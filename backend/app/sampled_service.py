@@ -13,6 +13,7 @@ from .sampled_analysis import build_sampled_isochrone
 from .sampled_geometry import (
     build_blind_zone_coverage,
     isochrone_search_radius_meters,
+    local_geometry_to_bd09,
     point_in_isochrone,
 )
 from .settings import settings
@@ -134,13 +135,25 @@ async def run_sampled_analysis(
         and all(poi_result["categoryStatus"].get(category) == "complete"
                 for category in ("market", "pharmacy", "primary_school"))
     )
-    result["blindZones"] = build_blind_zone_coverage(
+    blind_zones = build_blind_zone_coverage(
         region_geometry or result["isochroneMeters"],
         candidate_features,
         bd09_center,
         cell_size_meters=10.0,
         inventory_complete=inventory_complete,
     )
+    # The coverage calculation is deliberately performed in metres for the
+    # ten-metre boundary precision.  Convert each returned polygon back to
+    # BD-09 before handing it to the browser map projection.
+    for feature in blind_zones.get("features", []):
+        try:
+            feature["geometry"] = local_geometry_to_bd09(
+                feature["geometry"], bd09_center,
+            )
+        except (KeyError, TypeError, ValueError):
+            feature["geometry"] = None
+    blind_zones["properties"]["coordinateSystem"] = "bd09ll"
+    result["blindZones"] = blind_zones
     result["blindZoneStatus"] = result["blindZones"].get("properties", {}).get("status")
     result["blindZoneResolutionMeters"] = 10.0
     result["routeSegments"] = routes

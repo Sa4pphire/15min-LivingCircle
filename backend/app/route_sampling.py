@@ -89,11 +89,34 @@ async def collect_sampling_routes(
     if not callable(walking_route):
         return routes, failures
 
-    # Request every radial sample, not only the farthest sample per direction.
-    # When a local isochrone is supplied, clip every walking polyline to that
-    # polygon so each visible green route ends exactly on the computed edge.
+    # RouteMatrix provides several radii for each direction.  Request the
+    # outer candidate first and keep one inner fallback.  The previous
+    # implementation requested all 48 radial samples, which made a sampled
+    # analysis fragile under Baidu's transient limits without adding visible
+    # boundary information.
+    grouped: dict[float, list[dict[str, float | int]]] = {}
     for sample in samples:
         if sample.get("sampleIndex") == 0:
+            continue
+        try:
+            angle = float(sample["angleDegrees"])
+            radius = float(sample["radiusMeters"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if math.isfinite(angle) and math.isfinite(radius):
+            grouped.setdefault(angle, []).append(sample)
+    ordered_samples: list[dict[str, float | int]] = []
+    for angle in sorted(grouped):
+        ordered_samples.extend(sorted(
+            grouped[angle],
+            key=lambda item: float(item.get("radiusMeters", 0)),
+            reverse=True,
+        )[:2])
+
+    completed_angles: set[float] = set()
+    for sample in ordered_samples:
+        angle = float(sample.get("angleDegrees", 0.0))
+        if angle in completed_angles:
             continue
         try:
             destination = (float(sample["lng"]), float(sample["lat"]))
@@ -109,6 +132,7 @@ async def collect_sampling_routes(
                 })
                 continue
             boundary_shape = shape(boundary_geometry) if boundary_geometry else None
+            route_reaches_boundary = False
             for segment_index, points in enumerate(route["segments"]):
                 if (not isinstance(points, list) or len(points) < 2 or
                         any(not isinstance(point, list) or len(point) < 2 or
@@ -134,6 +158,7 @@ async def collect_sampling_routes(
                         reaches_boundary = reaches_boundary or (
                             boundary_shape.boundary.distance(geometry) <= 12.0
                         )
+                        route_reaches_boundary = route_reaches_boundary or reaches_boundary
                         clipped_parts.append([
                             local_point_to_bd09(point, origin)
                             for point in geometry.coords
@@ -152,6 +177,8 @@ async def collect_sampling_routes(
                         "thresholdExceeded": duration > threshold_seconds,
                         "reachesBoundary": reaches_boundary,
                     })
+            if route_reaches_boundary:
+                completed_angles.add(angle)
         except (BaiduApiError, OSError, TimeoutError, KeyError, TypeError, ValueError) as exc:
             failures.append({
                 "sampleIndex": sample.get("sampleIndex"),

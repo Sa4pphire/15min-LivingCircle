@@ -140,7 +140,13 @@ class BaiduClient:
                     raise BaiduApiError("已达到本次 POI 请求预算，未继续调用 API")
                 self.cache_stats["apiRequests"] += 1
                 try:
-                    return await self._request_json(path, params)
+                    for attempt in range(max(0, settings.baidu_max_retries) + 1):
+                        try:
+                            return await self._request_json(path, params)
+                        except BaiduTransientError:
+                            if attempt >= max(0, settings.baidu_max_retries):
+                                raise
+                            await asyncio.sleep(0.25 * (attempt + 1))
                 except (BaiduAuthError, BaiduQuotaError) as exc:
                     self._halt_error = exc
                     raise

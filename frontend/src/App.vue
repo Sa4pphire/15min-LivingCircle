@@ -1,5 +1,5 @@
 <script setup>
-import { onUnmounted, ref, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import RealMapStage from "./RealMapStage.vue";
 import PoiInventoryPanel from "./PoiInventoryPanel.vue";
 import NeighborhoodFooter from "./NeighborhoodFooter.vue";
@@ -15,10 +15,12 @@ const activePage = ref(0);
 const requestedMode = new URLSearchParams(window.location.search).get("mode");
 const mapMode = ref(requestedMode === "synthetic" ? "synthetic" : "real");
 const showBlindZones = ref(false);
+const activeMapMode = computed(() => showBlindZones.value ? "blind" : mapMode.value);
 const sharedMapMounted = ref(true);
 const mapModes = [
   { id: "real", label: "真实区域", description: "百度采样与 Python 插值等时圈"  },
   { id: "synthetic", label: "专家模式", description: "C++ 路网等时圈，当前仍使用合成数据" },
+  { id: "blind", label: "盲区显示", description: "显示服务覆盖盲区候选区域" },
 ];
 const mapZoomTier = ref("medium");
 const mapOverviewRequestId = ref(0);
@@ -171,17 +173,16 @@ async function selectCppPoi(poi) {
 watch(mapMode, mode => { if (mode !== "synthetic") clearCppPoiRoute(); });
 
 function switchMapMode(mode) {
+  if (mode === "blind") {
+    if (mapMode.value !== "real") mapMode.value = "real";
+    showBlindZones.value = !showBlindZones.value;
+    return;
+  }
   if (!["real", "synthetic"].includes(mode)) return;
   showBlindZones.value = false;
   if (mapMode.value === mode) return;
   if (mapZoomTier.value === "result") mapZoomTier.value = "medium";
   mapMode.value = mode;
-}
-
-function toggleBlindZones() {
-  // Keep the existing real-area layer behavior without treating it as a mode.
-  if (mapMode.value !== "real") mapMode.value = "real";
-  showBlindZones.value = !showBlindZones.value;
 }
 
 function toggleLivingFooter() {
@@ -318,36 +319,15 @@ onUnmounted(() => {
             </Transition>
             <!-- Replay a light reveal without remounting the shared base map. -->
             <div :key="mapMode" class="map-mode-wash" aria-hidden="true"></div>
-            <div class="map-layer-controls"
+            <div class="map-mode-switch" role="group" aria-label="地图展示模式"
+              :style="{ '--mode-index': mapModes.findIndex(mode => mode.id === activeMapMode), '--mode-count': mapModes.length }"
               @pointerdown.stop @click.stop @dblclick.stop>
-              <div class="map-mode-switch" role="group" aria-label="地图展示模式"
-                :style="{ '--mode-index': mapModes.findIndex(mode => mode.id === mapMode), '--mode-count': mapModes.length }">
                 <span class="map-mode-indicator" aria-hidden="true"></span>
                 <button v-for="mode in mapModes" :key="mode.id" type="button" :title="mode.description"
-                  :aria-pressed="mapMode === mode.id" :class="{ active: mapMode === mode.id }"
+                  :aria-pressed="mode.id === activeMapMode"
+                  :class="{ active: mode.id === activeMapMode }"
                   @click="switchMapMode(mode.id)">{{ mode.label }}</button>
-              </div>
-              <button type="button" class="map-round-control map-blind-toggle" role="switch" aria-label="盲区显示"
-                :aria-checked="showBlindZones" :class="{ 'is-on': showBlindZones }"
-                @click="toggleBlindZones">
-                <svg class="map-control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" />
-                  <circle cx="12" cy="12" r="2.6" />
-                </svg>
-                <span class="map-control-tooltip map-blind-tooltip" aria-hidden="true">盲区显示</span>
-              </button>
             </div>
-            <button type="button" class="map-round-control living-footer-toggle" aria-label="LIVING CIRCLE 装饰"
-              :aria-expanded="!livingFooterCollapsed" :aria-pressed="!livingFooterCollapsed"
-              :class="{ 'is-on': !livingFooterCollapsed }" aria-controls="living-wordmark-panel"
-              @pointerdown.stop @dblclick.stop @click.stop="toggleLivingFooter">
-              <svg class="map-control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M5 7V5h14v2M12 5v14M8.5 19h7" />
-              </svg>
-              <span class="map-control-tooltip" aria-hidden="true">{{ livingFooterCollapsed ? '显示装饰' : '隐藏装饰' }}</span>
-            </button>
             <div class="map-compass" aria-hidden="true"><span>北</span><i></i></div>
             <div class="map-scale-wrap" :class="{ collapsed: mapScaleCollapsed }">
               <button type="button" class="map-scale-toggle"
@@ -371,18 +351,23 @@ onUnmounted(() => {
           <div class="map-bottomline real-mode">
             <span v-if="mapMode === 'real'"><span class="line-signal"></span>{{ realAnalysisState === 'error' ? realAnalysisError : realAnalysisState === 'running' ? '正在生成百度采样等时圈，请稍候' : realAnalysisResult ? '百度采样等时圈与代表路线已显示' : realCandidate ? '已选起点 · 点击右上角生成真实区域分析' : '四路围合范围 · 点击地图选点' }}</span>
             <span v-else-if="mapMode === 'synthetic'" role="status"><span class="line-signal"></span>{{ cppAnalysisState === 'error' ? cppAnalysisError : cppAnalysisState === 'running' ? '正在计算路网等时圈' : cppAnalysisState === 'enriching' ? '等时圈已显示 · 正在补充设施，可继续选点' : cppAnalysisResult ? '等时圈已显示 · 点击设施查看路径（未核实）' : cppCandidate ? '已选起点 · 点击右上角计算等时圈' : '专家模式 · 合成路网，点击地图选点' }}</span>
-            <span><span class="line-signal"></span>{{ showBlindZones ? (realAnalysisResult?.blindZoneStatus === 'confirmed' ? `连续覆盖面盲区：按缺失类别着色，三类均缺失为红色 · 服务半径 1 公里` : realAnalysisResult?.blindZoneStatus === 'unknown' ? 'POI 清单不完整，暂不把缺失数据判为盲区' : '当前没有可确认的服务盲区') : '点击眼睛图标切换服务覆盖候选层' }}</span>
+            <span><span class="line-signal"></span>{{ showBlindZones ? (realAnalysisResult?.blindZoneStatus === 'confirmed' ? `连续覆盖面盲区：按缺失类别着色，三类均缺失为红色 · 服务半径 1 公里` : realAnalysisResult?.blindZoneStatus === 'unknown' ? 'POI 清单不完整，暂不把缺失数据判为盲区' : '当前没有可确认的服务盲区') : '点击“盲区显示”切换服务覆盖候选层' }}</span>
             <span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">边界与 SVG 数据 © OpenStreetMap contributors · ODbL</a></span>
           </div>
           <div v-if="mapMode === 'real' && realAnalysisResult" class="real-route-legend" aria-label="真实区域路线图例">
             <span><i class="legend-sampled-route"></i>采样边界路线 {{ realAnalysisResult.summary.samplingRouteCount }}</span>
             <span><i class="legend-poi-route"></i>POI 服务路线 {{ realAnalysisResult.summary.poiRouteCount }}<small v-if="realAnalysisResult.summary.poiRouteCount === 0">（暂无 15 分钟内有效路线）</small></span>
-            <span v-if="showBlindZones && realAnalysisResult?.blindZoneStatus === 'confirmed'"><i class="legend-blind-zone"></i>连续服务盲区（按缺失类别着色，三类均缺失为红色）</span>
+            <span v-if="showBlindZones && ['confirmed', 'provisional'].includes(realAnalysisResult?.blindZoneStatus)"><i class="legend-blind-zone"></i>{{ realAnalysisResult?.blindZoneStatus === 'provisional' ? '盲区候选（POI 不完整）' : '连续服务盲区（按缺失类别着色，三类均缺失为红色）' }}</span>
           </div>
         </div>
       </section>
     </main>
     <footer class="living-footer" :class="{ collapsed: livingFooterCollapsed }" aria-label="LIVING CIRCLE">
+      <button type="button" class="living-footer-toggle"
+        :aria-expanded="String(!livingFooterCollapsed)"
+        aria-controls="living-wordmark-panel"
+        :title="livingFooterCollapsed ? '展开 LIVING CIRCLE 动画' : '收起 LIVING CIRCLE 动画'"
+        @click="toggleLivingFooter">{{ livingFooterCollapsed ? '▲' : '▼' }}</button>
       <div class="living-meta" aria-hidden="true">
         <span>{{ mapMode === 'real' ? 'REAL AREA PREVIEW / XINJIANGWANCHENG' : 'C++ ISOCHRONE / SYNTHETIC ROAD GRAPH' }}</span>
         <span>向下滚动 · 查看生活圈报告 ↓</span>

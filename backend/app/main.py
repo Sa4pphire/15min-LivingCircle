@@ -41,6 +41,7 @@ _analyses: dict[str, AnalysisState] = {}
 _sampled_analyses: dict[str, AnalysisState] = {}
 _local_experiments: dict[str, AnalysisState] = {}
 _poi_routes = PoiRouteStore()
+_sampled_task_semaphore = asyncio.Semaphore(1)
 
 
 @app.get("/api/v1/health", response_model=HealthResponse)
@@ -191,10 +192,15 @@ async def _run_sampled_task(
             percent=30,
         )
 
-        result = await build_sampled_result(
-            client,
-            center,
-        )
+        # One sampled report can issue a RouteMatrix request, POI pages and
+        # walking-detail requests.  Serializing this external-work section
+        # prevents repeated browser clicks from competing for the same Baidu
+        # QPS/cache budget and turning every report into a transient failure.
+        async with _sampled_task_semaphore:
+            result = await build_sampled_result(
+                client,
+                center,
+            )
 
         analysis.result = result
         analysis.status = "completed"
