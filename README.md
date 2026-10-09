@@ -1,5 +1,7 @@
 # 15 分钟生活圈智能体检与规划助手
 
+当前默认运行数据已整理为 `data/regions/shanghai-new-jiangwan/` 区域包。地图拖动、缩放和选点范围由现有路网自动派生，提供动态米制比例尺；配置 `REGION_ID` 可选择区域。结构、更新和 ZIP 导出见 [区域包说明](docs/region-packages.md)。
+
 面向比赛演示的步行可达性分析 Web 项目。目标是在已核实的社区步行路网上，计算中心点出发的 15 分钟可达街段、近似等时圈，以及按设施入口耗时判断的服务覆盖和疑似灰区。
 
 项目采用 **Vue 3 + Vite 前端、Python/FastAPI 主服务、C++20 路网引擎**。当前处于演示与联调阶段：真实路网和设施入口仍待采集核实，尚不能生成经验证的真实社区体检报告。
@@ -134,19 +136,25 @@ Vite 将 `/api` 请求代理到 `http://127.0.0.1:8000`。Linux/macOS 手动构�
 
 直接 C++ 文件读取与 Python 标准输入调用使用同一图解析和算法。当前设施清单和评价类别为空，局部页面只显示可达街段及“数据不足”；不会将缺失设施当作灰区。`contracts/` 中的小图只保留为字段样例及单元测试。未来显式更换局部文件可设置 `LOCAL_EXPERIMENT_NETWORK_PATH`，不能放到 `WALKING_NETWORK_PATH` 中替代完整生活圈路网。
 
-## 配置与密钥
+## 手动编辑 C++ 路网
 
+需要手动整理 C++ 路网时，双击 `start-network-editor.bat` 打开本地编辑器（5174 / 8001），
+支持节点拖动、增删连线、拆分路段、属性修改、撤销和路径检查。保存自动备份，并将人工编辑写入统一标注；
+重新生成路网仍会保留编辑。操作和数据说明见 [路网编辑器](docs/network-editor.md)。
+
+## 配置与密钥
 | 配置 | 用途 |
 | --- | --- |
 | `CPP_ENGINE_PATH` | C++ 可执行文件路径；本地与容器路径不同 |
 | `WALKING_NETWORK_PATH` | 完整 15 分钟分析路网，默认 `data/networks/shanghai-new-jiangwan.json` |
-| `SYNTHETIC_NETWORK_PATH` | C++ 演示公共数据源，默认仓库内 `data/networks/synthetic-preview.json` |
+| `REGION_ID` | 当前区域包，默认 `shanghai-new-jiangwan` |
+| `SYNTHETIC_NETWORK_PATH` | C++ 演示公共数据源，默认 `data/regions/<REGION_ID>/network.json`；覆盖路径必须与区域包一致 |
 | `LOCAL_EXPERIMENT_NETWORK_PATH` | 可选的局部实验数据覆盖；未设置时共用 `SYNTHETIC_NETWORK_PATH` |
 | `BAIDU_SERVER_AK` | 仅供 Python 服务端地图请求使用 |
 | `VITE_BAIDU_BROWSER_AK` | 仅供前端百度 JSAPI 底图使用，会暴露给浏览器 |
 | `ANALYSIS_CACHE_DIR` | 缓存/日志目录配置；具体能力以当前调用模块为准 |
 
-本地后端通过进程环境读取配置，不会自动加载根目录 `.env`；可在启动前使用 PowerShell 的 `$env:变量名` 设置。不要直接将 Docker 示例中的 `/app/...` 路径用于本机。
+本地后端读取进程环境和根目录、`backend/` 下的 `.env`，进程环境优先；也可在启动前使用 PowerShell 的 `$env:变量名` 设置。启动器使用同一份区域配置，默认无需手动指定路网路径。不要直接将 Docker 示例中的 `/app/...` 路径用于本机。
 
 前端配置单独放在 `frontend/.env.local`，可从 `frontend/.env.example` 复制并填写浏览器 AK。Vite 的环境变量在启动/构建时读取；Docker 运行时设置根目录的 `BAIDU_BROWSER_AK` 不会自动替换已构建前端中的 `VITE_BAIDU_BROWSER_AK`。浏览器 AK 应配置域名限制，服务端 AK 不得放入任何 `VITE_` 变量。
 

@@ -1,21 +1,18 @@
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, useId, watch } from "vue";
 import BMapLoader from "@baidumap/jsapi-loader";
-import boundaryWgs from "./data/demoBoundary.wgs84.json";
-import preparedMapAsset from "./data/demoMap.bd09.json";
-import { preparedMapCenter, preparedMapGeometry, sampleLocalArea, sampleLocalPath } from "./mapAsset.js";
+import { createLocalBd09Alignment, sampleLocalArea, sampleLocalPath } from "./mapAsset.js";
+import { getActiveRegion } from "./regionLoader.js";
+import { boundsCorners, containsBounds, constrainMapView, metricScale, coverageCorrection } from "./mapCoverage.js";
 import { baiduMapStyle } from "./baiduMapStyle";
 import {
-  baiduZoomForFactor, clampMapPan, clampMapZoomFactor,
+  baiduZoomForFactor, clampMapZoomFactor,
   MAX_MAP_ZOOM_FACTOR, zoomFactor, zoomedFit,
 } from "./mapZoom";
 import {
-  DISPLAY_PADDING_METERS,
-  expandedLocalBounds,
   fitLocalPoints,
   geometryToSvgPath,
   localToWgs,
-  pointInPolygon,
   wgsToLocal,
 } from "./mapGeometry";
 import "./realMap.css";
@@ -34,13 +31,16 @@ const props = defineProps({
   showBlindZones: { type: Boolean, default: false },
 });
 const emit = defineEmits(["select", "poi-select", "poi-dismiss"]);
+const blindClipId = useId();
 
 const browserAk = import.meta.env.VITE_BAIDU_BROWSER_AK?.trim();
-const boundaryWgsRing = boundaryWgs.geometry.coordinates[0];
-const fallbackOrigin = [121.505, 31.333];
-const fallbackRing = boundaryWgsRing.map((point) => wgsToLocal(point, fallbackOrigin));
-const displayCornersLocal = expandedLocalBounds(fallbackRing);
-const fallbackBoundary = geometryToSvgPath(boundaryWgs.geometry, (point) => wgsToLocal(point, fallbackOrigin));
+const region = getActiveRegion();
+const preparedMapAsset = region.alignment;
+const fallbackOrigin = region.geographicOrigin;
+const coverageBounds = region.displayBounds;
+const displayCornersLocal = boundsCorners(coverageBounds);
+const fallbackRing = [...displayCornersLocal, displayCornersLocal[0]];
+const fallbackBoundary = geometryToSvgPath({ type: "Polygon", coordinates: [fallbackRing] }, point => point);
 
 const stageEl = ref(null);
 const baiduEl = ref(null);
@@ -51,7 +51,7 @@ const mapError = ref("");
 const boundaryState = ref("pending");
 const boundaryError = ref("");
 const notice = ref("");
-const context = shallowRef(null);
+const context = shallowRef(region.context);
 const boundaryBd09 = shallowRef(null);
 const displayCornersBd09 = shallowRef(null);
 const regionCenterBd09 = shallowRef(null);
@@ -99,7 +99,7 @@ const fallbackFit = computed(() => {
     translateX: fit.translateX + (viewport.value.width - size.width) / 2,
     translateY: fit.translateY + (viewport.value.height - size.height) / 2 };
 });
-const fallbackView = computed(() => {
+const fallbackCamera = computed(() => {
   const overviewSize = fallbackOverviewViewport.value ?? fallbackFitViewport.value ?? viewport.value;
   const overview = !manualZoom.value && props.zoomTier === "result" && props.analysisMode === "cpp"
     ? cppOverviewFit(overviewResult.value, overviewSize.width, overviewSize.height) : null;
@@ -108,7 +108,7 @@ const fallbackView = computed(() => {
     viewport.value.width,
     viewport.value.height,
     props.zoomTier,
-    props.candidate?.coordType === "wgs84ll"
+    props.candidate?.coordType === region.geographicCoordType
       ? wgsToLocal([props.candidate.lng, props.candidate.lat], fallbackOrigin) : null,
     manualZoom.value ? viewZoomFactor.value : zoomFactor(props.zoomTier),
   );
@@ -119,11 +119,45 @@ const fallbackView = computed(() => {
     fitted.translateX = viewport.value.width / 2 + (overview.translateX - overviewSize.width / 2) * ratio;
     fitted.translateY = viewport.value.height / 2 + (overview.translateY - overviewSize.height / 2) * ratio;
   }
-  return {
-    ...fitted,
-    translateX: fitted.translateX + fallbackPan.value.x,
-    translateY: fitted.translateY + fallbackPan.value.y,
-  };
+  return fitted;
+});
+const fallbackView = computed(() => constrainMapView({ ...fallbackCamera.value,
+  translateX: fallbackCamera.value.translateX + fallbackPan.value.x,
+  translateY: fallbackCamera.value.translateY + fallbackPan.value.y,
+}, viewport.value.width, viewport.value.height, coverageBounds));
+
+function setFallbackPan(pan) {
+  const camera = fallbackCamera.value;
+  const limited = constrainMapView({ ...camera, translateX: camera.translateX + pan.x,
+    translateY: camera.translateY + pan.y }, viewport.value.width, viewport.value.height, coverageBounds);
+  const x = (viewport.value.width / 2 - limited.translateX) / limited.scale;
+  const y = (viewport.value.height / 2 - limited.translateY) / limited.scale;
+  fallbackPan.value = { x: viewport.value.width / 2 - x * camera.scale - camera.translateX,
+    y: viewport.value.height / 2 - y * camera.scale - camera.translateY };
+}
+
+function setFallbackCenter([x, y]) {
+  const camera = fallbackCamera.value;
+  setFallbackPan({ x: viewport.value.width / 2 - x * camera.scale - camera.translateX,
+    y: viewport.value.height / 2 - y * camera.scale - camera.translateY });
+}
+
+const scaleBar = computed(() => {
+  projectionVersion.value;
+  if (mapState.value === "ready" && map && BMap) {
+    const projector = map.pixelToPoint ?? map.overlayPixelToPoint;
+    if (projector) {
+      const at = offset => {
+        const point = projector.call(map, new BMap.Pixel(viewport.value.width / 2 + offset,
+          viewport.value.height / 2));
+        return bd09ToLocal([point.lng, point.lat]);
+      };
+      const a = at(-40), b = at(40);
+      if (a && b) return metricScale(Math.hypot(b[0] - a[0], b[1] - a[1]) / 80);
+    }
+    return null;
+  }
+  return metricScale(1 / fallbackView.value.scale);
 });
 const fallbackTransform = computed(() => {
   const { scale, translateX, translateY } = fallbackView.value;
@@ -137,7 +171,7 @@ const contextGroups = computed(() => {
   return groups;
 });
 const fallbackCandidate = computed(() => {
-  if (props.candidate?.coordType !== "wgs84ll") return null;
+  if (props.candidate?.coordType !== region.geographicCoordType) return null;
   const [x, y] = wgsToLocal([props.candidate.lng, props.candidate.lat], fallbackOrigin);
   const { scale, translateX, translateY } = fallbackView.value;
   return { x: translateX + x * scale, y: translateY + y * scale };
@@ -191,8 +225,34 @@ function localAreaPath(result) {
   return geometryToSvgPath(result.displayArea.geometry, (point) => point);
 }
 
-const fallbackDemoResult = computed(() => props.analysisResult?.coordinateSystem === "preview-local-v1"
-  ? props.analysisResult : null);
+const fallbackDemoResult = computed(() => {
+  const result = props.analysisResult;
+  if (result?.coordinateSystem === 'preview-local-v1') return result;
+  if (result?.source === 'baidu-sampled-idw' && result.fallbackDisplayArea) {
+    return { ...result, displayArea: result.fallbackDisplayArea, routeSegments: [], accessLink: null };
+  }
+  return null;
+});
+function blindZoneStyle(missingCategories = []) {
+  const known = missingCategories.filter(category => Object.hasOwn(poiCategoryStyles, category));
+  const color = known.length === 1 ? poiCategoryStyles[known[0]].color
+    : known.length === Object.keys(poiCategoryStyles).length ? '#d3484a' : '#855ba7';
+  return { '--blind-fill': `${color}38`, '--blind-stroke': `${color}99` };
+}
+const fallbackBlindZones = computed(() => {
+  const result = props.analysisResult;
+  if (!props.showBlindZones || result?.source !== 'baidu-sampled-idw' || !mapAlignment.value) return [];
+  return (result.blindZones?.features ?? []).flatMap(feature => {
+    try {
+      const d = geometryToSvgPath(feature.geometry, point => {
+        const local = bd09ToLocal(point);
+        if (!finitePoint(local)) throw new Error('OUTSIDE_ALIGNMENT');
+        return local;
+      });
+      return d ? [{ d, missingCategories: feature.properties?.missingCategories ?? [] }] : [];
+    } catch { return []; }
+  });
+});
 const cppSyntheticResult = computed(() => props.analysisResult?.source === "synthetic-cpp-engine");
 const liveDemoResult = computed(() => {
   projectionVersion.value;
@@ -215,7 +275,7 @@ const liveDemoResult = computed(() => {
       : geometryToSvgPath(result.coordinateSystem === "preview-local-v1"
         ? sampleLocalArea(result.displayArea.geometry) : result.displayArea.geometry, project),
     routes: [],
-    poiRoutes: (props.analysisMode === "preview" ? result.routeSegments ?? [] : []).map((segment) => ({
+    poiRoutes: (props.analysisMode === "preview" && !props.poiRoute ? result.routeSegments ?? [] : []).map((segment) => ({
       id: segment.id,
       d: linePath(projectPath(segment.points)),
       delay: routeDelay(segment, result),
@@ -248,8 +308,9 @@ const projectedResult = computed(() => {
       projectGeometry(feature.geometry)),
     gaps: (result.blindZoneWalkways?.features ?? []).map((feature) =>
       projectGeometry(feature.geometry)),
-    blindZones: (props.showBlindZones ? result.blindZones?.features ?? [] : []).map((feature) =>
-      projectGeometry(feature.geometry)),
+    blindZones: (props.showBlindZones ? result.blindZones?.features ?? [] : []).map((feature) => ({
+      d: projectGeometry(feature.geometry), missingCategories: feature.properties?.missingCategories ?? [],
+    })),
   };
 });
 const poiMarkers = computed(() => {
@@ -268,25 +329,43 @@ const poiMarkers = computed(() => {
     return [{ ...poi, pixel: [translateX + point[0] * scale, translateY + point[1] * scale] }];
   }).sort((a, b) => Number(a.id === selectedPoi.value?.id) - Number(b.id === selectedPoi.value?.id));
 });
-const selectedPoiRoute = computed(() => props.analysisMode === "cpp" &&
-  props.poiRoute?.poiId === selectedPoi.value?.id ? props.poiRoute : null);
+const selectedPoiRoute = computed(() => props.poiRoute?.poiId === selectedPoi.value?.id ? props.poiRoute : null);
 const selectedRoutePaths = computed(() => {
   projectionVersion.value;
   const route = selectedPoiRoute.value;
   if (route?.status !== "ready") return [];
-  return route.segments.map(segment => {
-    const points = mapState.value === "ready" && map && BMap
-      ? sampleLocalPath(segment.points).map(point => {
-        const pixel = mapPointToOverlayPixel(localToBd09(point));
-        return [pixel.x, pixel.y];
-      }) : segment.points.map(point => {
-        const { scale, translateX, translateY } = fallbackView.value;
-        return [translateX + point[0] * scale, translateY + point[1] * scale];
-      });
-    return { ...segment, d: linePath(points), delay: `${segment.startProgress * .65}s`,
-      access: ["origin_access", "facility_access"].includes(segment.kind) };
+  const geographic = route.coordinateSystem === 'bd09ll';
+  return route.segments.flatMap(segment => {
+    const samples = geographic ? segment.points : mapState.value === 'ready' ? sampleLocalPath(segment.points) : segment.points;
+    const parts = [];
+    let part = [];
+    for (const point of samples) {
+      let projected = null;
+      if (mapState.value === 'ready' && map && BMap) {
+        const coordinate = geographic ? point : localToBd09(point);
+        if (finitePoint(coordinate)) {
+          const pixel = mapPointToOverlayPixel(coordinate);
+          projected = [pixel.x, pixel.y];
+        }
+      } else {
+        const local = geographic ? bd09ToLocal(point) : point;
+        if (finitePoint(local)) {
+          const { scale, translateX, translateY } = fallbackView.value;
+          projected = [translateX + local[0] * scale, translateY + local[1] * scale];
+        }
+      }
+      if (finitePoint(projected)) part.push(projected);
+      else { if (part.length >= 2) parts.push(part); part = []; }
+    }
+    if (part.length >= 2) parts.push(part);
+    return parts.map((points, index) => ({ ...segment, id: `${segment.id}:${index}`, d: linePath(points),
+      delay: `${segment.startProgress * .65}s`, baidu: geographic,
+      access: ["origin_access", "facility_access"].includes(segment.kind) }));
   });
 });
+const selectedRouteClipped = computed(() => selectedPoiRoute.value?.status === 'ready' &&
+  selectedPoiRoute.value.coordinateSystem === 'bd09ll' && mapState.value !== 'ready' &&
+  selectedPoiRoute.value.segments.some(segment => segment.points.some(point => !finitePoint(bd09ToLocal(point)))));
 
 function selectPoi(poi) {
   selectedPoi.value = poi;
@@ -344,11 +423,7 @@ function focusRequestedPoi() {
       showNotice("该设施缺少可用的地图坐标，暂时无法定位。");
       return;
     }
-    const { scale, translateX, translateY } = fallbackView.value;
-    fallbackPan.value = {
-      x: fallbackPan.value.x + viewport.value.width / 2 - (translateX + point[0] * scale),
-      y: fallbackPan.value.y + viewport.value.height / 2 - (translateY + point[1] * scale),
-    };
+    setFallbackCenter(point);
     // Retain a pending request only while the native SDK is still loading.
     if (mapState.value !== "loading") pendingPoiFocusRequest = null;
   }
@@ -367,13 +442,7 @@ function showNotice(message) {
 }
 
 async function loadFallbackContext() {
-  if (context.value) return;
-  try {
-    const module = await import("./data/demoContext.extended.wgs84.json");
-    if (!destroyed) context.value = module.default;
-  } catch {
-    showNotice("道路轮廓数据暂时无法读取，请刷新页面。");
-  }
+  if (!destroyed) context.value = region.context;
 }
 
 function scheduleProjection() {
@@ -381,6 +450,7 @@ function scheduleProjection() {
   frame = requestAnimationFrame(() => {
     frame = 0;
     if (!map || !BMap) return;
+    constrainNativeViewport();
     liveBoundaryPath.value = boundaryBd09.value ? geometryToSvgPath(
       { type: "Polygon", coordinates: [boundaryBd09.value] },
       ([lng, lat]) => {
@@ -390,6 +460,56 @@ function scheduleProjection() {
     ) : "";
     projectionVersion.value += 1;
   });
+}
+
+let constrainingNative = false;
+function constrainNativeViewport() {
+  if (constrainingNative || !map || !BMap || !boundaryBd09.value?.length) return;
+  const pixels = boundaryBd09.value.map(mapPointToOverlayPixel);
+  const xs = pixels.map(p => p.x), ys = pixels.map(p => p.y);
+  const west = Math.min(...xs), east = Math.max(...xs);
+  const north = Math.min(...ys), south = Math.max(...ys);
+  const width = viewport.value.width, height = viewport.value.height;
+  const ratio = Math.max(width / (east - west), height / (south - north));
+  if (![ratio, west, east, north, south].every(Number.isFinite) || ratio <= 0) return;
+  let level = map.getZoom();
+  let target = map.getCenter();
+  if (ratio > 1.001) {
+    level = Math.ceil(level + Math.log2(ratio));
+    map.setMinZoom?.(level);
+  } else {
+    const dx = west > 0 ? -west : east < width ? width - east : 0;
+    const dy = north > 0 ? -north : south < height ? height - south : 0;
+    const unproject = map.pixelToPoint ?? map.overlayPixelToPoint;
+    if (!unproject) return;
+    if (Math.abs(dx) >= .5 || Math.abs(dy) >= .5) {
+      target = unproject.call(map, new BMap.Pixel(width / 2 - dx, height / 2 - dy));
+    } else {
+      // The official datum grid is nonlinear. Check the viewport in local
+      // meters too, rather than trusting only its projected bounding box.
+      const samples = [[0,0], [width/2,0], [width,0], [width,height/2],
+        [width,height], [width/2,height], [0,height], [0,height/2]].map(([x,y]) => {
+        const point = unproject.call(map, new BMap.Pixel(x,y));
+        return bd09ToLocal([point.lng, point.lat]);
+      });
+      if (samples.some(point => !point)) return;
+      const correction = coverageCorrection(samples, coverageBounds);
+      if (correction.zoomRatio > 1.0001) {
+        level = Math.ceil(level + Math.log2(correction.zoomRatio));
+        map.setMinZoom?.(level);
+      } else if (Math.abs(correction.dx) > .05 || Math.abs(correction.dy) > .05) {
+        const center = bd09ToLocal([target.lng, target.lat]);
+        if (!center) return;
+        const coordinate = localToBd09([center[0] + correction.dx, center[1] + correction.dy]);
+        if (!coordinate) return;
+        target = new BMap.Point(...coordinate);
+      } else return;
+    }
+  }
+  constrainingNative = true;
+  try { map.centerAndZoom(target, level, { noAnimation: true }); }
+  finally { constrainingNative = false; }
+  viewZoomFactor.value = clampMapZoomFactor(2 ** (level - baseFittedZoom));
 }
 
 function fitBaiduViewport(animate = false) {
@@ -459,7 +579,7 @@ function handleMapWheel(event) {
   event.preventDefault();
   const delta = event.deltaY * (event.deltaMode === 1 ? 16
     : event.deltaMode === 2 ? viewport.value.height : 1);
-  const previous = fallbackActive.value && !manualZoom.value && props.zoomTier === "result"
+  const previous = fallbackActive.value
     ? clampMapZoomFactor(fallbackView.value.scale / fallbackFit.value.scale) : viewZoomFactor.value;
   const next = clampMapZoomFactor(previous * 2 ** (-Math.max(-240, Math.min(240, delta)) / 400));
   if (Math.abs(next - previous) < 1e-6) return;
@@ -471,11 +591,7 @@ function handleMapWheel(event) {
   viewZoomFactor.value = next;
   manualZoom.value = true;
   if (fallbackActive.value) {
-    const after = fallbackView.value;
-    fallbackPan.value = {
-      x: fallbackPan.value.x + viewport.value.width / 2 - (after.translateX + center[0] * after.scale),
-      y: fallbackPan.value.y + viewport.value.height / 2 - (after.translateY + center[1] * after.scale),
-    };
+    setFallbackCenter(center);
   }
   // Only one camera write per frame, including rapid mouse/trackpad wheel input.
   if (!wheelFrame) wheelFrame = requestAnimationFrame(() => {
@@ -484,16 +600,36 @@ function handleMapWheel(event) {
   });
 }
 
+function zoomMap(direction) {
+  handleMapWheel({ deltaY: -direction * 200, deltaX: 0, deltaMode: 0, ctrlKey: false,
+    preventDefault() {} });
+}
+
+function resetMapViewport() {
+  manualZoom.value = true;
+  viewZoomFactor.value = 1;
+  fallbackPan.value = { x: 0, y: 0 };
+  if (mapState.value === "ready" && map && baseFittedViewport) {
+    map.centerAndZoom(baseFittedViewport.center, baseFittedZoom, { noAnimation: true });
+    scheduleProjection();
+  }
+}
+
 function loadPreparedBoundary() {
   try {
-    const { ring, corners, alignment } = preparedMapGeometry(preparedMapAsset, {
-      ringWgs84: boundaryWgsRing,
-      originWgs84: fallbackOrigin,
-      paddingMeters: DISPLAY_PADDING_METERS,
-    });
+    const alignment = createLocalBd09Alignment(preparedMapAsset);
+    const corners = displayCornersLocal.map(alignment.toBd09);
+    const ring = sampleLocalPath(fallbackRing).map(alignment.toBd09);
+    if (corners.some(point => !point) || ring.some(point => !point)) {
+      throw new Error("路网范围超出本地坐标校准网格");
+    }
     boundaryBd09.value = ring;
     displayCornersBd09.value = corners;
     mapAlignment.value = alignment;
+    regionCenterBd09.value = alignment.toBd09([
+      (coverageBounds.minX + coverageBounds.maxX) / 2,
+      (coverageBounds.minY + coverageBounds.maxY) / 2,
+    ]);
     boundaryState.value = "ready";
     boundaryError.value = "";
   } catch (error) {
@@ -510,19 +646,18 @@ function selectPoint(lng, lat, coordType, localPoint = null) {
     showNotice("当前分析尚未完成，请稍候再选点。");
     return;
   }
-  const ring = coordType === "bd09ll" ? boundaryBd09.value : boundaryWgsRing;
-  if (coordType === "bd09ll" && boundaryState.value !== "ready") {
+  if (coordType === "bd09ll" && !localPoint && boundaryState.value !== "ready") {
     showNotice("选区数据尚未准备好，暂不能在百度底图上选点。");
-    return;
-  }
-  if (!ring || !pointInPolygon([lng, lat], [ring])) {
-    showNotice("请在国帆路、江湾城路、殷高东路、国权北路围合区内选点。");
     return;
   }
   const local = localPoint ?? (coordType === "bd09ll"
     ? bd09ToLocal([lng, lat]) : wgsToLocal([lng, lat], fallbackOrigin));
   if (!local) {
     showNotice("坐标尚未准备好，请稍后再选点。");
+    return;
+  }
+  if (!containsBounds(local, coverageBounds)) {
+    showNotice("当前位置超出现有路网数据范围，请在有数据的地区选点。");
     return;
   }
   emit("select", { lng, lat, coordType, local: { x: local[0], y: local[1] } });
@@ -542,7 +677,7 @@ function handleFallbackClick(event) {
   const local = fallbackPointFromClient(event.clientX, event.clientY);
   if (!local) return;
   const [lng, lat] = localToWgs(local, fallbackOrigin);
-  selectPoint(lng, lat, "wgs84ll", local);
+  selectPoint(lng, lat, region.geographicCoordType, local);
 }
 
 function fallbackPointFromClient(clientX, clientY) {
@@ -576,11 +711,7 @@ function moveFallbackDrag(event) {
     stageEl.value?.setPointerCapture(event.pointerId);
     leaveProbe();
   }
-  const limit = props.zoomTier === "large" ? 0.8 : 0.26;
-  fallbackPan.value = {
-    x: clampMapPan(fallbackDrag.pan.x + dx, viewport.value.width * limit),
-    y: clampMapPan(fallbackDrag.pan.y + dy, viewport.value.height * limit),
-  };
+  setFallbackPan({ x: fallbackDrag.pan.x + dx, y: fallbackDrag.pan.y + dy });
 }
 
 function endFallbackDrag(event) {
@@ -625,10 +756,11 @@ function moveProbe(event) {
       map,
       new BMap.Pixel(x, y),
     );
-    hoverInside.value = pointInPolygon([point.lng, point.lat], [boundaryBd09.value]);
+    const local = bd09ToLocal([point.lng, point.lat]);
+    hoverInside.value = Boolean(local && containsBounds(local, coverageBounds));
   } else {
     const local = fallbackPointFromClient(event.clientX, event.clientY);
-    if (local) hoverInside.value = pointInPolygon(localToWgs(local, fallbackOrigin), [boundaryWgsRing]);
+    if (local) hoverInside.value = containsBounds(local, coverageBounds);
   }
 }
 
@@ -647,7 +779,6 @@ function setupBaidu() {
 async function initializeBaidu() {
   // Overlay validation must not prevent a valid base map from opening.
   loadPreparedBoundary();
-  regionCenterBd09.value = preparedMapCenter(preparedMapAsset);
   if (!regionCenterBd09.value) {
     mapError.value = "本地 BD-09 地图中心缺失，请重新生成地图数据";
     mapState.value = "error";
@@ -687,7 +818,7 @@ async function initializeBaidu() {
     scheduleProjection();
   } catch {
     if (destroyed) return;
-    console.warn("百度底图初始化失败，已切换到 SVG 预览；边界不调用在线转换。");
+    console.warn("百度底图初始化失败，已切换到区域包的本地地图预览。");
     mapError.value = "请检查网络、浏览器 AK、服务权限和域名白名单";
     mapState.value = "error";
     await loadFallbackContext();
@@ -796,7 +927,7 @@ onUnmounted(() => {
     class="real-map-stage"
     :class="{ 'is-outside': !hoverInside, 'can-pan': fallbackActive, 'is-panning': fallbackDragging, 'can-animate': fallbackAnimated, 'has-cpp-result': cppSyntheticResult }"
     role="group"
-    aria-label="四路围合演示区域地图，可点击区域内位置设置候选起点"
+    aria-label="现有路网数据范围地图，可点击范围内位置设置候选起点"
     @click="handleFallbackClick"
     @pointerdown="beginFallbackDrag"
     @pointermove="handlePointerMove"
@@ -807,6 +938,17 @@ onUnmounted(() => {
     @wheel.capture.stop="handleMapWheel"
   >
     <div ref="baiduEl" class="real-baidu-map" :class="{ visible: mapState === 'ready' }" aria-hidden="true"></div>
+
+    <div class="real-map-navigation" @pointerdown.stop @click.stop @dblclick.stop>
+      <div class="real-map-zoom-buttons" role="group" aria-label="地图比例尺控制">
+        <button type="button" aria-label="放大地图" title="放大" @click="zoomMap(1)">＋</button>
+        <button type="button" aria-label="缩小地图" title="缩小" @click="zoomMap(-1)">−</button>
+        <button type="button" class="real-map-reset" aria-label="回到路网范围中心" @click="resetMapViewport">复位</button>
+      </div>
+      <div v-if="scaleBar" class="real-map-scale" :aria-label="`地图比例尺 ${scaleBar.label}`">
+        <span>{{ scaleBar.label }}</span><i :style="{ width: `${scaleBar.pixels}px` }"></i>
+      </div>
+    </div>
 
     <svg
       v-if="fallbackActive"
@@ -820,13 +962,17 @@ onUnmounted(() => {
         <pattern id="real-map-grid" width="30" height="30" patternUnits="userSpaceOnUse">
           <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#dce8e1" stroke-width=".65" />
         </pattern>
+        <clipPath :id="`${blindClipId}-fallback`" clipPathUnits="userSpaceOnUse">
+          <path v-if="fallbackDemoResult?.displayArea.type === 'polygon'"
+            :d="localAreaPath(fallbackDemoResult)" clip-rule="evenodd" fill-rule="evenodd" />
+        </clipPath>
       </defs>
       <rect :width="viewport.width" :height="viewport.height" fill="#eaf0ec" />
       <rect :width="viewport.width" :height="viewport.height" fill="url(#real-map-grid)" opacity=".45" />
       <g ref="contextEl" :style="{ transform: fallbackTransform }" class="real-context">
-        <path v-for="feature in contextGroups.waterArea" :key="feature.id" :d="feature.d" class="real-water-area" />
-        <path v-for="feature in contextGroups.park" :key="feature.id" :d="feature.d" class="real-park-area" />
-        <path v-for="feature in contextGroups.building" :key="feature.id" :d="feature.d" class="real-building" />
+        <path v-for="feature in contextGroups.waterArea" :key="feature.id" :d="feature.d" :fill-rule="feature.fillRule || 'nonzero'" class="real-water-area" />
+        <path v-for="feature in contextGroups.park" :key="feature.id" :d="feature.d" :fill-rule="feature.fillRule || 'nonzero'" class="real-park-area" />
+        <path v-for="feature in contextGroups.building" :key="feature.id" :d="feature.d" :fill-rule="feature.fillRule || 'nonzero'" class="real-building" />
         <path v-for="feature in contextGroups.waterLine" :key="feature.id" :d="feature.d" class="real-water-line" />
         <path v-for="feature in contextGroups.roadMajor" :key="`${feature.id}-base`" :d="feature.d" class="real-road-major-base" />
         <path v-for="feature in contextGroups.roadLocal" :key="`${feature.id}-base`" :d="feature.d" class="real-road-local-base" />
@@ -840,6 +986,11 @@ onUnmounted(() => {
           <path v-else-if="fallbackDemoResult.displayArea.type === 'polygon'" :d="localAreaPath(fallbackDemoResult)" class="real-demo-area" fill-rule="evenodd" />
           <path v-for="segment in analysisMode === 'cpp' ? [] : fallbackDemoResult.routeSegments" :key="segment.id" :d="linePath(segment.points)" class="real-demo-route" pathLength="1" :style="{ '--route-delay': routeDelay(segment, fallbackDemoResult) }" />
           <path v-if="analysisMode !== 'cpp' && fallbackDemoResult.accessLink?.length > 2" :d="linePath(fallbackDemoResult.accessLink.points)" class="real-demo-access" />
+        </g>
+        <g v-if="fallbackDemoResult?.displayArea.type === 'polygon'" class="real-blind-zones"
+          :clip-path="`url(#${blindClipId}-fallback)`">
+          <path v-for="(zone, index) in fallbackBlindZones" :key="`blind-${index}`" :d="zone.d"
+            class="real-blind-zone" :style="blindZoneStyle(zone.missingCategories)" fill-rule="evenodd" />
         </g>
       </g>
       <g v-if="fallbackCandidate" :style="{ transform: fallbackCandidateTransform }" class="real-candidate-mark" aria-hidden="true">
@@ -856,10 +1007,18 @@ onUnmounted(() => {
       preserveAspectRatio="none"
       aria-hidden="true"
     >
+      <defs>
+        <clipPath :id="`${blindClipId}-live`" clipPathUnits="userSpaceOnUse">
+          <path :d="liveDemoResult?.area || projectedResult?.area || ''" clip-rule="evenodd" fill-rule="evenodd" />
+        </clipPath>
+      </defs>
       <path v-if="projectedResult?.area" :d="projectedResult.area" class="real-analysis-area" fill-rule="evenodd" />
       <path v-for="(path, index) in projectedResult?.walkways ?? []" :key="`walk-${index}`" :d="path" class="real-analysis-walkway" />
       <path v-for="(path, index) in projectedResult?.gaps ?? []" :key="`gap-${index}`" :d="path" class="real-analysis-gap" />
-      <path v-for="(path, index) in projectedResult?.blindZones ?? []" :key="`blind-${index}`" :d="path" class="real-blind-zone" fill-rule="evenodd" />
+      <g v-if="liveDemoResult?.area || projectedResult?.area" class="real-blind-zones"
+        :clip-path="`url(#${blindClipId}-live)`">
+        <path v-for="(zone, index) in projectedResult?.blindZones ?? []" :key="`blind-${index}`" :d="zone.d" class="real-blind-zone" :style="blindZoneStyle(zone.missingCategories)" fill-rule="evenodd" />
+      </g>
       <path :d="liveBoundaryPath" class="real-live-boundary-fill" fill-rule="evenodd" />
       <path :d="liveBoundaryPath" class="real-live-boundary-outline" />
       <g v-if="liveDemoResult" class="real-demo-result">
@@ -881,11 +1040,11 @@ onUnmounted(() => {
       <g :key="`${selectedPoiRoute.poiId}:${selectedPoiRoute.sequence}`">
         <path v-for="segment in selectedRoutePaths" :key="`casing-${segment.id}`" :d="segment.d" class="real-cpp-route-casing" />
         <path v-for="segment in selectedRoutePaths" :key="segment.id" :d="segment.d"
-          class="real-cpp-selected-route" :class="{ 'is-access': segment.access }"
+          class="real-cpp-selected-route" :class="{ 'is-access': segment.access, 'is-baidu': segment.baidu }"
           :pathLength="segment.access ? undefined : 1" :style="{ '--route-delay': segment.delay }" />
       </g>
     </svg>
-    <svg v-if="analysisMode === 'cpp' && analysisResult" class="real-poi-layer"
+    <svg v-if="analysisResult" class="real-poi-layer"
       :viewBox="`0 0 ${viewport.width} ${viewport.height}`" role="group" aria-label="等时圈内基础设施候选点位">
       <g v-for="poi in poiMarkers" :key="poi.id" class="real-poi-marker"
         :class="{ 'is-selected': selectedPoi?.id === poi.id }" :style="{ '--poi-color': poiCategoryStyles[poi.category].color }"
@@ -907,12 +1066,14 @@ onUnmounted(() => {
       <strong>{{ selectedPoi.name }}</strong>
       <span>{{ poiCategoryStyles[selectedPoi.category].label }} · 百度 POI</span>
       <small v-if="selectedPoiRoute?.destinationAccessMode !== 'estimated_straight_line'">{{ poiAccessLabel(selectedPoi) }}</small>
-      <small v-if="selectedPoiRoute?.status === 'loading'">正在计算 Dijkstra 最短路径…</small>
+      <small v-if="selectedPoiRoute?.status === 'loading'">{{ selectedPoiRoute.algorithm === 'baidu_walking' ? '正在查询百度步行路线…' : '正在计算 Dijkstra 最短路径…' }}</small>
       <template v-else-if="selectedPoiRoute?.status === 'ready'">
         <strong class="real-cpp-route-summary">{{ (selectedPoiRoute.travelTimeSeconds / 60).toFixed(1) }} 分钟 · {{ Math.round(selectedPoiRoute.lengthMeters) }} 米</strong>
-        <small>过街等待 {{ Math.round(selectedPoiRoute.crossingWaitSeconds) }} 秒 · {{ selectedPoiRoute.destinationAccessMode === 'estimated_straight_line' ? '路线终点为 POI 点位' : '路线终点为绑定入口' }}</small>
+        <small v-if="selectedPoiRoute.algorithm === 'baidu_walking'">百度步行参考路线 · {{ selectedPoiRoute.cacheSource === 'analysis' ? '复用当前分析路线' : selectedPoiRoute.cacheSource === 'shared_cache' ? '使用路线缓存' : '路线查询完成' }}</small>
+        <small v-else>过街等待 {{ Math.round(selectedPoiRoute.crossingWaitSeconds) }} 秒 · {{ selectedPoiRoute.destinationAccessMode === 'estimated_straight_line' ? '路线终点为 POI 点位' : '路线终点为绑定入口' }}</small>
         <small v-if="selectedPoiRoute.destinationAccessMode === 'estimated_straight_line'" class="real-cpp-route-warning">直线穿越地块约 {{ Math.round(selectedPoiRoute.destinationAccessDistanceMeters) }} 米 · 未核实，未考虑建筑／围墙</small>
         <small v-if="!selectedPoiRoute.withinThreshold">该路径超过 15 分钟，展示面内的点不一定路网可达。</small>
+        <small v-if="selectedRouteClipped">本地底图仅显示已校准范围内的路径；百度预计耗时与距离为全程数据。</small>
       </template>
       <small v-else-if="selectedPoiRoute?.message">{{ selectedPoiRoute.message }}</small>
       <button v-if="selectedPoiRoute?.status === 'error'" type="button" class="real-cpp-route-retry" @click.stop="selectPoi(selectedPoi)">重试路线</button>

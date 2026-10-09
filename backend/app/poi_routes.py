@@ -9,6 +9,7 @@ import math
 from .engine import run_engine
 from .network import _to_map_coordinate, _valid_xy
 from .pois import _projection
+from .walking_types import is_walkway, is_separated_walkway, access_mode
 
 
 # Only broaden a synthetic destination's LOCAL access, not the walking graph.
@@ -75,9 +76,9 @@ def estimate_poi_access(poi_id: str, point, edges: list[dict]) -> tuple[dict | N
     if not _valid_xy(point):
         return None, 0
     candidates = []
-    sidewalks = [edge for edge in edges if edge["kind"] == "sidewalk"]
+    sidewalks = [edge for edge in edges if is_separated_walkway(edge)]
     for edge in edges:
-        if edge["kind"] not in ("sidewalk", "shared_way"):
+        if not is_walkway(edge):
             continue
         distance, projected = min(
             (_projection(point, first, second)
@@ -92,9 +93,9 @@ def estimate_poi_access(poi_id: str, point, edges: list[dict]) -> tuple[dict | N
     for distance, edge, projected in candidates:
         if distance > nearest_distance + ACCESS_DISTANCE_BAND_METERS:
             break
-        if edge["kind"] != nearest_edge["kind"]:
+        if access_mode(edge) != access_mode(nearest_edge):
             continue
-        if edge["kind"] == "sidewalk" and edge["id"] != nearest_edge["id"]:
+        if is_separated_walkway(edge) and edge["id"] != nearest_edge["id"]:
             if (not nearest_edge.get("streetBlockId") or
                     nearest_edge.get("side") not in ("left", "right") or
                     edge.get("streetBlockId") != nearest_edge["streetBlockId"] or

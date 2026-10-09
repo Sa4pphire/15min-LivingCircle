@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
 from app.network_audit import audit_network, find_junction_candidates  # noqa: E402
 from app.synthetic_converter import convert_preview_graph, with_preview_annotations  # noqa: E402
+from app.manual_graph_edits import apply_manual_edits  # noqa: E402
 from render_network_audit import path_data  # noqa: E402
 
 
@@ -100,7 +101,7 @@ def main() -> None:
     # from this legacy baseline.
     before = convert_preview_graph({**raw, 'dividedRoadSections': []}, origin,
                                    annotations["crossings"], legacy)
-    expected = convert_preview_graph(raw, origin, annotations["crossings"], annotations["junctions"])
+    expected = apply_manual_edits(convert_preview_graph(raw, origin, annotations["crossings"], annotations["junctions"]), annotations.get("manualGraphEdits"))
     if expected != graph:
         raise ValueError("generated walking network is stale; run export_synthetic_preview.py first")
     records = graph["sourceGraph"]["manualJunctionAnnotations"]

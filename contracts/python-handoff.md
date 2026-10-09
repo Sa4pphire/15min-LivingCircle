@@ -16,6 +16,8 @@
 
 ## 路网对接约定
 
+2026-10-07 起，沿路行走边统一为 `kind: "walkway"`，必须带 `accessMode: "separated" | "shared"`。下述左右侧、共享宽度和入口规则全部保留，旧 sidewalk/shared_way 输入仅作兼容。新的 C++ 可达街段及设施路线输出统一使用 walkway，Python 不能因此取消同侧接入检查；详见 [统一类型说明](../docs/unified-walkways.md)。
+
 1. 路网节点、边和设施只向 C++ 传 `schemaVersion: 2` 的规范化 JSON；不要传百度原始响应。`originBd09`、`supportedCenterBoundsMeters`、`synthetic` 是 Python 的网络文件元数据，引擎忽略它们。
 2. 普通道路两侧分别用 `sidewalk` 标注；经人工核实可自由穿行的步行街／小巷用一条 `shared_way`，填 `sharedWayType` 和 `widthMeters`。路口连接显式标注；普通道路过街只能用 `crossing`。同一普通道路两侧不要共用节点。
 3. 新设施数据使用 `id`、`category`、`entrances`；每个入口有独立 ID、`accessEdgeId`、`streetAccessPointMeters`，若入口离街边还要提供经核实的 `accessPathMeters`。旧单入口字段只用于兼容既有样例。过街边可单独传 `waitSeconds`。统计 15 分钟覆盖只看 `facilityTravelTimes[*].reachable`／`travelTimeSeconds`，并使用 `bestEntranceId` 标示最短入口。

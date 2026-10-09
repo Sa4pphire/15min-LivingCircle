@@ -2,16 +2,55 @@
   "schemaVersion": 2,
   "success": true,
   "result": {
-    "snappedOriginMeters": [200, 0],
+    "snappedOriginMeters": [
+      200,
+      0
+    ],
     "snapDistanceMeters": 0,
     "originAccessSeconds": 0,
     "reachableEdges": [
-      { "edgeId": "west_lane", "kind": "shared_way", "pathMeters": [[0, 0], [200, 0]], "widthMeters": 4 },
-      { "edgeId": "east_lane", "kind": "shared_way", "pathMeters": [[200, 0], [434, 0]], "widthMeters": 4 }
+      {
+        "edgeId": "west_lane",
+        "kind": "walkway",
+        "pathMeters": [
+          [
+            0,
+            0
+          ],
+          [
+            200,
+            0
+          ]
+        ],
+        "widthMeters": 4
+      },
+      {
+        "edgeId": "east_lane",
+        "kind": "walkway",
+        "pathMeters": [
+          [
+            200,
+            0
+          ],
+          [
+            434,
+            0
+          ]
+        ],
+        "widthMeters": 4
+      }
     ],
-    "frontierMeters": [[434, 0]],
+    "frontierMeters": [
+      [
+        434,
+        0
+      ]
+    ],
     "displayPolygonMeters": [],
-    "displayGeometryMeters": { "type": "MultiPolygon", "coordinates": [] },
+    "displayGeometryMeters": {
+      "type": "MultiPolygon",
+      "coordinates": []
+    },
     "facilityTravelTimes": [
       {
         "id": "synthetic_shop",
@@ -27,14 +66,70 @@
       {
         "category": "shopping",
         "coveredEdges": [
-          { "edgeId": "west_lane", "kind": "shared_way", "pathMeters": [[0, 0], [200, 0]], "widthMeters": 4 },
-          { "edgeId": "east_lane", "kind": "shared_way", "pathMeters": [[200, 0], [234, 0]], "widthMeters": 4 }
+          {
+            "edgeId": "west_lane",
+            "kind": "walkway",
+            "pathMeters": [
+              [
+                0,
+                0
+              ],
+              [
+                200,
+                0
+              ]
+            ],
+            "widthMeters": 4
+          },
+          {
+            "edgeId": "east_lane",
+            "kind": "walkway",
+            "pathMeters": [
+              [
+                200,
+                0
+              ],
+              [
+                234,
+                0
+              ]
+            ],
+            "widthMeters": 4
+          }
         ],
         "candidateUncoveredEdges": [
-          { "edgeId": "east_lane", "kind": "shared_way", "pathMeters": [[234, 0], [366, 0]], "widthMeters": 4 }
+          {
+            "edgeId": "east_lane",
+            "kind": "walkway",
+            "pathMeters": [
+              [
+                234,
+                0
+              ],
+              [
+                366,
+                0
+              ]
+            ],
+            "widthMeters": 4
+          }
         ],
         "unknownEdges": [
-          { "edgeId": "east_lane", "kind": "shared_way", "pathMeters": [[366, 0], [434, 0]], "widthMeters": 4 }
+          {
+            "edgeId": "east_lane",
+            "kind": "walkway",
+            "pathMeters": [
+              [
+                366,
+                0
+              ],
+              [
+                434,
+                0
+              ]
+            ],
+            "widthMeters": 4
+          }
         ],
         "coveredLengthMeters": 234,
         "candidateUncoveredLengthMeters": 132,
@@ -46,13 +141,43 @@
         "coveredEdges": [],
         "candidateUncoveredEdges": [],
         "unknownEdges": [
-          { "edgeId": "west_lane", "kind": "shared_way", "pathMeters": [[0, 0], [200, 0]], "widthMeters": 4 },
-          { "edgeId": "east_lane", "kind": "shared_way", "pathMeters": [[200, 0], [434, 0]], "widthMeters": 4 }
+          {
+            "edgeId": "west_lane",
+            "kind": "walkway",
+            "pathMeters": [
+              [
+                0,
+                0
+              ],
+              [
+                200,
+                0
+              ]
+            ],
+            "widthMeters": 4
+          },
+          {
+            "edgeId": "east_lane",
+            "kind": "walkway",
+            "pathMeters": [
+              [
+                200,
+                0
+              ],
+              [
+                434,
+                0
+              ]
+            ],
+            "widthMeters": 4
+          }
         ],
         "coveredLengthMeters": 0,
         "candidateUncoveredLengthMeters": 0,
         "unknownLengthMeters": 434,
-        "warnings": ["LOCAL_FACILITY_INVENTORY_INCOMPLETE"]
+        "warnings": [
+          "LOCAL_FACILITY_INVENTORY_INCOMPLETE"
+        ]
       }
     ],
     "diagnostics": {

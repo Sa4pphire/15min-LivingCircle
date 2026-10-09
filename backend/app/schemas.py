@@ -11,6 +11,7 @@ class CenterPoint(BaseModel):
 
 class AnalysisRequest(BaseModel):
     center: CenterPoint
+    regionId: str | None = Field(default=None, pattern=r'^[a-z0-9][a-z0-9_-]{0,79}$')
     originEdgeId: str | None = None
     minutes: Literal[15] = 15
     forceRefresh: bool = False

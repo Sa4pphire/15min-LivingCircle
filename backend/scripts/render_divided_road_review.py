@@ -9,6 +9,8 @@ from xml.etree import ElementTree
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'backend'))
 from app.synthetic_converter import convert_preview_graph, with_preview_annotations  # noqa: E402
+from app.manual_graph_edits import apply_manual_edits  # noqa: E402
+from app.walking_types import legacy_graph_view  # noqa: E402
 
 
 def render(output: Path | None = None) -> Path:
@@ -16,10 +18,11 @@ def render(output: Path | None = None) -> Path:
     annotations = json.loads((ROOT / 'data/networks/synthetic-preview.annotations.json').read_text('utf-8'))
     raw = with_preview_annotations(raw, annotations)
     after = json.loads((ROOT / 'data/networks/synthetic-preview.json').read_text('utf-8'))
-    if after != convert_preview_graph(raw, [121.505, 31.333], annotations['crossings'], annotations['junctions']):
+    if after != apply_manual_edits(convert_preview_graph(raw, [121.505, 31.333], annotations['crossings'], annotations['junctions']), annotations.get('manualGraphEdits')):
         raise ValueError('walking network is stale')
     before = convert_preview_graph({**raw, 'dividedRoadSections': []}, [121.505, 31.333],
                                   annotations['crossings'], annotations['junctions'])
+    before, after = legacy_graph_view(before), legacy_graph_view(after)
     section = raw['dividedRoadSections'][0]
     selected = {f"{c['edgeId']}:{side}" for c in section['carriageways'] for side in ('left', 'right')}
     outer = {f"{c['edgeId']}:{c['outerSide']}" for c in section['carriageways']}

@@ -17,12 +17,14 @@ from xml.etree import ElementTree
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "backend"))
+from app.walking_types import legacy_graph_view  # noqa: E402
 SOURCE = ROOT / "data" / "networks" / "synthetic-preview.json"
 OUTPUT = ROOT / "data" / "networks" / "synthetic-preview-audit.svg"
 EDGE_ORDER = ("shared_way", "sidewalk", "turn", "crossing")
 EDGE_LABELS = {
-    "shared_way": "共享通道",
-    "sidewalk": "普通道路一侧人行道",
+    "shared_way": "walkway · 共享接入",
+    "sidewalk": "walkway · 分侧接入",
     "turn": "显式转向连接",
     "crossing": "显式过街连接（合成，未核实）",
 }
@@ -45,7 +47,7 @@ def path_data(points: list[list[float]]) -> str:
 
 
 def render(source: Path = SOURCE, output: Path = OUTPUT) -> dict[str, int]:
-    graph = json.loads(source.read_text(encoding="utf-8"))
+    graph = legacy_graph_view(json.loads(source.read_text(encoding="utf-8")))
     nodes = graph["nodes"]
     edges = graph["edges"]
     annotations = graph.get("sourceGraph", {}).get("manualCrossingAnnotations", [])

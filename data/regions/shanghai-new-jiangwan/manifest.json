@@ -1,0 +1,37 @@
+{
+  "packageSchemaVersion": 1,
+  "id": "shanghai-new-jiangwan",
+  "name": "新江湾城路网演示区",
+  "version": "0.1.0",
+  "synthetic": true,
+  "files": {
+    "network": "network.json",
+    "alignment": "alignment.bd09.json",
+    "context": "context.json",
+    "sourceGraph": "source/road-graph.json",
+    "annotations": "source/annotations.json"
+  },
+  "selectionSource": "network-path-extent",
+  "coordinateSystem": {
+    "engine": "local-meters-east-north",
+    "display": "local-meters-east-south",
+    "geographic": "wgs84ll"
+  },
+  "facilityData": {
+    "annotatedCount": 0,
+    "candidatePois": "optional-local-cache-not-bundled"
+  },
+  "source": {
+    "provider": "OpenStreetMap contributors",
+    "license": "ODbL 1.0",
+    "url": "https://www.openstreetmap.org/copyright"
+  },
+  "coverageNotice": "路网外接范围仅表示现有数据范围；边缘可达结果可能被数据截断。",
+  "sha256": {
+    "network": "4fea99f0438c662cca16914f8a8a2f9bb531e95067567214ef1a338ea35d2199",
+    "alignment": "bc937a1947f39c4ce89355ef2be09ae5afcbc4d91a0bef6e9e83d3325ca34721",
+    "context": "14f283ee0eb99b5f2d117329f5bbdf3b8f27819dec771b7c0cab3f13c623cffb",
+    "sourceGraph": "55924457c6d72dc44607ee0752ae41601152468e6996786d137ca61241718fb6",
+    "annotations": "d89b1c2b638e5461408da885a6fc32d298977fa5f908bb8914bae42695f53c8a"
+  }
+}

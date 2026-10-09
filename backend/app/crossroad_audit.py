@@ -10,6 +10,7 @@ import math
 from typing import Any
 
 from .junction_annotations import expand_reviewed_junction
+from .walking_types import legacy_graph_view
 
 
 def group_directions(entries: list[dict], tolerance: float = 25) -> list[list[dict]]:
@@ -149,6 +150,7 @@ def audit_explicit_junction(graph: dict, record: dict) -> dict:
     Counts alone are insufficient: detect wrong-side turns, missing crossings,
     duplicate connectors, stale retired edges and hidden old-centre transfers.
     """
+    graph = legacy_graph_view(graph)
     by_id = {e["id"]: e for e in graph["edges"]}
     nodes = {n["id"]: n for n in graph["nodes"]}
     issues = []
@@ -292,6 +294,7 @@ def audit_explicit_junction(graph: dict, record: dict) -> dict:
 
 def audit_crossroads(source: dict, graph: dict, baseline: dict) -> dict:
     """Read-only inventory; all uncertainty is retained in the result."""
+    graph, baseline = legacy_graph_view(graph), legacy_graph_view(baseline)
     candidates = discover_crossroads(source)
     records = graph["sourceGraph"]["manualJunctionAnnotations"]
     checked = {r["id"]: audit_explicit_junction(graph, r) for r in records}

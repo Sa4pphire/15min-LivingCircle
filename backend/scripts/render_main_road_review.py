@@ -10,6 +10,8 @@ sys.path.insert(0, str(ROOT / "backend"))
 from app.synthetic_converter import convert_preview_graph, with_preview_annotations  # noqa: E402
 from app.network_audit import audit_network  # noqa: E402
 from app.crossroad_audit import audit_explicit_junction  # noqa: E402
+from app.manual_graph_edits import apply_manual_edits  # noqa: E402
+from app.walking_types import legacy_graph_view  # noqa: E402
 
 
 def render() -> Path:
@@ -18,13 +20,14 @@ def render() -> Path:
     raw = json.loads((ROOT / "frontend/src/data/demoRoadGraph.local.json").read_text("utf-8"))
     raw = with_preview_annotations(raw, annotations)
     origin = json.loads((ROOT / "frontend/src/data/demoContext.extended.wgs84.json").read_text("utf-8"))["originWgs84"]
-    after = convert_preview_graph(raw, origin, annotations["crossings"], annotations["junctions"])
+    after = apply_manual_edits(convert_preview_graph(raw, origin, annotations["crossings"], annotations["junctions"]), annotations.get("manualGraphEdits"))
     if after != json.loads((directory / "synthetic-preview.json").read_text("utf-8")):
         raise ValueError("walking network is stale; export before rendering")
     if any(not audit_explicit_junction(after, r)["pass"] for r in after["sourceGraph"]["manualJunctionAnnotations"]):
         raise ValueError("junction semantics failed; refusing to render an accepted model")
     before = convert_preview_graph({**raw, "dividedRoadSections": [s for s in raw["dividedRoadSections"] if not s["id"].startswith("main-")]},
                                    origin, annotations["crossings"], annotations["junctions"])
+    before, after = legacy_graph_view(before), legacy_graph_view(after)
     sections = [s for s in raw["dividedRoadSections"] if s["id"].startswith("main-")]
     rows = (len(sections) + 1) // 2
     height = 170 + rows * 440

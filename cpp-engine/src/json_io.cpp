@@ -62,9 +62,9 @@ bool has_non_whitespace(const std::string_view input) {
 
 std::string health_json() {
 #ifdef NDEBUG
-  return R"({"status":"ok","engine":"isochrone_engine","schemaVersion":2,"buildMode":"Release","facilitiesOnly":true})";
+  return R"({"status":"ok","engine":"isochrone_engine","schemaVersion":2,"buildMode":"Release","facilitiesOnly":true,"walkway":true})";
 #else
-  return R"({"status":"ok","engine":"isochrone_engine","schemaVersion":2,"buildMode":"Debug","facilitiesOnly":true})";
+  return R"({"status":"ok","engine":"isochrone_engine","schemaVersion":2,"buildMode":"Debug","facilitiesOnly":true,"walkway":true})";
 #endif
 }
 
@@ -110,7 +110,7 @@ std::string serialize_engine_result(const EngineResult& result) {
            << "\",\"kind\":\"" << edge_kind_name(edge.kind)
            << "\",\"pathMeters\":";
     write_path(edge.path);
-    if (edge.kind == EdgeKind::shared_way) {
+    if (edge.kind == EdgeKind::walkway && edge.width_meters > 0.0) {
       output << ",\"widthMeters\":" << edge.width_meters;
     }
     output << '}';

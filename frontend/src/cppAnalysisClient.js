@@ -3,8 +3,10 @@
 // south-positive coordinates. Nothing here claims verified pedestrian access.
 import { localToWgs, wgsToLocal } from "./mapGeometry.js";
 import { poiCandidates } from "./poiFacilities.js";
+import { getActiveRegion } from "./regionLoader.js";
 
-export const PREVIEW_ORIGIN_WGS84 = [121.505, 31.333];
+function previewOrigin() { return getActiveRegion().geographicOrigin || getActiveRegion().originWgs84; }
+function previewCoordType() { return getActiveRegion().geographicCoordType || 'wgs84ll'; }
 
 function localizeGeometry(geometry) {
   if (geometry?.type !== "MultiPolygon" || !Array.isArray(geometry.coordinates)) {
@@ -13,7 +15,7 @@ function localizeGeometry(geometry) {
   return {
     type: "MultiPolygon",
     coordinates: geometry.coordinates.map((polygon) => polygon.map((ring) =>
-      ring.map((point) => wgsToLocal(point, PREVIEW_ORIGIN_WGS84)))),
+      ring.map((point) => wgsToLocal(point, previewOrigin())))),
   };
 }
 
@@ -31,9 +33,9 @@ function localizeFeatureCollection(collection) {
         ? localizeGeometry(feature.geometry)
         : feature.geometry.type === "Polygon"
           ? { type: "Polygon", coordinates: feature.geometry.coordinates.map(ring =>
-              ring.map(point => wgsToLocal(point, PREVIEW_ORIGIN_WGS84))) }
+              ring.map(point => wgsToLocal(point, previewOrigin()))) }
           : { type: "LineString", coordinates: feature.geometry.coordinates.map(point =>
-              wgsToLocal(point, PREVIEW_ORIGIN_WGS84)) };
+              wgsToLocal(point, previewOrigin())) };
       return [{ ...feature, id: feature.id ?? `feature-${index}`, geometry }];
     }),
   };
@@ -41,16 +43,16 @@ function localizeFeatureCollection(collection) {
 
 export function normalizeCppReport(report, origin) {
   if (report?.metadata?.networkSource !== "synthetic" ||
-      report.metadata.coordType !== "wgs84ll" ||
+      report.metadata.coordType !== previewCoordType() ||
       !Array.isArray(report?.reachableWalkways?.features)) {
-    throw new Error("NOT_SYNTHETIC_WGS84_REPORT");
+    throw new Error("NOT_SYNTHETIC_REGION_REPORT");
   }
   const routeSegments = [];
   for (const feature of report.reachableWalkways.features) {
     if (feature?.geometry?.type !== "LineString" ||
         !Array.isArray(feature.geometry.coordinates)) continue;
     const points = feature.geometry.coordinates.map((point) =>
-      wgsToLocal(point, PREVIEW_ORIGIN_WGS84));
+      wgsToLocal(point, previewOrigin()));
     for (let index = 1; index < points.length; index += 1) {
       const startProgress = Math.min(1, Math.hypot(
         points[index - 1][0] - origin.x, points[index - 1][1] - origin.y,
@@ -68,7 +70,7 @@ export function normalizeCppReport(report, origin) {
   const accessLink = Number.isFinite(accessMeters) && accessMeters > 0.01 &&
     Array.isArray(snappedOrigin) && snappedOrigin.length === 2
     ? {
-        points: [[origin.x, origin.y], wgsToLocal(snappedOrigin, PREVIEW_ORIGIN_WGS84)],
+        points: [[origin.x, origin.y], wgsToLocal(snappedOrigin, previewOrigin())],
         length: accessMeters,
         estimatedSeconds: report.metadata.originAccessSeconds,
         verified: false,
@@ -123,11 +125,11 @@ export async function requestCppMapAnalysis({ origin, includePois = true, refres
   if (!Number.isFinite(origin?.x) || !Number.isFinite(origin?.y)) {
     throw new Error("INVALID_ANALYSIS_ORIGIN");
   }
-  const [lng, lat] = localToWgs([origin.x, origin.y], PREVIEW_ORIGIN_WGS84);
+  const [lng, lat] = localToWgs([origin.x, origin.y], previewOrigin());
   const accepted = await responseJson(await fetchImpl("/api/v1/synthetic-analyses", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ center: { lng, lat, coordType: "wgs84ll" }, minutes: 15, includePois, refreshPois }),
+    body: JSON.stringify({ regionId: getActiveRegion().id, center: { lng, lat, coordType: previewCoordType() }, minutes: 15, includePois, refreshPois }),
     signal,
   }));
   if (!accepted.analysisId) throw new Error("MISSING_ANALYSIS_ID");
@@ -174,7 +176,7 @@ export async function requestCppPoiRoute({ analysisId, poiId }, { signal, fetchI
       body: JSON.stringify({ poiId }), signal,
     }));
   if (route?.analysisId !== analysisId || route?.poiId !== poiId ||
-    route.algorithm !== "dijkstra" || route.coordType !== "wgs84ll" ||
+    route.algorithm !== "dijkstra" || route.coordType !== previewCoordType() ||
     !["ready", "unmapped", "unreachable"].includes(route.status)) {
     throw new Error("INVALID_CPP_POI_ROUTE");
   }
@@ -185,7 +187,7 @@ export async function requestCppPoiRoute({ analysisId, poiId }, { signal, fetchI
         !Array.isArray(point) || point.length !== 2 || !point.every(Number.isFinite))) {
       throw new Error("INVALID_CPP_POI_ROUTE_GEOMETRY");
     }
-    return geometry.coordinates.map(point => wgsToLocal(point, PREVIEW_ORIGIN_WGS84));
+    return geometry.coordinates.map(point => wgsToLocal(point, previewOrigin()));
   };
   const points = localizePath(route.geometry);
   if (!Array.isArray(route.segments) || !Number.isFinite(route.travelTimeSeconds) || route.travelTimeSeconds < 0) {
@@ -196,7 +198,7 @@ export async function requestCppPoiRoute({ analysisId, poiId }, { signal, fetchI
     const points = localizePath(segment.geometry);
     const seconds = segment.properties?.travelTimeSeconds;
     if (!Number.isFinite(seconds) || seconds < 0 ||
-      !["origin_access", "facility_access", "sidewalk", "shared_way", "turn", "crossing"].includes(segment.properties?.kind)) {
+      !["origin_access", "facility_access", "walkway", "sidewalk", "shared_way", "turn", "crossing"].includes(segment.properties?.kind)) {
       throw new Error("INVALID_CPP_POI_ROUTE_SEGMENT");
     }
     const startProgress = elapsed / Math.max(1, route.travelTimeSeconds);

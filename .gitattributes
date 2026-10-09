@@ -1,0 +1,3 @@
+# Region manifests hash exact file bytes; preserve them on every platform.
+/data/regions/** -text
+/data/region-packages/*.zip -text

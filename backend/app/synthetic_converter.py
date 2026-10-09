@@ -17,6 +17,7 @@ from .junction_annotations import (
 from .divided_road_sections import apply_divided_road_sections
 from .preview_connections import apply_preview_connections
 from .major_sidewalks import apply_major_sidewalk_policy
+from .walking_types import normalize_graph
 
 
 SIDEWALK_OFFSET_METERS = 3.0
@@ -480,7 +481,7 @@ def convert_preview_graph(
 
     selection = [[round(x, 3), round(-y, 3)] for x, y in graph["selectionBoundary"][0]]
     xs, ys = zip(*selection)
-    return {
+    return normalize_graph({
         "schemaVersion": 2,
         "synthetic": True,
         "syntheticPurpose": "Python-C++-frontend integration only; not a verified walking network",
@@ -504,4 +505,4 @@ def convert_preview_graph(
             **({'majorSidewalkSimplification':major_report} if major_report else {}),
             **({"sourceTopology": graph["sourceTopology"]} if "sourceTopology" in graph else {}),
         },
-    }
+    })

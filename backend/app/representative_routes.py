@@ -65,7 +65,10 @@ async def collect_representative_routes(
     # The nearest POIs are not necessarily walkable within the time budget.
     # Keep a bounded reserve from each category so a slow/failed candidate does
     # not make the whole category disappear from the map.
-    reserve = max(per_category, per_category * 3)
+    # Keep a small fallback reserve without turning one report into dozens of
+    # sequential walking-detail requests.  Five requested routes therefore
+    # probe at most seven POIs per category.
+    reserve = max(per_category, per_category + 2)
     candidates = select_representative_pois(
         facilities, origin, per_category=reserve,
     )

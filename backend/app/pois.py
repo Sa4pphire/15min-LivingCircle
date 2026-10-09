@@ -16,6 +16,7 @@ from .schemas import CenterPoint
 from .settings import settings
 from .poi_search import search_tiles
 from .local_alignment import load_grid_frame
+from .walking_types import is_walkway, is_shared_walkway, is_separated_walkway
 
 
 CATEGORIES = {
@@ -86,7 +87,11 @@ class PoiService:
         """
         coord_type = metadata["coordType"]
         origin = metadata["originWgs84" if coord_type == "wgs84ll" else "originBd09"]
-        grid_frame = load_grid_frame(metadata, settings.poi_map_asset_path)
+        alignment_path = settings.poi_map_asset_path
+        if metadata.get('regionId'):
+            from .region_package import load_region_by_id
+            alignment_path = load_region_by_id(metadata['regionId']).file('alignment')
+        grid_frame = load_grid_frame(metadata, alignment_path)
         if grid_frame is not None:
             return grid_frame
         if coord_type == "bd09ll":
@@ -123,7 +128,7 @@ class AccessIndex:
         self.cells = {}
         self.tolerance = tolerance
         for edge in edges:
-            if edge["kind"] not in ("sidewalk", "shared_way"):
+            if not is_walkway(edge):
                 continue
             for a, b in zip(edge["pathMeters"], edge["pathMeters"][1:]):
                 for x in range(math.floor((min(a[0], b[0]) - tolerance) / 20),
@@ -136,20 +141,20 @@ class AccessIndex:
         candidates = {}
         for edge, a, b in self.cells.get((math.floor(point[0] / 20), math.floor(point[1] / 20)), []):
             distance, projected = _projection(point, a, b)
-            limit = min(self.tolerance, edge.get("widthMeters", 0) / 2) if edge["kind"] == "shared_way" else self.tolerance
+            limit = min(self.tolerance, edge.get("widthMeters", 0) / 2) if is_shared_walkway(edge) else self.tolerance
             if distance <= limit and (edge["id"] not in candidates or distance < candidates[edge["id"]][0]):
                 candidates[edge["id"]] = (distance, edge, projected)
         ordered = sorted(candidates.values(), key=lambda item: (item[0], item[1]["id"]))
         if not ordered:
             return None, "not_on_modeled_way"
         distance, edge, projected = ordered[0]
-        if edge["kind"] == "sidewalk" and any(
-            other["kind"] == "sidewalk" and other.get("streetBlockId") == edge.get("streetBlockId") and
+        if is_separated_walkway(edge) and any(
+            is_separated_walkway(other) and other.get("streetBlockId") == edge.get("streetBlockId") and
             other.get("side") != edge.get("side") and abs(d - distance) <= 1.5
             for d, other, _ in ordered[1:]
         ):
             return None, "ambiguous_side"
-        return (edge, point if edge["kind"] == "shared_way" else projected, distance), "mapped_unverified"
+        return (edge, point if is_shared_walkway(edge) else projected, distance), "mapped_unverified"
 
 
 async def enrich_engine_pois(payload: dict, metadata: dict, center: CenterPoint, *, refresh=False,

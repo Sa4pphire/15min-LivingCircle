@@ -1,5 +1,6 @@
 """Read-only launcher preflight; do not generate or replace network data."""
 
+import argparse
 import json
 import math
 from pathlib import Path
@@ -11,6 +12,22 @@ from app.local_experiment import load_local_experiment_request
 from app.network import UnsupportedAreaError, _to_map_coordinate, load_engine_request
 from app.schemas import CenterPoint
 from app.settings import settings
+from app.region_package import load_region
+
+
+def launch_configuration():
+    """Resolve the same dotenv/region configuration used by the API."""
+    region = load_region()
+    metadata = region.public_metadata()
+    return {
+        "regionId": metadata["id"],
+        "regionRevision": metadata["revision"],
+        "regionFiles": [str(region.root / "manifest.json"),
+                        *(str(region.file(key)) for key in region.manifest["files"])],
+        "syntheticNetworkPath": str(settings.synthetic_network_path.resolve()),
+        "localNetworkPath": str(settings.local_experiment_network_path.resolve()),
+        "poiMapAssetPath": str(settings.poi_map_asset_path.resolve()),
+    }
 
 
 def midpoint(path):
@@ -38,7 +55,7 @@ def example_request(path, *, local):
         candidates.append((seed["lng"], seed["lat"], graph.get("originEdgeId")))
     # Use declared demo centers or actual edge positions, not invented connectors.
     for edge in edges:
-        if edge.get("kind") not in ("sidewalk", "shared_way"):
+        if edge.get("kind") not in ("walkway", "sidewalk", "shared_way"):
             continue
         for point in (midpoint(edge["pathMeters"]), edge["pathMeters"][0], edge["pathMeters"][-1]):
             lng, lat = _to_map_coordinate(point, origin)
@@ -61,6 +78,14 @@ def example_request(path, *, local):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--paths-only", action="store_true",
+                        help="Print validated region and data paths for the launcher")
+    args = parser.parse_args()
+    configuration = launch_configuration()
+    if args.paths_only:
+        print(json.dumps(configuration, ensure_ascii=True))
+        return
     # Imports verify the installed backend dependencies without installing anything.
     import fastapi
     import httpx
@@ -72,6 +97,8 @@ def main():
         "localRequest": local,
         "syntheticRequest": synthetic,
         "localSource": local_source,
+        "regionId": configuration["regionId"],
+        "regionRevision": configuration["regionRevision"],
     }, ensure_ascii=True))
 
 

@@ -1,0 +1,46 @@
+{
+  "packageSchemaVersion": 1,
+  "id": "region-6f36ee585055",
+  "name": "广东广州",
+  "version": "0.1.0",
+  "status": "draft",
+  "synthetic": true,
+  "authoringMode": "engine-snapshot",
+  "createdAt": "2026-10-09T02:58:32.368124+00:00",
+  "location": {
+    "query": "广东广州",
+    "centerBd09": [
+      113.27143134445974,
+      23.135336306695006
+    ],
+    "provider": "Baidu JSAPI geocoder"
+  },
+  "selectionSource": "network-path-extent",
+  "coordinateSystem": {
+    "engine": "local-meters-east-north",
+    "display": "local-meters-east-south",
+    "geographic": "bd09ll"
+  },
+  "files": {
+    "network": "network.json",
+    "context": "context.json",
+    "alignment": "alignment.bd09.json",
+    "sourceGraph": "source/engine-base.json",
+    "annotations": "source/annotations.json"
+  },
+  "facilityData": {
+    "annotatedCount": 0,
+    "candidatePois": "optional-local-cache-not-bundled"
+  },
+  "source": {
+    "provider": "用户绘制",
+    "verificationStatus": "user_edited_unverified"
+  },
+  "sha256": {
+    "network": "bb3904b6391afd90408bb2b8b6de300e534ada865917476b4cd9faf0f2813ac3",
+    "context": "0832920172e64d17b57f684e42c06515093a64036a34d61be61ef7158266fc38",
+    "alignment": "b5ee3381208d101d638d118cf7a70b9a8216e155e198060067a92017231b6359",
+    "sourceGraph": "bb3904b6391afd90408bb2b8b6de300e534ada865917476b4cd9faf0f2813ac3",
+    "annotations": "b9eef2438031d16f0ea52eb1fbd32c9475a7b70b2051f4d652a1b3cae8a49b39"
+  }
+}

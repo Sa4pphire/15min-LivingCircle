@@ -7,6 +7,7 @@ from typing import Any
 
 from .schemas import EngineHealth
 from .settings import settings
+from .walking_types import normalize_graph
 
 
 class EngineError(RuntimeError):
@@ -25,7 +26,8 @@ async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
     started = perf_counter()
     # Keep annotations in Python; compact only the v2 wire representation.
     # Meter coordinates retain their original precision.
-    edge_fields = {"id", "from", "to", "kind", "pathMeters", "streetBlockId",
+    payload = normalize_graph(payload)
+    edge_fields = {"id", "from", "to", "kind", "accessMode", "pathMeters", "streetBlockId",
                    "side", "sharedWayType", "widthMeters", "waitSeconds"}
     wire = {**payload, "edges": [
         {key: value for key, value in edge.items() if key in edge_fields}

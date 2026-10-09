@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from .engine import EngineError, check_engine, run_engine
 from .local_experiment import (build_local_experiment_result,
@@ -14,6 +15,7 @@ from .local_experiment import (build_local_experiment_result,
 from .network import UnsupportedAreaError, build_analysis_result, load_engine_request
 from .pois import CATEGORIES, PoiService, add_poi_result, enrich_engine_pois
 from .poi_routes import PoiRouteStore, RouteUnavailable
+from .sampled_poi_routes import route_sampled_poi
 from .baidu.client import BaiduClient
 from .sampled_service import run_sampled_analysis as build_sampled_result
 from .baidu.errors import BaiduApiError
@@ -29,6 +31,8 @@ from .schemas import (
     Progress,
 )
 from .settings import settings
+from .network_editor import router as network_editor_router
+from .region_package import load_region, load_region_by_id, list_display_regions, validate_region_center
 
 
 app = FastAPI(
@@ -36,11 +40,72 @@ app = FastAPI(
     version="0.1.0",
     description="Competition demo API for walkability and facility coverage analysis.",
 )
+app.include_router(network_editor_router)
+
+
+@app.get("/api/v1/region")
+async def active_region() -> dict:
+    try:
+        return load_region().public_metadata()
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(503, detail={"message": f"区域包无法加载：{exc}"}) from exc
+
+
+@app.get("/api/v1/region/assets/{asset}")
+async def region_asset(asset: str) -> FileResponse:
+    if asset not in ("context", "alignment"):
+        raise HTTPException(404, detail="Unknown region asset")
+    try:
+        region = load_region()
+        return FileResponse(region.file(asset), media_type="application/json",
+                            headers={"Cache-Control": "no-cache"})
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(503, detail={"message": f"区域资源无法加载：{exc}"}) from exc
+
+
+@app.get('/api/v1/regions')
+async def display_regions() -> dict:
+    return list_display_regions()
+
+
+def _display_region(identity: str):
+    try:
+        return load_region_by_id(identity)
+    except FileNotFoundError as exc:
+        raise HTTPException(404, detail={'code': 'REGION_NOT_FOUND', 'message': '区域包不存在，请刷新列表。'}) from exc
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(422, detail={'code': 'INVALID_REGION_PACKAGE', 'message': f'区域包无法加载：{exc}'}) from exc
+
+
+@app.get('/api/v1/regions/{region_id}')
+async def display_region_metadata(region_id: str) -> dict:
+    try:
+        return _display_region(region_id).public_metadata(asset_base=f'/api/v1/regions/{region_id}/assets')
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(422, detail={'code': 'INVALID_REGION_PACKAGE', 'message': str(exc)}) from exc
+
+
+@app.get('/api/v1/regions/{region_id}/assets/{asset}')
+async def display_region_asset(region_id: str, asset: str) -> FileResponse:
+    if asset not in ('context', 'alignment'):
+        raise HTTPException(404, detail='Unknown region asset')
+    return FileResponse(_display_region(region_id).file(asset), media_type='application/json',
+                        headers={'Cache-Control': 'no-cache'})
+
+
+def _analysis_region(identity: str | None):
+    if identity is None:
+        return None
+    region = _display_region(identity)
+    if not region.graph()['edges']:
+        raise HTTPException(422, detail={'code': 'REGION_NOT_READY', 'message': '该区域尚无路网，请先在编辑器中保存步行通道。'})
+    return region
 
 _analyses: dict[str, AnalysisState] = {}
 _sampled_analyses: dict[str, AnalysisState] = {}
 _local_experiments: dict[str, AnalysisState] = {}
 _poi_routes = PoiRouteStore()
+_sampled_task_semaphore = asyncio.Semaphore(1)
 
 
 @app.get("/api/v1/health", response_model=HealthResponse)
@@ -56,12 +121,13 @@ async def health() -> HealthResponse:
 
 @app.get("/api/v1/presets")
 async def presets() -> dict:
+    region = load_region().public_metadata()
     return {
         "items": [
             {
-                "id": "shanghai-new-jiangwan",
-                "name": "上海市杨浦区新江湾城街道",
-                "query": "上海市杨浦区新江湾城街道",
+                "id": region['id'],
+                "name": region['name'],
+                "query": region['name'],
                 "center": None,
             }
         ]
@@ -84,6 +150,8 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
     def publish(result: dict, metadata: dict, geometry_revision: int = 1) -> None:
         before = perf_counter()
         report = add_poi_result(build_analysis_result(result, metadata), result, metadata)
+        if metadata.get('regionId'):
+            report['metadata']['regionId'] = metadata['regionId']
         analysis.timingsMs["report"] = round((perf_counter() - before) * 1000, 3)
         report["metadata"].update({"timingsMs": dict(analysis.timingsMs),
                                   "engineBuildMode": result.get("diagnostics", {}).get("buildMode", "unknown"),
@@ -141,7 +209,7 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
                     raise EngineError("当前引擎不支持设施专用计算，请重新构建 Debug 引擎")
                 engine_result = {**engine_result, "facilityTravelTimes": facility_result["facilityTravelTimes"]}
             reachable_length = sum(math.dist(a, b) for edge in engine_result["reachableEdges"]
-                                   if edge.get("kind") in ("sidewalk", "shared_way")
+                                   if edge.get("kind") in ("walkway", "sidewalk", "shared_way")
                                    for a, b in zip(edge["pathMeters"], edge["pathMeters"][1:]))
             engine_result = {**engine_result, "grayZones": [{
                 "category": item["id"], "status": "data_insufficient", "uncoveredEdges": [],
@@ -175,6 +243,7 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
 async def _run_sampled_task(
     analysis_id: str,
     center: CenterPoint,
+    region_id: str | None = None,
 ) -> None:
     analysis = _sampled_analyses[analysis_id]
     analysis.status = "running"
@@ -191,10 +260,12 @@ async def _run_sampled_task(
             percent=30,
         )
 
-        result = await build_sampled_result(
-            client,
-            center,
-        )
+        async with _sampled_task_semaphore:
+            result = await build_sampled_result(
+                client,
+                center,
+                **({'region_id': region_id} if region_id else {}),
+            )
 
         analysis.result = result
         analysis.status = "completed"
@@ -245,9 +316,14 @@ async def _run_local_experiment(experiment_id: str, engine_input: dict,
 def _queue_analysis(request: AnalysisRequest, background_tasks: BackgroundTasks,
                     network_path: Path | None = None) -> AnalysisAccepted:
     started = perf_counter()
+    region = _analysis_region(request.regionId)
+    if region:
+        network_path = region.file('network')
     try:
         engine_input, network_meta = load_engine_request(
             request.center, request.originEdgeId, network_path=network_path)
+        if region:
+            network_meta['regionId'] = region.manifest['id']
     except UnsupportedAreaError as exc:
         raise HTTPException(
             status_code=422,
@@ -302,6 +378,11 @@ async def create_sampled_analysis(
     request: AnalysisRequest,
     background_tasks: BackgroundTasks,
 ) -> AnalysisAccepted:
+    region = _analysis_region(request.regionId)
+    try:
+        validate_region_center(request.center, region)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(422, detail={"code": "UNSUPPORTED_AREA", "message": str(exc)}) from exc
     analysis_id = uuid4().hex
 
     _sampled_analyses[analysis_id] = AnalysisState(
@@ -317,6 +398,7 @@ async def create_sampled_analysis(
         _run_sampled_task,
         analysis_id,
         request.center,
+        request.regionId,
     )
 
     return AnalysisAccepted(
@@ -369,6 +451,28 @@ async def route_analysis_poi(analysis_id: str, request: PoiRouteRequest) -> dict
     except (EngineError, ValueError, KeyError, TypeError) as exc:
         raise HTTPException(status_code=503,
                             detail={"code": "POI_ROUTE_ENGINE_ERROR", "message": str(exc)}) from exc
+
+
+@app.post('/api/v1/sampled-analyses/{analysis_id}/poi-route')
+async def route_sampled_analysis_poi(analysis_id: str, request: PoiRouteRequest) -> dict:
+    state = _sampled_analyses.get(analysis_id)
+    if state is None:
+        raise HTTPException(409, detail={'code': 'ROUTE_CONTEXT_EXPIRED',
+                                        'message': '该分析不存在或已过期，请重新计算真实区域分析。'})
+    if state.status != 'completed':
+        raise HTTPException(409, detail={'code': 'ANALYSIS_NOT_READY', 'message': '请等待真实区域分析完成后再规划路线。'})
+    if state.result is None:
+        raise HTTPException(409, detail={'code': 'ROUTE_CONTEXT_EXPIRED', 'message': '当前分析结果不可用，请重新计算。'})
+    client = BaiduClient(cache_enabled=True)
+    try:
+        return await route_sampled_poi(client, analysis_id, request.poiId, state.result)
+    except RouteUnavailable as exc:
+        raise HTTPException(409 if exc.code == 'ROUTE_CONTEXT_EXPIRED' else 404,
+                            detail={'code': exc.code, 'message': str(exc)}) from exc
+    except (BaiduApiError, OSError, sqlite3.Error, TimeoutError, ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(503, detail={'code': 'BAIDU_ROUTE_UNAVAILABLE', 'message': str(exc)}) from exc
+    finally:
+        await client.aclose()
 
 
 @app.get("/api/v1/local-experiments/{experiment_id}", response_model=AnalysisState)

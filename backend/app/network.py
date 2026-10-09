@@ -7,6 +7,7 @@ from typing import Any
 
 from .schemas import CenterPoint
 from .settings import settings
+from .walking_types import normalize_graph
 
 METERS_PER_DEGREE = 111_320.0
 
@@ -66,7 +67,7 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None,
     if not path.is_file():
         raise UnsupportedAreaError("演示区域尚未提供经核实的步行路网")
     try:
-        network = json.loads(path.read_text(encoding="utf-8"))
+        network = normalize_graph(json.loads(path.read_text(encoding="utf-8")))
         if "localExperiment" in network and not allow_local_experiment:
             raise ValueError("局部实验路网只能通过独立 local-experiments 入口加载")
         if network["schemaVersion"] != 2:
@@ -83,6 +84,9 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None,
                     not math.isfinite(origin[key]) for key in ("lng", "lat"))):
             raise ValueError(f"invalid {origin_key}")
         bounds = network["supportedCenterBoundsMeters"]
+        if network.get("selectionSource") == "network-path-extent":
+            from .region_package import network_bounds
+            bounds = network_bounds(network)
         x_meters, y_meters = _local_point(center, origin)
         for key in ("minX", "maxX", "minY", "maxY"):
             if (isinstance(bounds[key], bool) or
@@ -103,7 +107,7 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None,
                     raise ValueError("invalid public walkable area ring")
             if not any(_contains_point(ring, x_meters, y_meters) for ring in areas):
                 raise UnsupportedAreaError("中心点不在已核实的公共步行空间内")
-        elif "supportedCenterPolygonMeters" in network:
+        elif network.get("selectionSource") != "network-path-extent" and "supportedCenterPolygonMeters" in network:
             ring = network["supportedCenterPolygonMeters"]
             if (not isinstance(ring, list) or len(ring) < 4 or
                     ring[0] != ring[-1] or any(not _valid_xy(point) for point in ring)):
@@ -203,6 +207,11 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None,
         "networkNodeCount": len(network["nodes"]),
         "networkEdgeCount": len(network["edges"]),
     }
+    if network.get("selectionSource") == "network-path-extent":
+        from .region_package import sha256
+        metadata.update({"regionId": network.get("regionId", settings.region_id),
+                         "networkRevision": sha256(path), "coverageBoundsMeters": bounds,
+                         "coverageStatus": "bounded-model"})
     if "localExperiment" in network:
         metadata["localExperiment"] = network["localExperiment"]
     return payload, metadata
@@ -241,6 +250,8 @@ def build_analysis_result(engine_result: dict[str, Any],
     warnings = list(engine_result["diagnostics"].get("warnings", []))
     if network_meta["networkSource"] == "synthetic":
         warnings.append("SYNTHETIC_NETWORK_NOT_REAL_WORLD")
+    if network_meta.get("coverageStatus") == "bounded-model":
+        warnings.append("NETWORK_EXTENT_LIMITS_RESULTS")
     requested_facilities = {facility["id"]: facility
                             for facility in network_meta.get("facilities", [])}
     facility_times = engine_result.get("facilityTravelTimes", [])

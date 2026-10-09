@@ -48,6 +48,21 @@ export function preparedMapGeometry(asset, { ringWgs84, originWgs84, paddingMete
 // locally between official anchors, and invert the SAME cells for map clicks.
 export function createLocalBd09Alignment(asset) {
   const grid = asset?.alignment;
+  if (grid?.kind === 'bd09_local_meters') {
+    const origin = grid.originBd09;
+    if (!validPoint(origin) || Math.abs(origin[1]) >= 85 || grid.localAxis !== 'east-south') {
+      throw new Error('百度坐标原点无效');
+    }
+    const scaleX = 111320 * Math.cos(origin[1]*Math.PI/180);
+    return {
+      toBd09: point => {
+        if (!Array.isArray(point) || point.length !== 2 || !point.every(Number.isFinite)) return null;
+        const result = [origin[0]+point[0]/scaleX, origin[1]-point[1]/111320];
+        return validPoint(result) ? result : null;
+      },
+      toLocal: point => validPoint(point) ? [(point[0]-origin[0])*scaleX, (origin[1]-point[1])*111320] : null,
+    };
+  }
   const { columns, rows, stepMeters: step, minLocalMeters: minimum, pointsBd09: points } = grid ?? {};
   if (grid?.kind !== "bilinear_grid" || grid.localAxis !== "east-south" ||
     !Number.isInteger(columns) || !Number.isInteger(rows) || columns < 2 || rows < 2 ||

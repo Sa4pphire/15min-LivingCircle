@@ -22,13 +22,25 @@ def _server_ak() -> str:
             if value:
                 return value.strip()
     return ""
-SYNTHETIC_NETWORK_PATH = Path(os.getenv(
-    "SYNTHETIC_NETWORK_PATH", str(REPO_ROOT / "data/networks/synthetic-preview.json")
+
+
+def _repo_path(value: str) -> Path:
+    path = Path(value)
+    return path if path.is_absolute() else REPO_ROOT / path
+
+
+REGION_ID = os.getenv("REGION_ID", "shanghai-new-jiangwan")
+if not REGION_ID or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789-_" for c in REGION_ID):
+    raise ValueError("REGION_ID must be a region package identifier")
+REGION_ROOT = REPO_ROOT / "data/regions" / REGION_ID
+SYNTHETIC_NETWORK_PATH = _repo_path(os.getenv(
+    "SYNTHETIC_NETWORK_PATH", str(REGION_ROOT / "network.json")
 ))
 
 
 @dataclass(frozen=True)
 class Settings:
+    region_id: str = REGION_ID
     app_env: str = os.getenv("APP_ENV", "development")
     static_dir: Path = Path(os.getenv("STATIC_DIR", "static"))
     cpp_engine_path: Path = Path(
@@ -41,7 +53,7 @@ class Settings:
         os.getenv("WALKING_NETWORK_PATH", "data/networks/shanghai-new-jiangwan.json")
     )
     synthetic_network_path: Path = SYNTHETIC_NETWORK_PATH
-    local_experiment_network_path: Path = Path(
+    local_experiment_network_path: Path = _repo_path(
         os.getenv("LOCAL_EXPERIMENT_NETWORK_PATH", str(SYNTHETIC_NETWORK_PATH))
     )
     baidu_server_ak: str = _server_ak()
@@ -73,8 +85,8 @@ class Settings:
     poi_max_tiles: int = int(os.getenv("POI_MAX_TILES", "64"))
     poi_max_requests: int = int(os.getenv("POI_MAX_REQUESTS", "96"))
     poi_snap_meters: float = float(os.getenv("POI_SNAP_METERS", "3"))
-    poi_map_asset_path: Path = Path(os.getenv(
-        "POI_MAP_ASSET_PATH", str(REPO_ROOT / "frontend/src/data/demoMap.bd09.json")))
+    poi_map_asset_path: Path = _repo_path(os.getenv(
+        "POI_MAP_ASSET_PATH", str(REGION_ROOT / "alignment.bd09.json")))
 
 
 settings = Settings()

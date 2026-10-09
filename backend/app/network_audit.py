@@ -3,6 +3,7 @@
 from collections import Counter, defaultdict
 import math
 from typing import Any
+from .walking_types import normalize_graph
 
 
 def _finite_number(value: Any) -> bool:
@@ -11,6 +12,7 @@ def _finite_number(value: Any) -> bool:
 
 
 def audit_network(graph: dict[str, Any]) -> dict[str, Any]:
+    graph = normalize_graph(graph)
     nodes = {node["id"]: node for node in graph["nodes"]}
     edges = graph["edges"]
     if len(nodes) != len(graph["nodes"]):
@@ -25,7 +27,7 @@ def audit_network(graph: dict[str, Any]) -> dict[str, Any]:
     adjacency: dict[str, list[str]] = defaultdict(list)
     degree: Counter[str] = Counter()
     for edge in edges:
-        if edge["kind"] not in ("sidewalk", "shared_way", "turn", "crossing"):
+        if edge["kind"] not in ("walkway", "turn", "crossing"):
             raise ValueError(f"invalid edge kind: {edge['id']}")
         a, b = edge["from"], edge["to"]
         if a not in nodes or b not in nodes or a == b:

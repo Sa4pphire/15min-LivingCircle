@@ -1,5 +1,19 @@
 # 步行路网引擎契约 v2
 
+## 统一步行类型（2026-10-07）
+
+普通行走边统一输出 `kind: "walkway"`；`turn`、`crossing` 不变。迁移只改变类型表达，不合并道路，不改变节点／边 ID、端点、折线、入口引用及等待时间。
+
+- `accessMode: "separated"`：保留 `streetBlockId`、`side: "left" | "right"`；同一道路两侧不能共用节点，不能用 `turn` 免费换侧。沿用原人行道吸附和 POI 同侧接入规则，不设置共享宽度。
+- `accessMode: "shared"`：保留 `streetBlockId`、正数 `widthMeters`、`sharedWayType`，不设置 `side`；沿用原共享通道的宽度和横向接入计时规则。
+- 新 `walkway` 输入必须明确填写 `accessMode`。同一道路组不能混用两种接入方式，等待时间仍只能设置在 `crossing` 上。
+- 旧 `sidewalk`／`shared_way` JSON 仍可读取，分别映射到 `separated`／`shared`。输出与现有数据文件只使用 `walkway`；下文旧名称也用于解释保留的建模语义。
+- `--health` 新增 `walkway: true` 能力标识。Python 传输字段已包含 `accessMode`；更新后须重新构建引擎并重启后端。
+
+例如：`{"id":"walk-left","kind":"walkway","accessMode":"separated","streetBlockId":"block-1","side":"left","from":"a","to":"b","pathMeters":[[0,0],[100,0]]}`。
+
+完整迁移约定见 [统一 walkway 说明](../docs/unified-walkways.md)。
+
 Python 向引擎标准输入写入一个 JSON 对象；引擎向标准输出写入一个 JSON 对象。`schemaVersion` 必须为 `2`。演示统一读取现有 `data/networks/synthetic-preview.json`，由 Python 补入本次起点及计算参数后发送，不补充新的路网数据。C++ `--demo`／`--network` 可直接读取同一合成文件，`--input` 读取完整请求，二者复用同一图解析。字段说明见 `engine-input.example.json`；最小请求／输出见 `engine-input.minimal.example.json`、`engine-output.example.json`，这些小图仅供契约说明和单元测试。
 
 - 坐标是相对于文件原点的局部米制坐标，X 向东、Y 向北。当前合成文件使用 `originWgs84`，请求声明 `wgs84ll`；BD-09 文件使用 `originBd09`，声明 `bd09ll`。两者只供 Python 转换地图坐标，C++ 计算只用局部米数；不得混贴坐标类型。

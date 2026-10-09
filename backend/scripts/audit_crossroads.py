@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "backend"))
 from app.crossroad_audit import audit_crossroads  # noqa: E402
 from app.network_audit import audit_network  # noqa: E402
 from app.synthetic_converter import convert_preview_graph, with_preview_annotations  # noqa: E402
+from app.manual_graph_edits import apply_manual_edits  # noqa: E402
 from render_network_audit import path_data  # noqa: E402
 
 
@@ -99,7 +100,7 @@ def main() -> None:
     annotations = json.loads((directory/'synthetic-preview.annotations.json').read_text('utf-8'))
     raw = with_preview_annotations(raw, annotations)
     graph = json.loads((directory/'synthetic-preview.json').read_text('utf-8'))
-    expected = convert_preview_graph(raw, origin, annotations['crossings'], annotations['junctions'])
+    expected = apply_manual_edits(convert_preview_graph(raw, origin, annotations['crossings'], annotations['junctions']), annotations.get('manualGraphEdits'))
     if expected != graph:
         raise ValueError('walking graph is stale; export_synthetic_preview.py first')
     topology = audit_network(graph)

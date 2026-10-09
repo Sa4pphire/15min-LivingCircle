@@ -68,7 +68,13 @@ function Invoke-ApiJson([string]$uri, [string]$method = 'Get', $body = $null) {
 }
 
 function Test-ApiReady {
-    try { $health = Invoke-ApiJson "$apiUrl/api/v1/health"; return $health.status -eq 'ok' }
+    try {
+        $health = Invoke-ApiJson "$apiUrl/api/v1/health"
+        if ($health.status -ne 'ok') { return $false }
+        $region = Invoke-ApiJson "$apiUrl/api/v1/region"
+        return $region.id -eq $regionConfiguration.regionId -and
+            $region.revision -eq $regionConfiguration.regionRevision
+    }
     catch { return $false }
 }
 
@@ -79,12 +85,13 @@ function Test-FrontendReady {
     } catch { return $false }
 }
 
-function Get-ProcessRecord($process, [string]$role, [switch]$Primary) {
+function Get-ProcessRecord($process, [string]$role, [switch]$Primary, [string]$Executable) {
     $process.Refresh()
     return [pscustomobject]@{
         id = $process.Id
         startTicks = $process.StartTime.ToUniversalTime().Ticks.ToString()
-        executable = $process.Path
+        # MainModule/Path can briefly be unavailable immediately after Start-Process.
+        executable = if ($Executable) { $Executable } else { $process.Path }
         role = $role
         primary = [bool]$Primary
     }
@@ -170,9 +177,11 @@ function Stop-Service {
     Write-Host 'Stopped only the processes recorded by this launcher.'
 }
 
-function Get-ConfigurationFingerprint([string]$localPath, [string]$syntheticPath) {
+function Get-ConfigurationFingerprint([string]$localPath, [string]$syntheticPath,
+                                      [string[]]$regionFiles) {
     $files = @(
         Get-Item -LiteralPath $PSCommandPath, $localPath, $syntheticPath
+        Get-Item -LiteralPath $regionFiles
         Get-ChildItem -LiteralPath (Join-Path $repoRoot 'backend/app') -File -Filter '*.py'
         Get-ChildItem -LiteralPath (Join-Path $repoRoot 'cpp-engine/src') -File -Filter '*.cpp'
         Get-ChildItem -LiteralPath (Join-Path $repoRoot 'cpp-engine/include') -Recurse -File
@@ -228,6 +237,7 @@ function Resolve-Engine {
     $latestSource = ($sources | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1).LastWriteTimeUtc
     $buildRoot = Join-Path $repoRoot "cpp-engine/build/demo-launcher/$EngineConfiguration"
     $candidatePaths = @(
+        (Join-Path $repoRoot "cpp-engine/build/walkway/$EngineConfiguration/isochrone_engine.exe"),
         (Join-Path $repoRoot "cpp-engine/build/poi-route/$EngineConfiguration/isochrone_engine.exe"),
         (Join-Path $buildRoot 'isochrone_engine.exe'),
         (Join-Path $buildRoot 'cmake/isochrone_engine.exe'),
@@ -237,7 +247,10 @@ function Resolve-Engine {
     if ($env:CPP_ENGINE_PATH) { $candidatePaths += Get-FullRepoPath $env:CPP_ENGINE_PATH }
     $candidate = $candidatePaths | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
         Where-Object {
-            try { (& $_ --health | ConvertFrom-Json).buildMode -eq $EngineConfiguration }
+            try {
+                $engineHealth = & $_ --health | ConvertFrom-Json
+                $engineHealth.buildMode -eq $EngineConfiguration -and $engineHealth.walkway -eq $true
+            }
             catch { $false }
         } | ForEach-Object { Get-Item -LiteralPath $_ } | Sort-Object LastWriteTimeUtc -Descending |
         Select-Object -First 1
@@ -373,20 +386,23 @@ try {
         Write-Host "Port $FrontendPort listening: $(Test-PortOpen $FrontendPort)"
         return
     }
-    if ($Action -eq 'restart') { Stop-Service }
-    $syntheticPath = if ($env:SYNTHETIC_NETWORK_PATH) {
-        Get-FullRepoPath $env:SYNTHETIC_NETWORK_PATH
-    } else { Join-Path $repoRoot 'data/networks/synthetic-preview.json' }
-    $localPath = if ($LocalNetworkPath) { Get-FullRepoPath $LocalNetworkPath }
-        elseif ($env:LOCAL_EXPERIMENT_NETWORK_PATH) { Get-FullRepoPath $env:LOCAL_EXPERIMENT_NETWORK_PATH }
-        else { $syntheticPath }
+    if (-not (Test-Path -LiteralPath $python -PathType Leaf)) { throw "Required file missing: $python" }
+    if ($LocalNetworkPath) {
+        Set-LaunchEnvironment 'LOCAL_EXPERIMENT_NETWORK_PATH' (Get-FullRepoPath $LocalNetworkPath)
+    }
+    $configurationText = & $python -B (Join-Path $repoRoot 'backend/scripts/demo_preflight.py') --paths-only
+    if ($LASTEXITCODE -ne 0) { throw 'Region configuration failed; see the preceding error.' }
+    $regionConfiguration = $configurationText | ConvertFrom-Json
+    $syntheticPath = $regionConfiguration.syntheticNetworkPath
+    $localPath = $regionConfiguration.localNetworkPath
     foreach ($path in @($python, (Join-Path $frontendDir 'node_modules/vite/bin/vite.js'),
                          $localPath, $syntheticPath)) {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Required file missing: $path" }
     }
     $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
     if (-not $nodeCommand) { throw 'Node.js is not on PATH.' }
-    $fingerprint = Get-ConfigurationFingerprint $localPath $syntheticPath
+    $fingerprint = Get-ConfigurationFingerprint $localPath $syntheticPath $regionConfiguration.regionFiles
+    if ($Action -eq 'restart') { Stop-Service }
     $existing = Read-ServiceState
     if ($existing) {
         $live = @($existing.processes | Where-Object { $null -ne (Get-MatchingProcess $_) })
@@ -416,8 +432,10 @@ try {
     $engine = Resolve-Engine
     Test-EngineContract $engine
     Set-LaunchEnvironment 'CPP_ENGINE_PATH' $engine
+    Set-LaunchEnvironment 'REGION_ID' $regionConfiguration.regionId
     Set-LaunchEnvironment 'SYNTHETIC_NETWORK_PATH' $syntheticPath
     Set-LaunchEnvironment 'LOCAL_EXPERIMENT_NETWORK_PATH' $localPath
+    Set-LaunchEnvironment 'POI_MAP_ASSET_PATH' $regionConfiguration.poiMapAssetPath
     Set-LaunchEnvironment 'DEMO_BACKEND_PORT' $BackendPort.ToString()
     Set-LaunchEnvironment 'DEMO_FRONTEND_PORT' $FrontendPort.ToString()
     Set-LaunchEnvironment 'PYTHONIOENCODING' 'utf-8'
@@ -425,22 +443,25 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Python/network preflight failed; see the preceding error.' }
     $preflight = $preflightText | ConvertFrom-Json
     Write-Host "Engine contract verified: $engine"
+    Write-Host "Region package verified: $($preflight.regionId)"
     Write-Host "Local network: $localPath ($($preflight.localSource); no unverified real-world claims)"
     if ($Action -eq 'check') { Write-Host 'Dependencies, network inputs and engine contract passed.'; return }
     $state = [pscustomobject]@{
         version = 1; repoRoot = $repoRoot; backendPort = $BackendPort; frontendPort = $FrontendPort
         sessionId = [Guid]::NewGuid().ToString(); fingerprint = $fingerprint
         engine = $engine; localNetwork = $localPath; processes = @()
+        regionId = $preflight.regionId; regionRevision = $preflight.regionRevision
     }
     $ownedSessionId = $state.sessionId
     $backend = Start-LoggedProcess $python @('-B', '-m', 'uvicorn', 'app.main:app',
         '--app-dir', 'backend', '--host', '127.0.0.1', '--port', $BackendPort.ToString()) $repoRoot 'backend'
-    $ownedProcesses += Get-ProcessRecord $backend 'backend' -Primary
+    $ownedProcesses += Get-ProcessRecord $backend 'backend' -Primary -Executable $python
     $state.processes = $ownedProcesses
     Save-ServiceState $state
     Wait-ForReady { Test-ApiReady } $backend 'Python API'
     $frontend = Start-LoggedProcess $nodeCommand.Source @((Join-Path $frontendDir 'scripts/demo-vite.mjs')) $frontendDir 'frontend'
-    $ownedProcesses += Get-ProcessRecord $frontend 'frontend' -Primary
+    $ownedProcesses += Get-ProcessRecord $frontend 'frontend' -Primary -Executable $nodeCommand.Source
+    Wait-ForReady { Test-FrontendReady } $frontend 'Vite frontend'
     # Persist known descendants too, so an exited venv shim does not hide its Python child.
     $snapshot = @(Get-CimInstance Win32_Process -ErrorAction Stop)
     $descendants = @()
@@ -448,12 +469,15 @@ try {
     $ownedProcesses += $descendants
     $state.processes = $ownedProcesses
     Save-ServiceState $state
-    Wait-ForReady { Test-FrontendReady } $frontend 'Vite frontend'
     $proxyHealth = Invoke-ApiJson "$frontendUrl/api/v1/health"
     if ($proxyHealth.status -ne 'ok') { throw 'Frontend proxy did not reach the healthy backend.' }
+    $proxyRegion = Invoke-ApiJson "$frontendUrl/api/v1/region"
+    if ($proxyRegion.id -ne $preflight.regionId -or $proxyRegion.revision -ne $preflight.regionRevision) {
+        throw 'Frontend proxy did not load the configured region package.'
+    }
     Test-AnalysisRoundTrip $preflight.syntheticRequest 'synthetic-analyses' 'analyses' ''
     Test-AnalysisRoundTrip $preflight.localRequest 'local-experiments' 'local-experiments' 'local_experiment'
-    Write-Host 'Verified: frontend proxy -> Python -> C++, for both synthetic and local modes.'
+    Write-Host 'Verified: region package and frontend proxy -> Python -> C++, for both synthetic and local modes.'
     Write-Host "Open $frontendUrl/?mode=local"
     Write-Host 'These demo data do not establish a verified real-world facility report.'
     $mutex.ReleaseMutex()

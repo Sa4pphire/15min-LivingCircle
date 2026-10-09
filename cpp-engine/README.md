@@ -1,5 +1,7 @@
 # C++ 15 分钟步行引擎
 
+步行边现统一为 `walkway`，用 `accessMode: separated/shared` 保留原分侧／共享接入规则；节点、边 ID、几何和连接不变。旧 JSON 类型兼容读取，输出只使用 walkway，转弯与过街仍独立。迁移和编辑器说明见 [统一 walkway](../docs/unified-walkways.md)。
+
 该目录只做路网计算，不调用百度 API、不读取凭据。当前演示统一读取已建模的 [synthetic-preview.json](../data/networks/synthetic-preview.json)，不另补道路、设施或裁剪出口。Python 按文件声明将 WGS-84／BD-09 坐标换成局部米制坐标，通过标准输入发送 v2 JSON；C++ 也支持直接读取同一合成文件。标准输出返回计算 JSON，日志只写标准错误。完整字段见 [输入样例](../contracts/engine-input.example.json)、[输出样例](../contracts/engine-output.example.json) 和 [v2 契约](../contracts/engine-v2.README.md)。
 
 ## 构建

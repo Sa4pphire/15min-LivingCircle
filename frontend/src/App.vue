@@ -5,9 +5,12 @@ import PoiInventoryPanel from "./PoiInventoryPanel.vue";
 import NeighborhoodFooter from "./NeighborhoodFooter.vue";
 import { visiblePois } from "./poiFacilities.js";
 import { requestCppMapAnalysis, requestCppPoiRoute } from "./cppAnalysisClient.js";
-import { requestSampledMapAnalysis } from "./sampledAnalysisClient.js";
+import { requestSampledMapAnalysis, requestSampledPoiRoute } from "./sampledAnalysisClient.js";
+import { getActiveRegion } from "./regionLoader.js";
 
-
+const region = getActiveRegion();
+const emit = defineEmits(['choose-region']);
+const coverageSize = `${((region.boundsMeters.maxX - region.boundsMeters.minX) / 1000).toFixed(2)} × ${((region.boundsMeters.maxY - region.boundsMeters.minY) / 1000).toFixed(2)} 公里`;
 const pageViewport = ref(null);
 const detailPage = ref(null);
 const activePage = ref(0);
@@ -26,6 +29,9 @@ const realCandidate = ref(null);
 const realAnalysisResult = ref(null);
 const realAnalysisState = ref("idle");
 const realAnalysisError = ref("");
+const realPoiRoute = ref(null);
+let realPoiRouteAbort;
+let realPoiRouteSequence = 0;
 let realAnalysisAbort;
 const cppCandidate = ref(null);
 const cppAnalysisResult = ref(null);
@@ -44,6 +50,7 @@ let pageTurnTimer;
 let pageTurning = false;
 
 function chooseRealPoint(point) {
+  clearRealPoiRoute();
   realAnalysisAbort?.abort();
   realCandidate.value = point;
   realAnalysisResult.value = null;
@@ -53,6 +60,7 @@ function chooseRealPoint(point) {
 
 async function runRealAnalysis() {
   if (!realCandidate.value?.local || realAnalysisState.value === "running") return;
+  clearRealPoiRoute();
   realAnalysisAbort?.abort();
   const controller = new AbortController();
   realAnalysisAbort = controller;
@@ -62,7 +70,7 @@ async function runRealAnalysis() {
   try {
     const result = await requestSampledMapAnalysis(
       realCandidate.value,
-      { signal: controller.signal },
+      { signal: controller.signal, regionId: region.id },
     );
     if (controller.signal.aborted) return;
     realAnalysisResult.value = result;
@@ -73,6 +81,55 @@ async function runRealAnalysis() {
     realAnalysisError.value = "示意路线暂时无法生成，请重新选点后重试。";
     console.warn("真实区域合成分析失败。", error);
   }
+}
+
+function clearRealPoiRoute() {
+  realPoiRouteAbort?.abort();
+  realPoiRouteAbort = null;
+  realPoiRouteSequence += 1;
+  realPoiRoute.value = null;
+}
+
+async function selectRealPoi(poi) {
+  const target = visiblePois(realAnalysisResult.value).find(entry => entry.id === poi?.id);
+  if (!target || mapMode.value !== 'real') return;
+  if (realPoiRoute.value?.poiId === target.id && ['loading', 'ready'].includes(realPoiRoute.value.status)) return;
+  clearRealPoiRoute();
+  const analysisId = realAnalysisResult.value.analysisId;
+  if (!analysisId) {
+    realPoiRoute.value = { poiId: target.id, status: 'error', message: '请重新生成真实区域分析后再查询路线。' };
+    return;
+  }
+  const sequence = realPoiRouteSequence;
+  const controller = new AbortController();
+  realPoiRouteAbort = controller;
+  realPoiRoute.value = { poiId: target.id, status: 'loading', algorithm: 'baidu_walking' };
+  let timedOut = false;
+  const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 30_000);
+  try {
+    const route = await requestSampledPoiRoute({ analysisId, poiId: target.id }, { signal: controller.signal });
+    if (sequence !== realPoiRouteSequence || controller.signal.aborted) return;
+    realPoiRoute.value = { ...route, sequence };
+  } catch (error) {
+    if (sequence !== realPoiRouteSequence || (controller.signal.aborted && !timedOut)) return;
+    realPoiRoute.value = { poiId: target.id, status: 'error', algorithm: 'baidu_walking',
+      message: timedOut ? '百度路线查询超时，请稍后重试。'
+        : String(error?.message).includes('ROUTE_CONTEXT_EXPIRED') ? '该分析已过期，请重新生成真实区域分析。'
+        : '百度步行路线暂时无法获取，请稍后重试。' };
+  } finally {
+    clearTimeout(timeout);
+    if (sequence === realPoiRouteSequence) realPoiRouteAbort = null;
+  }
+}
+
+function selectMapPoi(poi) {
+  if (mapMode.value === 'real') void selectRealPoi(poi);
+  else void selectCppPoi(poi);
+}
+
+function dismissMapPoi() {
+  if (mapMode.value === 'real') clearRealPoiRoute();
+  else clearCppPoiRoute();
 }
 
 function chooseCppPoint(point) {
@@ -166,7 +223,10 @@ async function selectCppPoi(poi) {
   }
 }
 
-watch(mapMode, mode => { if (mode !== "synthetic") clearCppPoiRoute(); });
+watch(mapMode, mode => {
+  if (mode !== 'synthetic') clearCppPoiRoute();
+  if (mode !== 'real') clearRealPoiRoute();
+});
 
 function switchMapMode(mode) {
   if (!["real", "synthetic"].includes(mode)) return;
@@ -242,6 +302,8 @@ function handlePageKeydown(event) {
 }
 
 onUnmounted(() => {
+  clearRealPoiRoute();
+  clearCppPoiRoute();
   clearCppPoiRoute();
   realAnalysisAbort?.abort();
   cppAnalysisAbort?.abort();
@@ -268,9 +330,11 @@ onUnmounted(() => {
       </div>
       <div class="header-message">
         <strong>从一个起点，看见城市的日常半径。</strong>
-        <span>上海 · 新江湾城样例区</span>
+        <span>{{ region.name }}</span>
       </div>
       <div class="header-right">
+        <button type="button" class="header-nav-button region-switch-button" @click="emit('choose-region')">切换区域</button>
+        <a class="header-nav-button" :href="`/?mode=editor&region=${encodeURIComponent(region.id)}`">编辑路网</a>
         <button type="button" class="header-nav-button" @click="goToPage(1)">查看报告 <span aria-hidden="true">↓</span></button>
         <a class="header-contact" href="https://github.com/Sa4pphire" target="_blank" rel="noopener noreferrer" aria-label="在 GitHub 联系项目作者">联系 <span class="github-label">/ GitHub</span> <span aria-hidden="true">↗</span></a>
       </div>
@@ -300,9 +364,9 @@ onUnmounted(() => {
                 :zoom-tier="mapZoomTier" :overview-request-id="mapOverviewRequestId"
                 :show-blind-zones="showBlindZones"
                 :poi-focus-request="mapMode === 'synthetic' ? cppPoiFocusRequest : null"
-                :poi-route="mapMode === 'synthetic' ? cppPoiRoute : null"
+                :poi-route="mapMode === 'synthetic' ? cppPoiRoute : realPoiRoute"
                 :selection-disabled="mapMode === 'synthetic' && cppAnalysisState === 'running'"
-                @poi-select="selectCppPoi" @poi-dismiss="clearCppPoiRoute"
+                @poi-select="selectMapPoi" @poi-dismiss="dismissMapPoi"
                 @select="mapMode === 'synthetic' ? chooseCppPoint($event) : chooseRealPoint($event)" />
             </Transition>
             <!-- Replay a light reveal without remounting the shared base map. -->
@@ -341,22 +405,23 @@ onUnmounted(() => {
           </div>
 
           <div class="map-bottomline real-mode">
-            <span v-if="mapMode === 'real'"><span class="line-signal"></span>{{ realAnalysisState === 'error' ? realAnalysisError : realAnalysisState === 'running' ? '正在生成百度采样等时圈，请稍候' : realAnalysisResult ? '百度采样等时圈与代表路线已显示' : realCandidate ? '已选起点 · 点击右上角生成真实区域分析' : '四路围合范围 · 点击地图选点' }}</span>
+            <span v-if="mapMode === 'real'"><span class="line-signal"></span>{{ realAnalysisState === 'error' ? realAnalysisError : realAnalysisState === 'running' ? '正在生成百度采样等时圈，请稍候' : realAnalysisResult ? '百度采样等时圈与代表路线已显示' : realCandidate ? '已选起点 · 点击右上角生成真实区域分析' : '现有路网范围 · 点击地图选点' }}</span>
             <span v-else-if="mapMode === 'synthetic'" role="status"><span class="line-signal"></span>{{ cppAnalysisState === 'error' ? cppAnalysisError : cppAnalysisState === 'running' ? '正在计算路网等时圈' : cppAnalysisState === 'enriching' ? '等时圈已显示 · 正在补充设施，可继续选点' : cppAnalysisResult ? '等时圈已显示 · 点击设施查看路径（未核实）' : cppCandidate ? '已选起点 · 点击右上角计算等时圈' : '专家模式 · 合成路网，点击地图选点' }}</span>
-            <span><span class="line-signal"></span>{{ showBlindZones ? (realAnalysisResult?.blindZoneStatus === 'confirmed' ? `红色区域表示 10 米分辨率服务盲区候选 · 服务半径 1 公里` : realAnalysisResult?.blindZoneStatus === 'unknown' ? 'POI 清单不完整，暂不把缺失数据判为盲区' : '当前没有可确认的服务盲区') : '点击眼睛图标切换服务覆盖候选层' }}</span>
-            <span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">边界与 SVG 数据 © OpenStreetMap contributors · ODbL</a></span>
+            <span><span class="line-signal"></span>{{ showBlindZones ? (realAnalysisResult?.blindZoneStatus === 'confirmed' ? '等时圈内盲区候选 · 五类设施 · 直线服务半径 1 公里' : realAnalysisResult?.blindZoneStatus === 'provisional' ? '部分设施查询不完整：仅评估查询完成的类别' : realAnalysisResult?.blindZoneStatus === 'unknown' ? '设施检索不完整或不可用，暂无法判断盲区' : '计算真实区域分析后可查看服务覆盖候选') : '点击眼睛图标切换服务覆盖候选层' }}</span>
+            <span><a v-if="region.source?.provider === 'OpenStreetMap contributors'" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">区域轮廓与路网 © OpenStreetMap contributors · ODbL</a><template v-else>区域轮廓与路网：{{ region.source?.provider || '当前区域包' }}</template></span>
           </div>
           <div v-if="mapMode === 'real' && realAnalysisResult" class="real-route-legend" aria-label="真实区域路线图例">
             <span><i class="legend-sampled-route"></i>采样边界路线 {{ realAnalysisResult.summary.samplingRouteCount }}</span>
-            <span><i class="legend-poi-route"></i>POI 服务路线 {{ realAnalysisResult.summary.poiRouteCount }}<small v-if="realAnalysisResult.summary.poiRouteCount === 0">（暂无 15 分钟内有效路线）</small></span>
-            <span v-if="showBlindZones && realAnalysisResult?.blindZoneStatus === 'confirmed'"><i class="legend-blind-zone"></i>10 米分辨率服务盲区候选</span>
+            <span v-if="realPoiRoute?.status === 'ready'"><i class="legend-poi-route"></i>选中设施的百度步行路线</span>
+            <span v-else><i class="legend-poi-route"></i>POI 服务路线 {{ realAnalysisResult.summary.poiRouteCount }}<small v-if="realAnalysisResult.summary.poiRouteCount === 0">（暂无 15 分钟内有效路线）</small></span>
+            <span v-if="showBlindZones && ['confirmed', 'provisional'].includes(realAnalysisResult?.blindZoneStatus)"><i class="legend-blind-zone"></i>{{ realAnalysisResult.blindZoneStatus === 'provisional' ? '清单不完整 · 候选盲区' : '连续服务覆盖盲区候选' }}</span>
           </div>
         </div>
       </section>
     </main>
     <footer class="living-footer" :class="{ collapsed: livingFooterCollapsed }" aria-label="LIVING CIRCLE">
       <div class="living-meta" aria-hidden="true">
-        <span>{{ mapMode === 'real' ? 'REAL AREA PREVIEW / XINJIANGWANCHENG' : 'C++ ISOCHRONE / SYNTHETIC ROAD GRAPH' }}</span>
+        <span>{{ region.id.toUpperCase() }} / {{ mapMode === 'real' ? 'AREA PREVIEW' : 'C++ ISOCHRONE' }}</span>
         <span>向下滚动 · 查看生活圈报告 ↓</span>
       </div>
       <div id="living-wordmark-panel" class="living-wordmark" aria-hidden="true">
@@ -378,7 +443,7 @@ onUnmounted(() => {
       <div class="detail-page-inner">
         <div class="detail-page-heading">
           <div>
-            <p class="section-kicker">{{ mapMode === 'real' ? '真实区域 · 新江湾城演示范围' : '专家模式 · C++ 算法演示' }}</p>
+            <p class="section-kicker">{{ mapMode === 'real' ? region.name : '专家模式 · C++ 算法演示' }}</p>
             <h2>{{ mapMode === 'real' ? '真实范围与选点状态' : '从地图走进路网计算' }}</h2>
           </div>
           <button type="button" class="return-map-button" @click="goToPage(0)">返回地图 <span aria-hidden="true">↑</span></button>
@@ -392,20 +457,22 @@ onUnmounted(() => {
         </div>
         <section class="panel-section">
           <div class="section-head"><span class="section-index">01</span><h2>演示区域</h2></div>
-          <p class="section-explain">这是项目自定义的道路围合区域，不是新江湾城街道行政边界。</p>
-          <div class="real-road-list"><span>北 · 国帆路</span><span>东 · 江湾城路</span><span>南 · 殷高东路</span><span>西 · 国权北路</span></div>
+          <p class="section-explain">地图拖动与选点范围由当前路网路径自动派生，覆盖约 {{ coverageSize }}。</p>
+          <div class="real-road-list"><span>{{ region.nodeCount.toLocaleString() }} 个路网节点</span><span>{{ region.edgeCount.toLocaleString() }} 条路网边</span><span>区域版本 {{ region.version }}</span><span>数据范围自动计算</span></div>
         </section>
         <section class="panel-section">
           <div class="section-head"><span class="section-index">02</span><h2>候选起点</h2></div>
-          <p v-if="!realCandidate" class="section-explain">返回地图，在围合区域内点击一个位置，或选用区域中心。</p>
+          <p v-if="!realCandidate" class="section-explain">返回地图，在现有路网数据范围内选择起点。</p>
           <div v-else class="real-selected-point"><span class="origin-pin"></span><div><strong>已记录候选位置</strong><small>{{ realCandidate.coordType === 'bd09ll' ? 'BD-09 坐标' : 'WGS-84 示意坐标 · 百度底图待配置' }}</small><code>{{ realCandidate.lng.toFixed(6) }}, {{ realCandidate.lat.toFixed(6) }}</code></div></div>
           <p class="origin-action-hint">选点到最近道路的虚线仅为未核实的演示接入，不代表可实际步行穿行。</p>
         </section>
         <section class="panel-section">
           <div class="section-head"><span class="section-index">03</span><h2>路线示意状态</h2></div>
           <p v-if="realAnalysisResult" class="section-explain">百度采样结果生成不规则 15 分钟等时圈，并绘制 {{ realAnalysisResult.summary.samplingRouteCount }} 条采样边界步行路线；另有 {{ realAnalysisResult.summary.poiRouteCount }} 个 POI 服务点路线<span v-if="realAnalysisResult.summary.poiRouteCount === 0">（当前检索到的服务点没有通过 15 分钟步行阈值）</span>。绿色线贴合采样边界，蓝色线指向服务点。</p>
+          <p v-if="realAnalysisResult" class="section-explain">设施沿用学校、医院、商超、公共服务、餐饮五类规则。盲区仅在等时圈内显示，按 1 公里直线服务半径估算；圈外设施可覆盖圈内区域。查询不完整的类别不判定缺失，入口和清单未经核实。</p>
+          <p v-if="realAnalysisResult" class="section-explain">点击地图上的设施可查询起点到该设施的百度步行参考路线，并显示预计耗时与距离。</p>
           <p v-else class="section-explain">在地图上选点并点击“生成真实区域分析”，即可请求百度采样、Python 插值和代表性步行路线。</p>
-          <p class="section-explain">真实路网仍需覆盖选区外可达的外围，不能沿四路边界截断。</p>
+          <p class="section-explain">{{ region.coverageNotice }}</p>
           <button type="button" class="return-map-button real-demo-switch" @click="switchMapMode('synthetic'); goToPage(0)">体验专家模式 <span aria-hidden="true">↗</span></button>
         </section>
         <div class="panel-footer">边界与 SVG 示意数据 © OpenStreetMap contributors（ODbL）；百度底图启用后保留其原生版权标识。</div>
@@ -418,8 +485,8 @@ onUnmounted(() => {
         </div>
         <section class="panel-section">
           <div class="section-head"><span class="section-index">01</span><h2>分析起点</h2></div>
-          <p v-if="!cppCandidate" class="section-explain">返回地图，在四路围合区域内选择起点。选区外的路网仍参与 15 分钟计算。</p>
-          <div v-else class="real-selected-point"><span class="origin-pin"></span><div><strong>已选择合成路网起点</strong><small>同一份 SVG 底图 · 选点仅限四路围合区</small><code>{{ cppCandidate.lng.toFixed(6) }}, {{ cppCandidate.lat.toFixed(6) }}</code></div></div>
+          <p v-if="!cppCandidate" class="section-explain">返回地图，在当前步行图的数据范围内选择起点。</p>
+          <div v-else class="real-selected-point"><span class="origin-pin"></span><div><strong>已选择合成路网起点</strong><small>当前区域包 · 选点范围由路网派生</small><code>{{ cppCandidate.lng.toFixed(6) }}, {{ cppCandidate.lat.toFixed(6) }}</code></div></div>
           <p class="origin-action-hint">路外起点会先扣除到最近合成路段的估算步行时间；若 15 分钟内无法到达路段，引擎会拒绝分析。</p>
         </section>
         <section class="panel-section">
@@ -447,7 +514,7 @@ onUnmounted(() => {
         <section class="panel-section">
           <div class="section-head"><span class="section-index">03</span><h2>数据与精度说明</h2></div>
           <p class="section-explain">路外选点会按到最近路段的直线距离扣除步行时间；这只是合成演示接入，不保证穿越建筑或地块可行。主干道用双侧人行道建模，其余道路暂按共享通道处理；部分过街连接为合成推断。图形不是经核实的真实 15 分钟等时圈。</p>
-          <p class="section-explain">四路围合线仅限制起点，不裁切外围可达路段。百度 POI 点位采用缓存的坐标校准与路网近似对齐；圈内候选数量与模型步行可达分开统计，入口与清单未核齐时不输出真实灰区。</p>
+          <p class="section-explain">{{ region.coverageNotice }} 百度 POI 点位采用本区域包的坐标校准；圈内候选数量与模型步行可达分开统计，入口与清单未核齐时不输出真实灰区。</p>
           <button type="button" class="return-map-button real-demo-switch" @click="goToPage(0)">返回地图重新选点 <span aria-hidden="true">↗</span></button>
         </section>
         <div class="panel-footer">SVG 底图与边界数据 © OpenStreetMap contributors（ODbL）；合成路网仅用于算法联调。</div>

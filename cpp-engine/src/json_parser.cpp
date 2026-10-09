@@ -328,8 +328,7 @@ Point path_point(const JsonValue& value) {
 }
 
 EdgeKind edge_kind(const std::string& value) {
-  if (value == "sidewalk") return EdgeKind::sidewalk;
-  if (value == "shared_way") return EdgeKind::shared_way;
+  if (value == "walkway" || value == "sidewalk" || value == "shared_way") return EdgeKind::walkway;
   if (value == "turn") return EdgeKind::turn;
   if (value == "crossing") return EdgeKind::crossing;
   throw std::invalid_argument("unknown edge kind: " + value);
@@ -378,7 +377,22 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
     edge.id = string(field(value, "id"));
     edge.from = string(field(value, "from"));
     edge.to = string(field(value, "to"));
-    edge.kind = edge_kind(string(field(value, "kind")));
+    const std::string kind = string(field(value, "kind"));
+    edge.kind = edge_kind(kind);
+    if (edge.kind == EdgeKind::walkway) {
+      const auto* declared = optional_field(value, "accessMode");
+      const std::string mode = declared ? string(*declared)
+          : kind == "sidewalk" ? "separated"
+          : kind == "shared_way" ? "shared" : "";
+      if ((mode != "separated" && mode != "shared") ||
+          (kind == "sidewalk" && mode != "separated") ||
+          (kind == "shared_way" && mode != "shared")) {
+        throw std::invalid_argument("walkway requires consistent accessMode: separated or shared");
+      }
+      edge.access_mode = mode == "shared" ? WalkAccessMode::shared : WalkAccessMode::separated;
+    } else if (optional_field(value, "accessMode")) {
+      throw std::invalid_argument("accessMode is only valid on walkway");
+    }
     if (const auto* block = optional_field(value, "streetBlockId")) {
       edge.street_block_id = string(*block);
     }

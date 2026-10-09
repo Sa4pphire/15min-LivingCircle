@@ -4,6 +4,7 @@
 .real-cpp-route-casing, .real-cpp-selected-route { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .real-cpp-route-casing { stroke: #fbfdfc; stroke-width: 8; opacity: .92; }
 .real-cpp-selected-route { stroke: #327793; stroke-width: 4; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .7s ease-out var(--route-delay, 0s) forwards; }
+.real-cpp-selected-route.is-baidu { stroke: #2d74c4; stroke-width: 4.5; }
 .real-cpp-selected-route.is-access { stroke: #b07754; stroke-dasharray: 4 5; stroke-dashoffset: 0; animation: real-circle-reveal .3s ease-out var(--route-delay, 0s) both; }
 .legend-cpp-route { background: #327793; }
 .real-poi-marker { pointer-events: auto; cursor: pointer; }
@@ -59,7 +60,7 @@
   .real-demo-route { fill: none; stroke: #087e71; stroke-width: 4.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .3s cubic-bezier(.22, .7, .3, 1) var(--route-delay, .08s) forwards; }
   .real-sampled-route { fill: none; stroke: #087e71; stroke-width: 3.6; stroke-linecap: round; stroke-linejoin: round; opacity: .82; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .3s cubic-bezier(.22, .7, .3, 1) var(--route-delay, .08s) forwards; }
   .real-poi-route { fill: none; stroke: #2d74c4; stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; opacity: .96; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: real-route-draw .3s cubic-bezier(.22, .7, .3, 1) var(--route-delay, .08s) forwards; }
-  .real-blind-zone { fill: rgba(211, 72, 74, .22); stroke: rgba(183, 48, 55, .45); stroke-width: .8; vector-effect: non-scaling-stroke; }
+  .real-blind-zone { fill: var(--blind-fill, rgba(211, 72, 74, .22)); stroke: var(--blind-stroke, rgba(183, 48, 55, .45)); stroke-width: .8; vector-effect: non-scaling-stroke; }
 .real-demo-access { fill: none; stroke: #d1764e; stroke-width: 2.5; stroke-dasharray: 4 4; stroke-linecap: round; vector-effect: non-scaling-stroke; animation: real-circle-reveal .3s ease-out .1s both; }
 @keyframes real-circle-reveal { from { opacity: 0; } to { opacity: 1; } }
 @keyframes real-route-draw { to { stroke-dashoffset: 0; } }
@@ -91,6 +92,15 @@
 .real-map-probe.outside { color: #aa6549; }
 .real-map-probe.outside .real-probe-ring { border-style: dashed; background: rgba(209, 118, 78, .055); box-shadow: none; }
 .real-map-toast { position: absolute; z-index: 7; left: 50%; bottom: 84px; max-width: calc(100% - 35px); margin: 0; padding: 9px 13px; transform: translateX(-50%); background: #173c3a; color: #f1fbf4; font-size: 11px; text-align: center; box-shadow: 0 4px 18px rgba(18, 60, 54, .18); }
+.real-map-navigation { position: absolute; z-index: 8; top: 18px; left: 16px; padding: 7px; border-radius: 9px; background: rgba(251,253,252,.94); color: #31574c; box-shadow: 0 3px 16px rgba(23,60,58,.12); }
+.real-map-zoom-buttons { display: flex; gap: 3px; }
+.real-map-zoom-buttons button { display: grid; place-items: center; min-width: 34px; height: 34px; padding: 0 5px; border: 0; border-radius: 5px; background: #eaf2ed; color: #23695b; font: inherit; font-size: 19px; cursor: pointer; }
+.real-map-zoom-buttons .real-map-reset { min-width: 42px; font-size: 11px; }
+.real-map-zoom-buttons button:hover { background: #d8eade; }
+.real-map-zoom-buttons button:focus-visible { outline: 2px solid #147d72; outline-offset: 2px; }
+.real-map-scale { margin-top: 5px; font-size: 10px; line-height: 1.5; }
+.real-map-scale i { display: block; height: 5px; border: solid #31574c; border-width: 0 1px 2px; box-sizing: border-box; }
+@media (max-width: 600px) { .real-map-navigation { top: 10px; left: 10px; padding: 5px; } .real-map-zoom-buttons button { min-width: 30px; height: 36px; } }
 @media (max-width: 1100px) {
   .real-demo-legend { bottom: 84px; }
   .real-poi-popover { top: 60px; bottom: auto; left: 12px; right: 12px; width: auto; max-height: calc(50% - 90px); overflow: auto; }

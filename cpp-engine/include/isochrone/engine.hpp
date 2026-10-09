@@ -11,7 +11,8 @@
 
 namespace isochrone {
 
-enum class EdgeKind { sidewalk, shared_way, turn, crossing };
+enum class EdgeKind { walkway, turn, crossing };
+enum class WalkAccessMode { separated, shared };
 
 class OriginNotOnWalkway : public std::runtime_error {
  public:
@@ -32,14 +33,20 @@ struct WalkEdge {
   std::string id;
   std::string from;
   std::string to;
-  EdgeKind kind{EdgeKind::sidewalk};
+  EdgeKind kind{EdgeKind::walkway};
   std::vector<Point> path;
   std::string street_block_id;
   std::string side;
   std::string shared_way_type;
   double width_meters{};
   std::optional<double> wait_seconds;
+  // One walking kind; retain the original lateral-access/side constraints.
+  WalkAccessMode access_mode{WalkAccessMode::separated};
 };
+
+[[nodiscard]] inline bool is_shared_walkway(const WalkEdge& edge) {
+  return edge.kind == EdgeKind::walkway && edge.access_mode == WalkAccessMode::shared;
+}
 
 struct FacilityEntrance {
   std::string id;

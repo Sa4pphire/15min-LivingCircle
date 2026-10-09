@@ -107,7 +107,7 @@ Snap project_to_edge(Point point, const WalkEdge& edge,
     if (candidate_distance < best.distance_meters) {
       best.point = projection;
       best.distance_meters = candidate_distance;
-      best.surface_distance_meters = edge.kind == EdgeKind::shared_way
+      best.surface_distance_meters = is_shared_walkway(edge)
           ? std::max(0.0, candidate_distance - edge.width_meters / 2.0)
           : candidate_distance;
       best.offset_meters = walked + fraction * std::sqrt(squared_length);
@@ -127,7 +127,7 @@ Snap snap_origin(const EngineInput& input) {
   for (std::size_t edge_index = 0; edge_index < input.edges.size();
        ++edge_index) {
     const auto& edge = input.edges[edge_index];
-    if (edge.kind == EdgeKind::sidewalk || edge.kind == EdgeKind::shared_way) {
+    if (edge.kind == EdgeKind::walkway) {
       candidates.push_back(project_to_edge(input.origin, edge, edge_index));
     }
   }
@@ -140,7 +140,7 @@ Snap snap_origin(const EngineInput& input) {
       return candidate.distance_meters <= input.max_origin_snap_meters;
     }
     return candidate.surface_distance_meters <=
-        (edge.kind == EdgeKind::shared_way ? 3.0 : input.max_origin_snap_meters);
+        (is_shared_walkway(edge) ? 3.0 : input.max_origin_snap_meters);
   };
   const auto access_distance = [&](const Snap& candidate) {
     return input.allow_off_network_origin ? candidate.distance_meters
@@ -164,7 +164,7 @@ Snap snap_origin(const EngineInput& input) {
           return input.edges[snap.edge_index].id == *input.origin_edge_id;
         });
     if (selected == candidates.end()) {
-      throw std::invalid_argument("originEdgeId must identify a sidewalk or shared_way");
+      throw std::invalid_argument("originEdgeId must identify a walkway");
     }
     if (!in_range(*selected) ||
         access_distance(*selected) >
@@ -546,8 +546,7 @@ RoadClosureFillStats fill_closed_road_faces(
         if (time > threshold) {
           for (const std::size_t link_index : face.link_indices) {
             const InternalEdge& edge = *perimeter_edges[link_index];
-            if (edge.kind != EdgeKind::sidewalk &&
-                edge.kind != EdgeKind::shared_way) continue;
+            if (edge.kind != EdgeKind::walkway) continue;
             time = std::min(time, time_from_street_to_point(
                 edge, arrival, point, speed));
             if (time <= threshold) break;
@@ -646,8 +645,7 @@ std::vector<DisplayPolygon> isochrone_polygons(
 
   for (const TimedDisplayEdge& timed : timed_edges) {
     const InternalEdge& edge = *timed.edge;
-    const bool street = edge.kind == EdgeKind::sidewalk ||
-                        edge.kind == EdgeKind::shared_way;
+    const bool street = edge.kind == EdgeKind::walkway;
     const double radius = std::max(
         street ? area_radius : connector_radius,
         edge.width_meters / 2.0);
@@ -728,8 +726,7 @@ std::vector<DisplayPolygon> isochrone_polygons(
 
 const char* edge_kind_name(EdgeKind kind) {
   switch (kind) {
-    case EdgeKind::sidewalk: return "sidewalk";
-    case EdgeKind::shared_way: return "shared_way";
+    case EdgeKind::walkway: return "walkway";
     case EdgeKind::turn: return "turn";
     case EdgeKind::crossing: return "crossing";
   }
@@ -781,7 +778,7 @@ void validate_graph(const EngineInput& input) {
   }
   std::unordered_set<std::string> edge_ids;
   std::unordered_map<std::string, const WalkEdge*> edge_lookup;
-  std::unordered_map<std::string, EdgeKind> block_kinds;
+  std::unordered_map<std::string, int> block_kinds;
   std::unordered_map<std::string, std::unordered_map<std::string, std::string>>
       block_node_sides;
   std::unordered_map<std::string, std::unordered_map<std::string, std::string>>
@@ -802,35 +799,36 @@ void validate_graph(const EngineInput& input) {
         path_length(edge.path) <= kEpsilon) {
       throw std::invalid_argument("edge path does not match its nodes");
     }
-    if (edge.kind == EdgeKind::sidewalk &&
+    if (edge.kind == EdgeKind::walkway && !is_shared_walkway(edge) &&
         (edge.street_block_id.empty() ||
          (edge.side != "left" && edge.side != "right"))) {
-      throw std::invalid_argument("sidewalk needs streetBlockId and side");
+      throw std::invalid_argument("separated walkway needs streetBlockId and side");
     }
-    if (edge.kind == EdgeKind::shared_way &&
+    if (is_shared_walkway(edge) &&
         (edge.street_block_id.empty() || !edge.side.empty() ||
          (edge.shared_way_type != "pedestrian_street" &&
           edge.shared_way_type != "shared_alley") ||
          !std::isfinite(edge.width_meters) || edge.width_meters <= 0.0)) {
       throw std::invalid_argument(
-          "shared_way needs streetBlockId, sharedWayType and positive widthMeters, without side");
+          "shared walkway needs streetBlockId, sharedWayType and positive widthMeters, without side");
     }
-    if (edge.kind != EdgeKind::shared_way &&
+    if (!is_shared_walkway(edge) &&
         (!edge.shared_way_type.empty() || edge.width_meters != 0.0)) {
-      throw std::invalid_argument("only shared_way may declare sharedWayType or widthMeters");
+      throw std::invalid_argument("only shared accessMode may declare sharedWayType or widthMeters");
     }
     if (edge.wait_seconds &&
         (edge.kind != EdgeKind::crossing || !std::isfinite(*edge.wait_seconds) ||
          *edge.wait_seconds < 0.0)) {
       throw std::invalid_argument("waitSeconds must be non-negative and only on crossing");
     }
-    if (edge.kind == EdgeKind::sidewalk || edge.kind == EdgeKind::shared_way) {
-      const auto [found, inserted] = block_kinds.emplace(edge.street_block_id, edge.kind);
-      if (!inserted && found->second != edge.kind) {
+    if (edge.kind == EdgeKind::walkway) {
+      const auto [found, inserted] = block_kinds.emplace(edge.street_block_id,
+          is_shared_walkway(edge) ? 1 : 0);
+      if (!inserted && found->second != (is_shared_walkway(edge) ? 1 : 0)) {
         throw std::invalid_argument("streetBlockId mixes separated and shared road models");
       }
     }
-    if (edge.kind == EdgeKind::sidewalk) {
+    if (edge.kind == EdgeKind::walkway && !is_shared_walkway(edge)) {
       for (const auto& node_id : {edge.from, edge.to}) {
         const auto [found, inserted] =
             block_node_sides[edge.street_block_id].emplace(node_id, edge.side);
@@ -892,8 +890,7 @@ void validate_graph(const EngineInput& input) {
       }
       const auto edge = edge_lookup.find(entrance.access_edge_id);
       if (edge == edge_lookup.end() ||
-          (edge->second->kind != EdgeKind::sidewalk &&
-           edge->second->kind != EdgeKind::shared_way)) {
+          edge->second->kind != EdgeKind::walkway) {
         throw std::invalid_argument("facility accessEdgeId must identify a traversable edge");
       }
       const Snap access = project_to_edge(
@@ -1174,7 +1171,7 @@ EngineResult compute_reachability(const EngineInput& input) {
       if (part.to < edge.length - kEpsilon) {
         result.frontier.push_back(point_at(edge.path, part.to));
       }
-      if (edge.kind == EdgeKind::sidewalk || edge.kind == EdgeKind::shared_way) {
+      if (edge.kind == EdgeKind::walkway) {
         reachable_street_length += part.to - part.from;
       }
     }
@@ -1207,8 +1204,7 @@ EngineResult compute_reachability(const EngineInput& input) {
         }
         const std::vector<double> service_times = shortest_times(adjacency, sources);
         for (const InternalEdge& edge : edges) {
-          if (edge.kind != EdgeKind::sidewalk &&
-              edge.kind != EdgeKind::shared_way) continue;
+          if (edge.kind != EdgeKind::walkway) continue;
           const auto from_origin = reachable_intervals(
               edge, arrival, input.threshold_seconds,
               input.walking_speed_meters_per_second);
@@ -1268,8 +1264,7 @@ EngineResult compute_reachability(const EngineInput& input) {
       }
       const std::vector<double> service_times = shortest_times(adjacency, sources);
       for (const InternalEdge& edge : edges) {
-        if (edge.kind != EdgeKind::sidewalk &&
-            edge.kind != EdgeKind::shared_way) continue;
+        if (edge.kind != EdgeKind::walkway) continue;
         const auto from_origin = reachable_intervals(
             edge, arrival, input.threshold_seconds,
             input.walking_speed_meters_per_second);
