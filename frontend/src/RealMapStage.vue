@@ -387,7 +387,7 @@ function poiLocalPoint(poi) {
 
 function focusRequestedPoi() {
   const request = pendingPoiFocusRequest;
-  if (!request || props.analysisMode !== "cpp") return;
+  if (!request) return;
   const poi = visiblePois(props.analysisResult).find(entry => entry.id === request.id);
   if (!poi) {
     pendingPoiFocusRequest = null;
@@ -662,8 +662,8 @@ function selectPoint(lng, lat, coordType, localPoint = null) {
   }
   emit("select", { lng, lat, coordType, local: { x: local[0], y: local[1] } });
   showNotice(props.analysisMode === "cpp"
-    ? "起点已选；点击右上角运行 C++ 路网计算。"
-    : "起点已选；点击右上角生成百度采样等时圈与代表路线。");
+    ? "起点已选；点击右上角，计算模拟步行范围。"
+    : "起点已选；点击右上角，在线计算步行范围。");
 }
 
 function handleMapClick(event) {
@@ -1064,15 +1064,15 @@ onUnmounted(() => {
     <div v-if="selectedPoi" class="real-poi-popover" role="status" @pointerdown.stop @click.stop>
       <button type="button" aria-label="关闭设施详情" @click.stop="dismissPoi">×</button>
       <strong>{{ selectedPoi.name }}</strong>
-      <span>{{ poiCategoryStyles[selectedPoi.category].label }} · 百度 POI</span>
-      <small v-if="selectedPoiRoute?.destinationAccessMode !== 'estimated_straight_line'">{{ poiAccessLabel(selectedPoi) }}</small>
-      <small v-if="selectedPoiRoute?.status === 'loading'">{{ selectedPoiRoute.algorithm === 'baidu_walking' ? '正在查询百度步行路线…' : '正在计算 Dijkstra 最短路径…' }}</small>
+      <span>{{ poiCategoryStyles[selectedPoi.category].label }} · 百度地图地点</span>
+      <small v-if="selectedPoiRoute?.destinationAccessMode !== 'estimated_straight_line'">地点入口请以现场情况为准。</small>
+      <small v-if="selectedPoiRoute?.status === 'loading'">正在查询步行路线…</small>
       <template v-else-if="selectedPoiRoute?.status === 'ready'">
         <strong class="real-cpp-route-summary">{{ (selectedPoiRoute.travelTimeSeconds / 60).toFixed(1) }} 分钟 · {{ Math.round(selectedPoiRoute.lengthMeters) }} 米</strong>
         <small v-if="selectedPoiRoute.algorithm === 'baidu_walking'">百度步行参考路线 · {{ selectedPoiRoute.cacheSource === 'analysis' ? '复用当前分析路线' : selectedPoiRoute.cacheSource === 'shared_cache' ? '使用路线缓存' : '路线查询完成' }}</small>
-        <small v-else>过街等待 {{ Math.round(selectedPoiRoute.crossingWaitSeconds) }} 秒 · {{ selectedPoiRoute.destinationAccessMode === 'estimated_straight_line' ? '路线终点为 POI 点位' : '路线终点为绑定入口' }}</small>
-        <small v-if="selectedPoiRoute.destinationAccessMode === 'estimated_straight_line'" class="real-cpp-route-warning">直线穿越地块约 {{ Math.round(selectedPoiRoute.destinationAccessDistanceMeters) }} 米 · 未核实，未考虑建筑／围墙</small>
-        <small v-if="!selectedPoiRoute.withinThreshold">该路径超过 15 分钟，展示面内的点不一定路网可达。</small>
+        <small v-else>模拟步行路线 · 过街预计等待 {{ Math.round(selectedPoiRoute.crossingWaitSeconds) }} 秒</small>
+        <small v-if="selectedPoiRoute.destinationAccessMode === 'estimated_straight_line'" class="real-cpp-route-warning">其中约 {{ Math.round(selectedPoiRoute.destinationAccessDistanceMeters) }} 米按直线估算，实际通行可能有差异。</small>
+        <small v-if="!selectedPoiRoute.withinThreshold">这条路线超过 15 分钟。</small>
         <small v-if="selectedRouteClipped">本地底图仅显示已校准范围内的路径；百度预计耗时与距离为全程数据。</small>
       </template>
       <small v-else-if="selectedPoiRoute?.message">{{ selectedPoiRoute.message }}</small>
@@ -1081,8 +1081,8 @@ onUnmounted(() => {
     </div>
 
     <div v-if="analysisResult?.coordinateSystem === 'preview-local-v1'" class="real-demo-legend" aria-label="合成示意图例">
-      <span><i :class="cppSyntheticResult ? 'legend-area' : 'legend-circle'"></i>{{ cppSyntheticResult ? 'C++ 路网等时圈 · 近似面' : '固定半径示意' }}</span>
-      <span v-if="analysisMode === 'cpp'"><i class="legend-cpp-route"></i>{{ selectedPoiRoute?.status === 'ready' ? '选中设施的 Dijkstra 路径' : '点击设施查看最短路径' }}</span>
+      <span><i :class="cppSyntheticResult ? 'legend-area' : 'legend-circle'"></i>{{ cppSyntheticResult ? '模拟步行范围' : '参考步行范围' }}</span>
+      <span v-if="analysisMode === 'cpp'"><i class="legend-cpp-route"></i>{{ selectedPoiRoute?.status === 'ready' ? '选中地点的步行路线' : '点击地点查看路线' }}</span>
       <span v-else><i class="legend-route"></i>临时路网路线</span>
       <span v-if="selectedPoiRoute?.status === 'ready' && selectedRoutePaths.some(segment => segment.access)"><i class="legend-access"></i>估算接入 · 未核实</span>
     </div>

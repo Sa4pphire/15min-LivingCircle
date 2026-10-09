@@ -61,10 +61,10 @@ const routes = [[[185, 157], [185, 64]], [[185, 157], [322, 157]],
 </template>
 
 <style scoped>
-.neighborhood-footer { flex: none; height: clamp(150px, 22vh, 220px); overflow: hidden; background: #fbfdfc; }
+.neighborhood-footer { flex: none; height: var(--neighborhood-height, clamp(150px, 22vh, 220px)); overflow: hidden; background: var(--neighborhood-background, #fbfdfc); }
 .neighborhood-inner {
   position: relative; display: flex; align-items: center; justify-content: space-between; gap: 24px;
-  width: min(100%, 1740px); height: 100%; margin-inline: auto; padding-inline: clamp(22px, 3.8vw, 64px);
+  width: min(100%, var(--neighborhood-width, 1740px)); height: 100%; margin-inline: auto; padding-inline: var(--neighborhood-gutter, clamp(22px, 3.8vw, 64px));
 }
 .neighborhood-note { display: flex; align-items: center; gap: 12px; flex: none; }
 .neighborhood-note p { margin: 0; color: #6b8b7c; font-size: clamp(14px, 1.1vw, 19px); font-weight: 400; letter-spacing: .04em; }
@@ -89,13 +89,13 @@ const routes = [[[185, 157], [185, 64]], [[185, 157], [322, 157]],
   .neighborhood-footer:hover .neighborhood-routes path { stroke-dashoffset: 0; }
 }
 @media (max-width: 700px) {
-  .neighborhood-footer { height: 152px; }
-  .neighborhood-inner { align-items: flex-end; padding-inline: 18px; gap: 0; }
+  .neighborhood-footer { height: var(--neighborhood-height, 152px); }
+  .neighborhood-inner { align-items: flex-end; padding-inline: var(--neighborhood-gutter, 18px); gap: 0; }
   .neighborhood-note { z-index: 1; align-self: flex-end; margin-bottom: 20px; gap: 10px; }
   .neighborhood-note p { font-size: 12px; }
   .neighborhood-art { position: absolute; right: -80px; top: -15px; width: 360px; height: 168px; opacity: .65; }
 }
-@media (max-height: 600px) { .neighborhood-footer { height: 120px; } }
+@media (max-height: 600px) { .neighborhood-footer { height: var(--neighborhood-height, 120px); } }
 @media (prefers-reduced-motion: reduce), (hover: none) {
   .neighborhood-routes path { transition: none; stroke-dashoffset: 0; opacity: .55; }
 }
