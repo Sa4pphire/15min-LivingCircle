@@ -26,6 +26,7 @@ button:disabled { cursor: wait; opacity: .65; }
 .brand-mark { flex: none; width: 36px; height: 36px; color: #a9e6bf; }
 .brand-mark svg { display: block; width: 100%; height: 100%; }
 .brand-title { margin: 0; color: #f1fbf4; font-size: clamp(17px, 1.1vw, 22px); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+.brand-name-short { display: none; }
 .brand-subtitle { color: #a3c9b9; font-size: 10px; letter-spacing: .03em; margin-top: 5px; }
 .header-message { display: grid; gap: 5px; margin-inline: auto; color: #d8eee1; }
 .header-message strong { font-size: clamp(12px, .82vw, 16px); font-weight: 600; letter-spacing: -.025em; white-space: nowrap; }
@@ -361,6 +362,8 @@ h2 { font-size: 16px; line-height: 1.2; font-weight: 700; margin: 0; letter-spac
 }
 
 @media (max-width: 1180px) {
+  .app-header .brand-name-full { display: none; }
+  .app-header .brand-name-short { display: inline; }
   .dashboard { gap: 18px; padding-inline: 25px; }
   .insight-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .service-section { grid-column: 1 / -1; }

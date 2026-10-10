@@ -67,6 +67,8 @@
   .region-preview-surface { height: 330px; padding: 12px; }
 }
 @media (max-width: 640px) {
+  .region-library-brand .brand-name-full { display: none; }
+  .region-library-brand .brand-name-short { display: inline; }
   .region-library-header { min-height: 68px; padding: 15px 22px; }
   .region-library-brand { font-size: 17px; }
   .region-library-body { display: flex; flex-direction: column; align-items: stretch; padding: 28px 22px; gap: 28px; }

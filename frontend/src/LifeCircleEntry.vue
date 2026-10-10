@@ -110,7 +110,7 @@ onUnmounted(() => { disposed = true; previewController?.abort(); listController?
         <header class="region-library-header">
           <div class="region-library-brand">
             <svg viewBox="0 0 36 36" aria-hidden="true" fill="none"><circle cx="18" cy="18" r="13.5" stroke="currentColor" stroke-width="1.5"/><circle cx="18" cy="18" r="8.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="18" cy="18" r="3.2" fill="currentColor"/></svg>
-            <span>步行生活圈<small>15 分钟可达性体检</small></span>
+            <span><span class="brand-name-full">Vision China Terminal</span><span class="brand-name-short" aria-label="Vision China Terminal">VCT</span><small>15 分钟可达性体检</small></span>
           </div>
           <a class="region-editor-link" href="/?mode=editor">路网编辑器</a>
         </header>

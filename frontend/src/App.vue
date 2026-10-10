@@ -340,7 +340,7 @@ onUnmounted(() => {
           </svg>
         </div>
         <div>
-          <h1 class="brand-title">步行生活圈</h1>
+          <h1 class="brand-title" aria-label="Vision China Terminal（VCT）"><span class="brand-name-full">Vision China Terminal</span><span class="brand-name-short">VCT</span></h1>
           <div class="brand-subtitle">15 分钟可达性体检 · 演示版</div>
         </div>
       </div>

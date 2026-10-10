@@ -8,7 +8,7 @@ app.innerHTML = `
       <header class="toolbar">
         <div>
           <p class="eyebrow">OPEN MAP ANALYSIS</p>
-          <h1>15 分钟生活圈体检助手</h1>
+          <h1>Vision China Terminal（VCT）</h1>
         </div>
         <button id="health-check" type="button">检查服务</button>
       </header>

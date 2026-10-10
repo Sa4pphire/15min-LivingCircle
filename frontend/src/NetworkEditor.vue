@@ -786,7 +786,7 @@ function draw() {
   scaleBar.value = metricScale(scaleStart && scaleEnd ? distance(scaleStart, scaleEnd) / 100 : 1 / view.scale, 100);
 }
 onMounted(async () => {
-  document.title = '路网手动编辑器 · 步行生活圈';
+  document.title = '路网手动编辑器 · Vision China Terminal（VCT）';
   baseLayer = document.createElement('canvas');
   displayContext(context);
   const resize = box => {
