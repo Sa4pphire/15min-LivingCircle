@@ -5,7 +5,7 @@ import { constrainMapView, metricScale } from './mapCoverage.js';
 import { createEditorBaiduMap } from './editorBaiduMap.js';
 import { sampleLocalPath } from './mapAsset.js';
 import { kinds, xy, distance, newId, pathLength, moveNode, splitEdge,
-  projectToPath, edgeProperties, findRoute, edgesInRectangle, updateEdges, removeNode, removeEdges, edgeRemovalPlan, editShapePoint, normalizeEditorGraph } from './networkEditorModel.js';
+  projectToPath, edgeProperties, findRoute, edgesInRectangle, updateEdges, removeNode, removeEdges, edgeRemovalPlan, editShapePoint, normalizeEditorGraph, appendDrawPoint } from './networkEditorModel.js';
 import { GraphHistory, graphSnapshot } from './networkEditorHistory.js';
 import { pathBounds, intersectsBounds, backdropBounds, NodeGrid, canvasPixelRatio } from './networkEditorGeometry.js';
 import './networkEditor.css';
@@ -26,6 +26,8 @@ const visible = ref(Object.fromEntries(Object.keys(kinds).map(k => [k, true])));
 const connectKind = ref(region.authoringWorkspace ? 'walkway' : 'turn'), nodeForm = ref({ x: 0, y: 0 }), edgeForm = ref({});
 const audit = ref(null), engine = ref(''), undoCount = ref(0), redoCount = ref(0), deletePrompt = ref(null);
 const route = shallowRef(null), routeStart = ref(null), connectStart = ref(null);
+const drawSegmentCount = ref(0);
+let suppressDrawClick = false;
 const pointer = ref([0, 0]), scaleBar = ref(null), draftAvailable = ref(false);
 let context = getActiveRegion().context;
 const contourCount = ref(context.features.length);
@@ -42,6 +44,7 @@ const tools = [
   { id: 'select', label: '选择', key: 'V', icon: '↖' },
   { id: 'move', label: '移动节点', key: 'M', icon: '✥' },
   { id: 'node', label: '新增节点', key: 'N', icon: '⊕' },
+  { id: 'draw', label: '连续绘制', key: 'P', icon: '✎' },
   { id: 'delete-node', label: '删除节点', key: 'D', icon: '⊖' },
   { id: 'connect', label: '连线', key: 'L', icon: '⌁' },
   { id: 'split', label: '拆分路段', key: 'S', icon: '⋈' },
@@ -57,7 +60,7 @@ const selectedEdges = computed(() => { tick.value; return selectedEdgeIds.value.
 const selectedPageRows = computed(() => selectedEdges.value.slice(selectionPage.value * selectionPageSize, (selectionPage.value + 1) * selectionPageSize));
 const selectionPages = computed(() => Math.ceil(selectedEdges.value.length / selectionPageSize));
 const selectedLength = computed(() => selectedEdges.value.reduce((sum, edge) => sum + pathLength(edge.pathMeters), 0));
-const showToolNodes = computed(() => ['connect', 'move', 'route', 'delete-node'].includes(tool.value) || (region.authoringWorkspace && tool.value === 'node'));
+const showToolNodes = computed(() => ['node', 'draw', 'connect', 'move', 'route', 'delete-node'].includes(tool.value));
 const stats = computed(() => { tick.value; return graph.value ? { nodes: graph.value.nodes.length, edges: graph.value.edges.length } : null; });
 const incident = computed(() => {
   tick.value;
@@ -74,7 +77,9 @@ const results = computed(() => {
 const hint = computed(() => ({
   select: multiSelectMode.value ? '点击路段加入或移出选择，拖动框选。右键拖动平移，Esc 清空。' : '点击查看属性；Shift 点击多选，Shift 拖动框选。拖动空白平移。',
   move: '拖动节点；相连路段端点一起移动。坐标重合不会自动合并。',
-  node: '点击地图新增节点，再用“连线”接入路网。',
+  node: '点击地图新增独立节点，不自动连线；可再用“连续绘制”或“连线”接入。',
+  draw: connectStart.value ? '连续点击新增节点并自动连线；点击已有节点可接入。双击或 Enter 完成，右键拖动平移。'
+    : stats.value?.nodes ? '先点已有节点作为起点，再连续点击地图绘制；双击完成。' : '先点击地图建立起点，再连续点击绘制；双击完成。',
   'delete-node': '点击节点删除；确认框会列出相连路段。右键拖动平移，Ctrl+Z 恢复。',
   connect: connectStart.value ? '起点已选。点终点完成连线，点空白添加折点；也可搜索终点 ID。' : '节点已显示。先点起点，再点终点；也可搜索节点 ID 精确选择。',
   split: '点击路段内部拆出连接节点。过街边请单独重画，避免重复等待。',
@@ -354,13 +359,47 @@ function wheelZoom(event) {
   pendingWheelZoom = { factor, point: eventPoint(event) }; queueFrame();
 }
 function setTool(id) {
+  if (tool.value === 'draw' && id !== 'draw' && connectStart.value) message.value = '绘制已结束，已画内容保留，可用 Ctrl+Z 撤销';
   if (id === 'context') { discardContours(); contourPrompt.value = false; }
   tool.value = id; if (id !== 'select') multiSelectMode.value = false;
   connectStart.value = null; routeStart.value = null; bends = [];
-  if (id === 'connect') clearSelection();
+  drawSegmentCount.value = 0; suppressDrawClick = false;
+  if (id === 'draw') connectKind.value = 'walkway';
+  if (id === 'connect' || id === 'draw') clearSelection();
   redraw(true);
 }
-function cancelConnection() { connectStart.value = null; bends = []; clearSelection(); redraw(); }
+function cancelConnection() { connectStart.value = null; bends = []; drawSegmentCount.value = 0; clearSelection(); redraw(); }
+function finishDrawing() {
+  if (tool.value !== 'draw' || busy.value || !connectStart.value) return;
+  const count = drawSegmentCount.value;
+  cancelConnection();
+  message.value = count ? `已完成绘制，共 ${count} 段；可选择节点开始下一条，Ctrl+Z 逐段撤销`
+    : '已结束绘制，可重新选择起点';
+}
+function drawPoint(point, targetId = null) {
+  if (tool.value !== 'draw' || busy.value || !graph.value) return;
+  if (!connectStart.value && targetId) {
+    connectStart.value = targetId; drawSegmentCount.value = 0; choose('node', targetId);
+    message.value = '起点已选，连续点击地图绘制，双击完成'; redraw(); return;
+  }
+  if (!connectStart.value && graph.value.nodes.length) { error.value = '请先点击已有节点作为绘制起点'; return; }
+  if (targetId === connectStart.value && targetId) {
+    message.value = '已到当前节点，双击或按 Enter 完成绘制'; return;
+  }
+  let added;
+  if (!change(() => { added = appendDrawPoint(graph.value, connectStart.value, point, connectKind.value, { targetId }); })) return;
+  connectStart.value = added.nodeId;
+  if (added.edgeId) drawSegmentCount.value++;
+  choose('node', added.nodeId); pointer.value = [...point];
+  message.value = added.edgeId ? `已绘制 ${drawSegmentCount.value} 段，继续点击或双击完成` : '已建立起点，继续点击地图绘制';
+  redraw();
+}
+function drawClick(event) {
+  if (tool.value !== 'draw' || event.button !== 0 || event.altKey || event.detail > 1) return;
+  if (suppressDrawClick) { suppressDrawClick = false; return; }
+  const screen = eventPoint(event), node = hitNode(screen);
+  drawPoint(node ? xy(node) : toWorld(screen), node?.id ?? null);
+}
 function clearSelection() { selection.value = null; selectedEdgeIds.value = []; redraw(); }
 function selectEdges(ids) {
   selectedEdgeIds.value = [...new Set(ids)].filter(id => edges.has(id));
@@ -383,10 +422,12 @@ function chooseSearchResult(item, event) {
   choose(item.type, item.id, true, event.shiftKey || multiSelectMode.value);
   search.value = '';
   if (tool.value === 'connect' && item.type === 'node') connectNode(item.id);
+  if (tool.value === 'draw' && item.type === 'node') drawPoint(xy(nodes.get(item.id)), item.id);
 }
 function chooseNode(id, locate = false) {
   choose('node', id, locate);
   if (tool.value === 'connect') connectNode(id);
+  if (tool.value === 'draw') drawPoint(xy(nodes.get(id)), id);
 }
 function startFromNode(id) { setTool('connect'); connectNode(id); }
 function connectNode(id) {
@@ -429,7 +470,7 @@ function hitNode(point) {
   for (const id of nodeGrid?.near(toWorld(point), 9 / view.scale) ?? []) {
     const node = nodes.get(id); if (!node) continue;
     const linked = incidence.get(node.id) ?? [];
-    if (tool.value !== 'connect' && linked.length && !linked.some(e => visible.value[e.kind])) continue;
+    if (!['connect', 'draw'].includes(tool.value) && linked.length && !linked.some(e => visible.value[e.kind])) continue;
     const d = distance(point, toScreen(xy(node))); if (d < best) { found = node; best = d; }
   }
   return found;
@@ -462,9 +503,17 @@ function press(event) {
       previous: [...selectedEdgeIds.value], moved: false }; return;
   }
   if (tool.value === 'node') {
-    const id = newId('node');
-    change(() => graph.value.nodes.push({ id, xMeters: world[0], yMeters: world[1], verificationStatus: 'user_edited_unverified' }));
-    choose('node', id); return;
+    let added;
+    if (change(() => { added = appendDrawPoint(graph.value, null, world); })) {
+      choose('node', added.nodeId);
+      message.value = '已新增独立节点，可用“连续绘制”或“连线”接入路网';
+    }
+    return;
+  }
+  if (tool.value === 'draw') {
+    suppressDrawClick = false;
+    canvas.value.setPointerCapture(event.pointerId);
+    drag = { type: 'draw-point', screen, moved: false }; return;
   }
   if (tool.value === 'delete-node') {
     if (!node) { error.value = '请点击节点；节点密集时先放大地图'; return; }
@@ -513,7 +562,7 @@ function press(event) {
 }
 function move(event) {
   const screen = eventPoint(event); pendingPointer = toWorld(screen); queueFrame();
-  if (['multi-select', 'package', 'context'].includes(drag?.type)) {
+  if (['multi-select', 'package', 'context', 'draw-point'].includes(drag?.type)) {
     drag.end = screen; if (distance(screen, drag.screen) > 4) drag.moved = true;
   } else if (drag?.type === 'pan') {
     view.x = drag.view.x - (screen[0] - drag.screen[0]) / view.scale;
@@ -540,7 +589,9 @@ function move(event) {
   if (drag || showToolNodes.value || connectStart.value) redraw();
 }
 function release(event) {
-  if (drag?.type === 'context') {
+  if (drag?.type === 'draw-point') {
+    suppressDrawClick = drag.moved;
+  } else if (drag?.type === 'context') {
     const end = toWorld(eventPoint(event)), begin = drag.startWorld;
     if (drag.moved) {
       contourBounds.value = { minX: Math.min(begin[0],end[0]), maxX: Math.max(begin[0],end[0]),
@@ -607,7 +658,8 @@ function keydown(event) {
   if (deletePrompt.value) return;
   if (/INPUT|TEXTAREA|SELECT/.test(event.target.tagName) || busy.value) return;
   const key = event.key.toLowerCase();
-  if ((event.ctrlKey || event.metaKey) && key === 's') { event.preventDefault(); if (dirty.value) save(); }
+  if (event.key === 'Enter' && tool.value === 'draw') { event.preventDefault(); finishDrawing(); }
+  else if ((event.ctrlKey || event.metaKey) && key === 's') { event.preventDefault(); if (dirty.value) save(); }
   else if ((event.ctrlKey || event.metaKey) && key === 'z') { event.preventDefault(); undo(event.shiftKey); }
   else if ((event.ctrlKey || event.metaKey) && key === 'y') { event.preventDefault(); undo(true); }
   else if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); askDelete(); }
@@ -666,9 +718,9 @@ function drawBase() {
   const visibleNodes = new Set(drawn.flatMap(e => [e.from, e.to]));
   if ((showNodes.value && view.scale >= 0.7) || showToolNodes.value) {
     for (const node of nodes.values()) {
-      if (tool.value !== 'connect' && !visibleNodes.has(node.id) && incidence.get(node.id)?.length) continue;
+      if (!['connect', 'draw'].includes(tool.value) && !visibleNodes.has(node.id) && incidence.get(node.id)?.length) continue;
       const point = toScreen(xy(node));
-      if (point[0] >= 0 && point[0] <= width && point[1] >= 0 && point[1] <= height) dot(ctx, xy(node), '#758d9b', tool.value === 'connect' ? 3.5 : 2.7);
+      if (point[0] >= 0 && point[0] <= width && point[1] >= 0 && point[1] <= height) dot(ctx, xy(node), '#758d9b', ['connect', 'draw'].includes(tool.value) ? 3.5 : 2.7);
     }
   }
 }
@@ -780,13 +832,13 @@ onUnmounted(() => {
       </div>
       <div class="ne-history"><button :disabled="!undoCount || busy" title="撤销 Ctrl+Z" @click="undo()">↶ 撤销</button><button :disabled="!redoCount || busy" title="重做 Ctrl+Y" @click="undo(true)">↷ 重做</button></div>
     </div>
-    <div v-if="tool === 'connect'" class="ne-connect-options">
+    <div v-if="tool === 'connect' || tool === 'draw'" class="ne-connect-options">
       <span class="ne-connect-label">新连线类型</span>
       <div class="ne-connect-kinds" role="group" aria-label="新连线类型">
         <button v-for="(value, key) in kinds" :key="key" :class="{ active: connectKind === key }" :aria-pressed="connectKind === key" :disabled="busy" @click="connectKind = key"><i :style="{ background: value.color }"></i>{{ value.label }}</button>
       </div>
       <span v-if="connectKind === 'crossing'" class="ne-connect-wait">默认等待 20 秒</span>
-      <div class="ne-connect-status"><span>{{ connectStart ? '已选起点' : '请选择起点节点' }}</span><code v-if="connectStart" :title="connectStart">{{ connectStart }}</code><button v-if="connectStart" :disabled="busy" @click="cancelConnection">取消当前连线</button></div>
+      <div class="ne-connect-status"><span>{{ connectStart ? (tool === 'draw' ? `已绘制 ${drawSegmentCount} 段 · 当前末端` : '已选起点') : '请选择起点节点' }}</span><code v-if="connectStart" :title="connectStart">{{ connectStart }}</code><button v-if="connectStart" :disabled="busy" @click="tool === 'draw' ? finishDrawing() : cancelConnection()">{{ tool === 'draw' ? '完成绘制' : '取消当前连线' }}</button></div>
     </div>
     <div v-if="draftAvailable" class="ne-draft">发现上次未保存的本机草稿。<button @click="restoreDraft">恢复草稿</button><button @click="downloadDraft">下载草稿</button><button @click="draftAvailable = false">稍后处理</button></div>
     <div v-if="error" class="ne-error" role="alert">{{ error }}<button @click="error = ''" aria-label="关闭错误">×</button></div>
@@ -795,6 +847,7 @@ onUnmounted(() => {
         <div ref="baiduElement" class="ne-baidu" :class="{ ready: basemapState === 'ready' }" aria-hidden="true"></div>
         <canvas ref="canvas" tabindex="0" :class="`tool-${tool}`" aria-label="路网地图，使用工具栏选择编辑操作"
           @pointerdown="press" @pointermove="move" @pointerup="release" @pointercancel="cancel" @contextmenu.prevent
+          @click="drawClick" @dblclick.prevent="finishDrawing"
           @wheel.prevent="wheelZoom" />
         <div class="ne-map-help"><span class="ne-tool-dot"></span>{{ hint }}</div>
         <div v-if="selectedEdges.length" class="ne-selection-bar"><span>已选 {{ selectedEdges.length }} 条路段</span><button :disabled="busy" @click="clearSelection">清空选择</button></div>
@@ -875,7 +928,7 @@ onUnmounted(() => {
       <section class="ne-dialog ne-package-dialog" role="dialog" aria-modal="true" aria-labelledby="ne-package-title">
         <h2 id="ne-package-title">{{ packageResult ? '区域包已生成' : '打包框选区域' }}</h2>
         <template v-if="packageResult">
-          <p>{{ packageResult.name }} · v{{ packageResult.version }}<br />{{ packageResult.nodeCount }} 个节点 / {{ packageResult.edgeCount }} 条路段<br />ZIP {{ (packageResult.archiveBytes/1024).toFixed(0) }} KB，C++ {{ packageResult.engine }} 检查通过。</p>
+          <p>{{ packageResult.name }} · v{{ packageResult.version }}<br />{{ packageResult.nodeCount }} 个节点 / {{ packageResult.edgeCount }} 条路段 / {{ packageResult.poiCount ?? 0 }} 个地点<br />ZIP {{ (packageResult.archiveBytes/1024).toFixed(0) }} KB，C++ {{ packageResult.engine }} 检查通过。</p>
           <p>已加入区域列表，原区域和画布修改可继续保留。</p>
           <div><button @click="packagePrompt = false">继续当前编辑</button><a class="ne-button" :href="packageResult.downloadUrl" :download="packageResult.archiveName">下载 ZIP</a><button class="ne-primary" @click="chooseRegion(packageResult.id)">打开新区域</button></div>
         </template>

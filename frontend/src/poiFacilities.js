@@ -8,6 +8,19 @@ export const poiCategoryStyles = {
   dining: { label: "餐饮", glyph: "餐", color: "#b45f2f" },
 };
 
+export function regionPoiCandidates(region) {
+  const bounds = region?.boundsMeters;
+  if (!bounds) return [];
+  return (region?.pois?.items ?? []).filter(item => Object.hasOwn(poiCategoryStyles, item.category) &&
+    item.localPointMeters[0] >= bounds.minX && item.localPointMeters[0] <= bounds.maxX &&
+    item.localPointMeters[1] >= bounds.minY && item.localPointMeters[1] <= bounds.maxY).map(item => ({
+      ...item, id: item.uid, bd09: [item.lng, item.lat],
+      point: [item.localPointMeters[0], -item.localPointMeters[1]],
+      categoryLabel: poiCategoryStyles[item.category].label,
+      modelReachable: null, accessVerified: false, accessStatus: 'unverified_access',
+  }));
+}
+
 export function poiCandidates(result) {
   if (Array.isArray(result?.poiFacilities)) {
     return result.poiFacilities.filter(poi => poi && Object.hasOwn(poiCategoryStyles, poi.category));
@@ -41,6 +54,7 @@ export function poiInfo(result) {
 export function poiCacheLabel(result) {
   const info = poiInfo(result);
   if (!info) return "待加载";
+  if (info.dataSource === 'region_package') return `区域包地点 ${info.candidateCount ?? 0} 项`;
   if (info.status === "pending") return info.cacheOnly ? "读取本地缓存" : "更新设施中";
   if (info.cacheOnly && info.status === "unavailable") return "本地缓存待补充";
   if (info.status === "unavailable") return "检索不可用";
@@ -52,6 +66,7 @@ export function poiCacheLabel(result) {
 
 export function poiSearchProgress(result) {
   const info = poiInfo(result);
+  if (info?.dataSource === 'region_package') return '使用区域包内已保存的地点，清单可能不完整。';
   if (!info || !Number.isFinite(info.plannedQueries)) return "";
   const progress = `检索 ${info.completedQueries ?? 0}/${info.plannedQueries} 个网格关键词`;
   if (info.cacheOnly && info.refreshRequired) return `${progress} · 本次仅使用本地缓存，清单待补全。可刷新 POI 或先预采集，不将缺失数据判为匮乏。`;

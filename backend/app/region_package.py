@@ -82,7 +82,9 @@ class RegionPackage:
             raise ValueError('区域原点超出支持的地理坐标范围')
         revision = sha256(self.file('network'))
         assets = {key: f'{asset_base}/{key}?v={sha256(self.file(key))}'
-                  for key in ('context', 'alignment') if key in self.manifest['files']}
+                  for key in ('context', 'alignment', 'pois') if key in self.manifest['files']}
+        from .region_pois import read_region_pois
+        pois = read_region_pois(self)
         return {'id': self.manifest['id'], 'name': self.manifest['name'],
                 'source': self.manifest.get('source', {}),
                 'version': self.manifest['version'], 'revision': revision,
@@ -95,6 +97,8 @@ class RegionPackage:
                 'engineAxis': 'east-north', 'displayAxis': 'east-south',
                 'boundsMeters': bounds, 'selectionSource': 'network-path-extent',
                 'nodeCount': len(graph['nodes']), 'edgeCount': len(graph['edges']),
+                'poiCount': len(pois['items']) if pois is not None else 0,
+                'poiDataSource': 'region_package' if pois is not None else 'runtime_cache',
                 'assets': assets,
                 'coverageNotice': ('新区域草稿，请根据底图绘制步行通道。' if not graph['edges'] else
                     '范围由现有路网派生；边缘结果可能受数据截断影响，通行关系仍待核实。')}
@@ -124,6 +128,9 @@ def load_region(root: Path | None = None, *, verify: bool = True) -> RegionPacka
                 raise ValueError(f'区域文件校验和不一致: {key}')
     if root is None and settings.synthetic_network_path.resolve() != region.file('network'):
         raise ValueError('SYNTHETIC_NETWORK_PATH 与 REGION_ID 不一致，请移除旧路径覆盖')
+    if 'pois' in manifest['files']:
+        from .region_pois import read_region_pois
+        read_region_pois(region)
     return region
 
 

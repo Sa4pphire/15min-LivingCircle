@@ -36,6 +36,30 @@ export function moveNode(graph, id, point) {
       (index === 0 && edge.from === id) || (index === edge.pathMeters.length - 1 && edge.to === id) ? [...point] : p) });
 }
 
+// Each drawn segment is an explicit topology edge. Merely crossing a path
+// never splits it or joins its nodes. Validate before mutating either array.
+export function appendDrawPoint(graph, startId, point, kind = 'walkway', options = {}) {
+  if (!Array.isArray(point) || point.length !== 2 || !point.every(Number.isFinite)) throw new Error('节点坐标无效');
+  const start = startId ? graph.nodes.find(node => node.id === startId) : null;
+  if (startId && !start) throw new Error('起点已失效，请重新选择');
+  const target = options.targetId ? graph.nodes.find(node => node.id === options.targetId) : null;
+  if (options.targetId && !target) throw new Error('终点已失效，请重新选择');
+  const node = target ?? { id: options.nodeId ?? newId('node'), xMeters: point[0], yMeters: point[1],
+    verificationStatus: 'user_edited_unverified' };
+  if (!target && graph.nodes.some(existing => existing.id === node.id)) throw new Error('节点标识重复');
+  let edge = null;
+  if (start) {
+    if (start.id === node.id || distance(xy(start), xy(node)) < 0.05) throw new Error('新节点距离当前节点不足 0.05 米，请换个位置');
+    const id = options.edgeId ?? newId('edge');
+    if (graph.edges.some(existing => existing.id === id)) throw new Error('路段标识重复');
+    edge = edgeProperties({ id, from: start.id, to: node.id, pathMeters: [xy(start), xy(node)] },
+      { kind, accessMode: 'shared', widthMeters: 4, waitSeconds: 20 });
+  }
+  if (!target) graph.nodes.push(node);
+  if (edge) graph.edges.push(edge);
+  return { nodeId: node.id, edgeId: edge?.id ?? null };
+}
+
 export function editShapePoint(graph, id, index, point, insert = false) {
   const edge = graph.edges.find(item => item.id === id);
   if (!edge || !Array.isArray(point) || point.length !== 2 || !point.every(Number.isFinite) ||

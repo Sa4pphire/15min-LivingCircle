@@ -22,6 +22,7 @@ import { cppOverviewFit, cppOverviewInsets, cppOverviewPoints } from "./cppOverv
 const props = defineProps({
   candidate: { type: Object, default: null },
   analysisResult: { type: Object, default: null },
+  analysisComplete: { type: Boolean, default: false },
   zoomTier: { type: String, default: "medium" },
   overviewRequestId: { type: Number, default: 0 },
   poiFocusRequest: { type: Object, default: null },
@@ -315,7 +316,9 @@ const projectedResult = computed(() => {
 });
 const poiMarkers = computed(() => {
   projectionVersion.value;
-  return visiblePois(props.analysisResult).flatMap((poi) => {
+  if (!props.candidate || !props.analysisComplete || !props.analysisResult) return [];
+  const candidates = visiblePois(props.analysisResult);
+  return candidates.flatMap((poi) => {
     if (mapState.value === "ready" && map && BMap) {
       const coordinate = finitePoint(poi.bd09) ? poi.bd09
         : finitePoint(poi.point) ? localToBd09(poi.point) : null;
@@ -369,7 +372,7 @@ const selectedRouteClipped = computed(() => selectedPoiRoute.value?.status === '
 
 function selectPoi(poi) {
   selectedPoi.value = poi;
-  emit("poi-select", poi);
+  if (props.analysisResult) emit("poi-select", poi);
 }
 
 function dismissPoi() {
@@ -871,6 +874,12 @@ watch(() => props.analysisResult, (next, previous) => {
   }
   if (mapState.value === "ready") scheduleProjection();
 });
+watch(() => props.analysisComplete, (complete) => {
+  if (!complete) {
+    pendingPoiFocusRequest = null;
+    selectedPoi.value = null;
+  }
+});
 watch(() => props.analysisMode, () => {
   pendingPoiFocusRequest = null;
   selectedPoi.value = null;
@@ -1044,8 +1053,8 @@ onUnmounted(() => {
           :pathLength="segment.access ? undefined : 1" :style="{ '--route-delay': segment.delay }" />
       </g>
     </svg>
-    <svg v-if="analysisResult" class="real-poi-layer"
-      :viewBox="`0 0 ${viewport.width} ${viewport.height}`" role="group" aria-label="等时圈内基础设施候选点位">
+    <svg v-if="candidate && analysisComplete && analysisResult" class="real-poi-layer"
+      :viewBox="`0 0 ${viewport.width} ${viewport.height}`" role="group" aria-label="步行范围内地点">
       <g v-for="poi in poiMarkers" :key="poi.id" class="real-poi-marker"
         :class="{ 'is-selected': selectedPoi?.id === poi.id }" :style="{ '--poi-color': poiCategoryStyles[poi.category].color }"
         :transform="`translate(${poi.pixel[0]} ${poi.pixel[1]})`" tabindex="0" role="button"
@@ -1061,7 +1070,7 @@ onUnmounted(() => {
         <text text-anchor="middle" dominant-baseline="central" :fill="poiCategoryStyles[poi.category].color">{{ poiCategoryStyles[poi.category].glyph }}</text>
       </g>
     </svg>
-    <div v-if="selectedPoi" class="real-poi-popover" role="status" @pointerdown.stop @click.stop>
+    <div v-if="analysisComplete && selectedPoi" class="real-poi-popover" role="status" @pointerdown.stop @click.stop>
       <button type="button" aria-label="关闭设施详情" @click.stop="dismissPoi">×</button>
       <strong>{{ selectedPoi.name }}</strong>
       <span>{{ poiCategoryStyles[selectedPoi.category].label }} · 百度地图地点</span>

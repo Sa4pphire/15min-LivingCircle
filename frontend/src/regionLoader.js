@@ -1,3 +1,5 @@
+import { poiCategoryStyles } from './poiFacilities.js';
+
 let activeRegion;
 
 export function getActiveRegion() {
@@ -28,15 +30,29 @@ async function readRegion(endpoint, fetchImpl, { signal } = {}) {
     return body;
   }
   const metadata = validateRegion(await read(endpoint));
-  const [context, alignment] = await Promise.all([
+  const [context, alignment, pois] = await Promise.all([
     read(metadata.assets.context),
     metadata.assets.alignment ? read(metadata.assets.alignment) : null,
+    metadata.assets.pois ? read(metadata.assets.pois) : null,
   ]);
   const originKey = metadata.geographicCoordType === 'bd09ll' ? 'originBd09' : 'originWgs84';
   if (JSON.stringify(context[originKey]) !== JSON.stringify(metadata.geographicOrigin)) {
     throw new Error("区域底图与路网原点不一致");
   }
-  return Object.freeze({ ...metadata, context, alignment });
+  if (pois && (pois.schemaVersion !== 1 || pois.regionId !== metadata.id || pois.coordType !== 'bd09ll' ||
+      pois.engineAxis !== 'east-north' || JSON.stringify(pois[originKey]) !== JSON.stringify(metadata.geographicOrigin) ||
+      !Array.isArray(pois.items) || pois.items.some(item => !item?.uid || !item.name ||
+        !Array.isArray(item.localPointMeters) || item.localPointMeters.length !== 2 || !item.localPointMeters.every(Number.isFinite) ||
+        !Number.isFinite(item.lng) || !Number.isFinite(item.lat) || Math.abs(item.lng) > 180 || Math.abs(item.lat) >= 85 ||
+        !Array.isArray(item.categories) || !item.categories.length || item.category !== item.categories[0] ||
+        item.categories.some(key => !Object.hasOwn(poiCategoryStyles, key)) ||
+        new Set(item.categories).size !== item.categories.length))) {
+    throw new Error('区域地点数据与当前区域不一致');
+  }
+  if (pois && new Set(pois.items.map(item => item.uid)).size !== pois.items.length) {
+    throw new Error('区域地点标识重复');
+  }
+  return Object.freeze({ ...metadata, context, alignment, pois });
 }
 
 export function activateRegion(region) {

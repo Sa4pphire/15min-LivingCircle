@@ -18,7 +18,7 @@
 .real-poi-marker .real-poi-selection-ring { fill: none; stroke: var(--poi-color); stroke-width: 2; opacity: .75; }
 .real-poi-marker .real-poi-selection-pulse { fill: none; stroke: var(--poi-color); stroke-width: 2; transform-origin: 0 0; opacity: 0; animation: real-poi-locate .85s ease-out; }
 @keyframes real-poi-locate { from { transform: scale(.7); opacity: .8; } to { transform: scale(1.45); opacity: 0; } }
-.real-poi-popover { position: absolute; z-index: 6; right: 19px; bottom: 104px; width: min(260px, calc(100% - 38px)); padding: 16px; background: #fbfdfb; border-left: 3px solid #147d72; display: grid; gap: 7px; color: #173c3a; font-size: 12px; }
+.real-poi-popover { position: absolute; z-index: 6; right: 52px; bottom: 104px; width: min(260px, calc(100% - 38px)); padding: 16px; background: #fbfdfb; border-left: 3px solid #147d72; display: grid; gap: 7px; color: #173c3a; font-size: 12px; }
 .real-poi-popover > button:not(.real-cpp-route-retry) { position: absolute; right: 5px; top: 4px; border: 0; background: transparent; font-size: 20px; cursor: pointer; }
 .real-cpp-route-retry { justify-self: start; border: 0; background: #e9f2ed; color: #173c3a; padding: 6px 10px; cursor: pointer; font-size: 11px; }
 .real-cpp-route-summary { color: #327793; }

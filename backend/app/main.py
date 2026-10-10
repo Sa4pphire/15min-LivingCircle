@@ -53,7 +53,7 @@ async def active_region() -> dict:
 
 @app.get("/api/v1/region/assets/{asset}")
 async def region_asset(asset: str) -> FileResponse:
-    if asset not in ("context", "alignment"):
+    if asset not in ("context", "alignment", "pois"):
         raise HTTPException(404, detail="Unknown region asset")
     try:
         region = load_region()
@@ -87,7 +87,7 @@ async def display_region_metadata(region_id: str) -> dict:
 
 @app.get('/api/v1/regions/{region_id}/assets/{asset}')
 async def display_region_asset(region_id: str, asset: str) -> FileResponse:
-    if asset not in ('context', 'alignment'):
+    if asset not in ('context', 'alignment', 'pois'):
         raise HTTPException(404, detail='Unknown region asset')
     return FileResponse(_display_region(region_id).file(asset), media_type='application/json',
                         headers={'Cache-Control': 'no-cache'})
@@ -428,8 +428,9 @@ async def create_local_experiment(
 async def search_pois(request: PoiSearchRequest) -> dict:
     """Cached POI discovery only, without asserting entrances or walkability."""
     try:
-        service = PoiService()
-    except (OSError, sqlite3.Error) as exc:
+        region = _display_region(request.regionId) if request.regionId else load_region()
+        service = PoiService(region=region)
+    except (OSError, ValueError, sqlite3.Error) as exc:
         raise HTTPException(status_code=503, detail={"code": "POI_CACHE_UNAVAILABLE",
                             "message": "POI 缓存不可用，未调用百度接口，请检查缓存目录权限。"}) from exc
     try:
@@ -437,6 +438,11 @@ async def search_pois(request: PoiSearchRequest) -> dict:
                                                request.categories, refresh=request.refresh)
         return {"items": items, "metadata": metadata,
                 "categoryLabels": {key: CATEGORIES[key]["label"] for key in request.categories}}
+    except ValueError as exc:
+        raise HTTPException(422, detail={'code': 'INVALID_POI_QUERY', 'message': str(exc)}) from exc
+    except (OSError, sqlite3.Error) as exc:
+        raise HTTPException(503, detail={'code': 'POI_CACHE_UNAVAILABLE',
+            'message': '地点数据暂时无法读取，请检查区域包和缓存目录。'}) from exc
     finally:
         await service.client.aclose()
 

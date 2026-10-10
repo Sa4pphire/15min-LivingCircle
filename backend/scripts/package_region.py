@@ -1,5 +1,6 @@
 """Create/check/archive a portable region from the existing, edited road model.
 
+Includes normalized region POI snapshots from existing local caches.
 No API calls, boundary.geojson, credentials, tests or generated SVG files.
 """
 import argparse
@@ -13,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'backend'))
 from app.region_package import load_region, network_bounds, refresh_manifest
 from app.network_audit import audit_network
+from app.settings import settings
+from bundle_region_pois import bundle_region
 
 
 def package_current(region_id: str, name: str, version: str) -> Path:
@@ -108,7 +111,11 @@ def main():
         raise ValueError('region-id 只能使用小写字母、数字、连字符或下划线')
     directory = (package_current(args.region_id, args.name, args.version) if args.create else
                  ROOT / 'data/regions' / args.region_id)
+    if args.create or args.archive:
+        bundle_region(load_region(directory), settings.analysis_cache_dir)
     report = check(directory)
+    region = load_region(directory)
+    report['poiCount'] = region.public_metadata()['poiCount']
     if args.archive:
         target = ROOT / 'data/region-packages' / f"{report['id']}-{report['version']}.zip"
         target.parent.mkdir(parents=True, exist_ok=True)

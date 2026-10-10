@@ -20,6 +20,7 @@ shanghai-new-jiangwan/
   network.json                  # v2 引擎图及设施入口
   context.json                  # 本地地图展示资源
   alignment.bd09.json           # 官方坐标校准网格；无选区多边形
+  pois.json                     # 区域内地点缓存快照、五类分类及坐标
   source/road-graph.json         # 用于重建的道路源图
   source/annotations.json       # 人工校对和可回放编辑记录
   README.md
@@ -27,7 +28,11 @@ shanghai-new-jiangwan/
 
 引擎局部米制坐标 X 向东、Y 向北；前端展示坐标 X 向东、Y 向南。原点按坐标标识读取 `network.json.originWgs84` 或 `originBd09`，加载器校验底图和坐标数据的原点一致。原始道路源图可能保留历史提取范围元数据，它不再作为用户选点边界。
 
-当前包的 `facilities` 为空；候选 POI 仍可使用运行机器已有的共享缓存，数据完整度继续按原逻辑说明。包不包含原始接口缓存、SQLite 协调数据库或 API 密钥。将区域包复制到新机器，不会自动取得这台机器原先没有的 POI 清单。
+当前包的路网 `facilities` 为空；地点候选保存在 `pois.json`，与人工核实的路网设施入口分开。前端从清单的 `assets.pois` 加载，但进入地图、刚选定起点和计算过程中均不显示地点；完成计算后只展示本次步行范围内的地点。重新选点时隐藏旧地点。后端在线与合成分析默认优先读取当前区域包的快照，不依赖原机器的 `data/cache`，不自动发起地点检索。手动“刷新 POI”仍会走原有在线检索；随后重新打包即可更新快照。
+
+快照保留 BD-09 经纬度、引擎局部米制坐标、名称、地址、UID、五类分类、导航点（若有）和观测时间，按 UID 去重，使用已有坐标校准筛除区域外地点。旧缓存不记录请求关键词时，按名称和地点标签恢复现有五类范围；无法分类的记录跳过。新建区域的快照初始为空，旧包没有 `pois` 文件时兼容原缓存流程。
+
+快照是离线演示数据，不按请求缓存有效期自动失效；地点可能变化、清单与入口未核实。未知类别不会据此被判为设施盲区。包不包含原始接口响应、SQLite 协调数据库或 API 密钥。复制区域包后即可读取这些地点；在线等时圈与百度步行路线仍需原有 API 配置。
 
 ## 编辑器框选导出
 
@@ -87,7 +92,7 @@ shanghai-new-jiangwan/
 
 容器已包含 `data/regions/`；现有 Compose 数据挂载也包含区域包。使用 `.env.example` 中的 `REGION_ID` 配置即可。`SYNTHETIC_NETWORK_PATH`、`POI_MAP_ASSET_PATH` 等旧路径覆盖如果保留，必须与选中的区域包一致。
 
-本地 `start-demo.bat` 和 `start-network-editor.bat` 从后端配置读取区域路径，并在启动前校验清单及校验和。启动后也验证 `/api/v1/region` 和前端代理，避免仅引擎健康而网页区域加载失败。更改区域配置后执行 `start-demo.bat restart`；编辑器服务执行 `start-network-editor.bat restart`。旧服务仍使用启动时的环境，刷新网页不能改变后端的路径配置。
+本地统一启动入口 `start-demo.bat` 启动展示与路网编辑共用的前后端服务，只自动打开展示页。编辑器可随后从展示页进入，无需单独启动。启动器从后端配置读取区域路径，并在启动前校验清单及校验和。启动后也验证 `/api/v1/region` 和前端代理，避免仅引擎健康而网页区域加载失败。更改区域配置后执行 `start-demo.bat restart`，或再次双击脚本。旧服务仍使用启动时的环境，刷新网页不能改变后端的路径配置。
 
 ## 编制和导出
 
@@ -97,7 +102,15 @@ shanghai-new-jiangwan/
 .\.venv\Scripts\python.exe backend/scripts/package_region.py --archive
 ```
 
-输出为 `data/region-packages/shanghai-new-jiangwan-0.1.0.zip`。压缩包只包含清单列出的数据文件与说明，不包含测试、生成 SVG 或缓存目录。
+打包前会合并已有包内快照与本机地点缓存，更新 `pois.json` 和清单校验和，旧文件备份在 `data/cache/region-poi-backups/`。输出为 `data/region-packages/shanghai-new-jiangwan-0.1.0.zip`。压缩包只包含清单列出的数据文件与说明，包含整理后的 POI 快照，不包含测试、生成 SVG、原始缓存目录或密钥。
+
+仅更新区域内地点快照，可运行：
+
+```powershell
+.\.venv\Scripts\python.exe backend/scripts/bundle_region_pois.py --region-id shanghai-new-jiangwan
+```
+
+编辑器框选导出也会合并父包快照与本机已有缓存，只保留新路网范围内的地点；导出结果显示随包携带的地点数量。整个整理和打包过程不调用外部 API。
 
 从本区域包的源图和标注重建引擎图：
 

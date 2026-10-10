@@ -2,25 +2,16 @@
 setlocal
 if not "%~1"=="" goto command_line
 
-:menu
-echo.
-echo Living Circle Demo Services
-echo [1] Start    [2] Stop    [3] Restart    [4] Status    [5] Exit
-choice /c 12345 /n /m "Select: "
-if errorlevel 5 exit /b 0
-if errorlevel 4 set "DEMO_ACTION=status"
-if errorlevel 4 goto selected
-if errorlevel 3 set "DEMO_ACTION=restart"
-if errorlevel 3 goto selected
-if errorlevel 2 set "DEMO_ACTION=stop"
-if errorlevel 2 goto selected
-set "DEMO_ACTION=start"
-
-:selected
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0start-demo.ps1" -Action "%DEMO_ACTION%"
-echo.
-pause
-goto menu
+echo Starting Living Circle and Network Editor...
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0start-demo.ps1" -Action restart
+if errorlevel 1 (
+  echo.
+  echo Startup failed. See the error and log paths above.
+  pause
+  exit /b 1
+)
+start "" "http://127.0.0.1:5173/"
+exit /b 0
 
 :command_line
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0start-demo.ps1" %*

@@ -9,7 +9,8 @@
     "alignment": "alignment.bd09.json",
     "context": "context.json",
     "sourceGraph": "source/road-graph.json",
-    "annotations": "source/annotations.json"
+    "annotations": "source/annotations.json",
+    "pois": "pois.json"
   },
   "selectionSource": "network-path-extent",
   "coordinateSystem": {
@@ -19,7 +20,10 @@
   },
   "facilityData": {
     "annotatedCount": 0,
-    "candidatePois": "optional-local-cache-not-bundled"
+    "candidatePois": "bundled-snapshot",
+    "candidateCount": 642,
+    "inventoryVerified": false,
+    "accessVerified": false
   },
   "source": {
     "provider": "OpenStreetMap contributors",
@@ -32,6 +36,7 @@
     "alignment": "bc937a1947f39c4ce89355ef2be09ae5afcbc4d91a0bef6e9e83d3325ca34721",
     "context": "14f283ee0eb99b5f2d117329f5bbdf3b8f27819dec771b7c0cab3f13c623cffb",
     "sourceGraph": "55924457c6d72dc44607ee0752ae41601152468e6996786d137ca61241718fb6",
-    "annotations": "d89b1c2b638e5461408da885a6fc32d298977fa5f908bb8914bae42695f53c8a"
+    "annotations": "d89b1c2b638e5461408da885a6fc32d298977fa5f908bb8914bae42695f53c8a",
+    "pois": "4bdb30773ab59760e90c1e0cd3e1e8ac3e6052a9091eca8d2e36bd8239cbd2af"
   }
 }

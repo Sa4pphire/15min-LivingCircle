@@ -371,7 +371,7 @@ def region_metadata(request: Request, region_id: str) -> dict:
 @router.get('/regions/{region_id}/assets/{asset}')
 def region_asset(request: Request, region_id: str, asset: str):
     _local_access(request)
-    if asset not in ('context', 'alignment'):
+    if asset not in ('context', 'alignment', 'pois'):
         raise HTTPException(404, detail='Unknown region asset')
     try:
         return Response(editor_region(region_id).file(asset).read_bytes(), media_type='application/json',

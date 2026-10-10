@@ -224,11 +224,15 @@ def create_region(parent: RegionPackage, graph: dict, summary: dict, identity: s
     annotations = {'schemaVersion': 1, 'coordinateSystem': 'engine-local-meters',
                    'authoringMode': 'engine-snapshot', 'crossings': [], 'junctions': [],
                    'manualGraphEdits': make_manual_edits(graph, graph)}
+    from .region_pois import crop_region_pois
+    from .settings import settings
+    pois = crop_region_pois(parent, graph, identity, summary['boundsMeters'], settings.analysis_cache_dir)
     manifest = {key: deepcopy(value) for key, value in parent.manifest.items() if key not in ('files', 'sha256')}
     manifest.update(id=identity, name=name, version=version, status='ready', authoringMode='engine-snapshot', parentRegion=lineage,
         files={'network': 'network.json', 'context': 'context.json', 'alignment': 'alignment.bd09.json',
-               'sourceGraph': 'source/engine-base.json', 'annotations': 'source/annotations.json'},
-        facilityData={'annotatedCount': len(graph['facilities']), 'candidatePois': 'optional-local-cache-not-bundled'})
+               'sourceGraph': 'source/engine-base.json', 'annotations': 'source/annotations.json', 'pois': 'pois.json'},
+        facilityData={'annotatedCount': len(graph['facilities']), 'candidatePois': 'bundled-snapshot',
+                      'candidateCount': len(pois['items']), 'inventoryVerified': False, 'accessVerified': False})
     context = _context(json.loads(parent.file('context').read_text('utf-8')), summary['boundsMeters'])
     alignment = _alignment(json.loads(parent.file('alignment').read_text('utf-8')), summary['boundsMeters'])
     with tempfile.TemporaryDirectory(prefix='.package-', dir=regions) as folder:
@@ -236,7 +240,7 @@ def create_region(parent: RegionPackage, graph: dict, summary: dict, identity: s
         (working / 'source').mkdir(parents=True)
         values = {'manifest.json': manifest, 'network.json': graph, 'context.json': context,
                   'alignment.bd09.json': alignment, 'source/engine-base.json': graph,
-                  'source/annotations.json': annotations}
+                  'source/annotations.json': annotations, 'pois.json': pois}
         for relative, value in values.items():
             (working / relative).write_text(json.dumps(value, ensure_ascii=False, allow_nan=False,
                 separators=(',', ':')), encoding='utf-8')
@@ -244,7 +248,8 @@ def create_region(parent: RegionPackage, graph: dict, summary: dict, identity: s
             '局部米制原点与父区域一致。过街与转弯仅保留完整连接；裁剪端点不建立隐式连接。\n'
             '范围从 network.json 派生，不需要 boundary.geojson。边缘可达结果可能被数据截断。\n'
             '本包包含可回放的引擎源图和人工修改记录，可在路网编辑器继续处理。\n'
-            'POI 缓存和 API 密钥未包含。地图显示不代表已核实通行权限。\n', encoding='utf-8')
+            'pois.json 包含框选范围内的地点缓存快照；清单与入口未经完整性核实。API 密钥未包含。\n'
+            '地图显示不代表已核实通行权限。\n', encoding='utf-8')
         refresh_manifest(load_region(working, verify=False))
         load_region(working).public_metadata()
         working.rename(destination)
@@ -254,6 +259,6 @@ def create_region(parent: RegionPackage, graph: dict, summary: dict, identity: s
     temporary = archive.with_suffix('.zip.tmp')
     temporary.write_bytes(region_zip(region))
     temporary.replace(archive)
-    return {**summary, 'id': identity, 'name': name, 'version': version, 'archiveName': archive.name,
+    return {**summary, 'poiCount': len(pois['items']), 'id': identity, 'name': name, 'version': version, 'archiveName': archive.name,
             'archiveBytes': archive.stat().st_size,
             'downloadUrl': f'/api/v1/network-editor/regions/{identity}/download'}

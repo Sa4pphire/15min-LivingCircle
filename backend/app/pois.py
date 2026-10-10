@@ -17,17 +17,10 @@ from .settings import settings
 from .poi_search import search_tiles
 from .local_alignment import load_grid_frame
 from .walking_types import is_walkway, is_shared_walkway, is_separated_walkway
+from .poi_categories import CATEGORIES
+from .region_pois import search_region_pois
 
 
-CATEGORIES = {
-    "education": {"label": "学校", "query": "学校$幼儿园", "keywords": ("学校", "幼儿园")},
-    "healthcare": {"label": "医院", "query": "医院$社区卫生服务中心", "keywords": ("医院", "社区卫生服务中心")},
-    "shopping": {"label": "商超", "query": "超市$便利店", "keywords": ("超市", "便利店")},
-    "public_service": {"label": "公共服务", "query": "街道办事处$社区事务受理服务中心$派出所$邮局",
-                       "keywords": ("街道办事处", "社区事务受理服务中心", "派出所", "邮局")},
-    # Baidu's documented broad food category includes venues without 餐厅 in their names.
-    "dining": {"label": "餐饮", "query": "美食", "keywords": ("美食",)},
-}
 GRID_METERS = 500
 
 
@@ -42,16 +35,28 @@ def _grid_query(center: CenterPoint, radius: int):
 
 
 class PoiService:
-    def __init__(self, *, client=None, cache=None):
-        shared_cache = cache or SharedBaiduCache(
-            settings.analysis_cache_dir, settings.poi_cache_path,
-            settings.poi_cache_ttl_hours * 3600, settings.poi_cache_stale_hours * 3600)
+    def __init__(self, *, client=None, cache=None, region=None):
+        self.region = region
+        self._cache = cache
+        self._cache_enabled = False
         self.client = client or BaiduClient()
-        self.client.enable_cache(shared_cache)
         self.stats = self.client.cache_stats
+
+    def _enable_cache(self):
+        if not self._cache_enabled:
+            shared_cache = self._cache or SharedBaiduCache(
+                settings.analysis_cache_dir, settings.poi_cache_path,
+                settings.poi_cache_ttl_hours * 3600, settings.poi_cache_stale_hours * 3600)
+            self.client.enable_cache(shared_cache)
+            self._cache_enabled = True
 
     async def search(self, center: CenterPoint, radius: int, category_ids, *, refresh=False, bounds=None,
                      cache_only=False):
+        if self.region is not None and not refresh:
+            bundled = search_region_pois(self.region, center, radius, category_ids, bounds=bounds)
+            if bundled is not None:
+                return bundled
+        self._enable_cache()
         before = dict(self.stats)
         query_center, query_radius = _grid_query(center, radius)
         order = list(dict.fromkeys(category_ids))
@@ -100,6 +105,7 @@ class PoiService:
                         (point[1] - origin["lat"]) * METERS_PER_DEGREE]
             return project, "native_bd09_local_meters"
         anchors = [_to_map_coordinate(point, origin) for point in ([0, 0], [1000, 0], [0, 1000])]
+        self._enable_cache()
         converted = await self.client.convert_coordinates([tuple(point) for point in anchors], "wgs84ll",
                                                          cache_only=cache_only)
         a, east, north = converted
@@ -168,7 +174,9 @@ async def enrich_engine_pois(payload: dict, metadata: dict, center: CenterPoint,
     service = None
     records, info = [], {"status": "unavailable", "provider": "baidu_place_v2"}
     try:
-        service = PoiService()
+        from .region_package import load_region_by_id
+        region = load_region_by_id(metadata['regionId']) if metadata.get('regionId') else None
+        service = PoiService(**({'region': region} if region is not None else {}))
         bounds = None
         if engine_result is not None:
             geometry = engine_result.get("displayGeometryMeters", {})
@@ -229,7 +237,7 @@ async def enrich_engine_pois(payload: dict, metadata: dict, center: CenterPoint,
     finally:
         if service is not None:
             await service.client.aclose()
-    if service is not None:
+    if service is not None and info.get('dataSource') != 'region_package':
         info.update(service.stats)
     metadata["poiRecords"] = records
     metadata["poi"] = {**info, "networkOrigin": metadata.get("originWgs84", metadata.get("originBd09")),

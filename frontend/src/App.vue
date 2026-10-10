@@ -377,6 +377,7 @@ onUnmounted(() => {
                 :analysis-mode="mapMode === 'synthetic' ? 'cpp' : 'preview'"
                 :candidate="mapMode === 'synthetic' ? cppCandidate : realCandidate"
                 :analysis-result="mapMode === 'synthetic' ? cppAnalysisResult : realAnalysisResult"
+                :analysis-complete="mapMode === 'synthetic' ? cppAnalysisState === 'complete' : realAnalysisState === 'complete'"
                 :zoom-tier="mapZoomTier" :overview-request-id="mapOverviewRequestId"
                 :show-blind-zones="showBlindZones"
                 :poi-focus-request="mapMode === 'synthetic' ? cppPoiFocusRequest : realPoiFocusRequest"

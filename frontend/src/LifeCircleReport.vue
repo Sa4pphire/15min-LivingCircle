@@ -15,9 +15,11 @@ const showHelp = ref(false), animatedCount = ref(0);
 const figureId = useId();
 const regionTitle = computed(() => String(props.region.name || '当前区域').replace(/路网演示区$/, '') || '当前区域');
 let countFrame;
-const places = computed(() => nearbyPlaces(props.result));
-const hasPlaceCount = computed(() => places.value.length > 0 || ['ready', 'partial'].includes(props.result?.poiInfo?.status));
-const filtered = computed(() => nearbyPlaces(props.result, category.value, query.value));
+const placesReady = computed(() => props.state === 'complete' && props.origin && props.result);
+const places = computed(() => placesReady.value ? nearbyPlaces(props.result) : []);
+const hasPlaceCount = computed(() => placesReady.value &&
+  (places.value.length > 0 || ['ready', 'partial'].includes(props.result?.poiInfo?.status)));
+const filtered = computed(() => placesReady.value ? nearbyPlaces(props.result, category.value, query.value) : []);
 const selectedPlace = computed(() => filtered.value.find(poi => poi.id === selectedId.value));
 const categoryRows = computed(() => lifeCategories.map(item => ({ ...item,
   count: places.value.filter(poi => (poi.categories ?? [poi.category]).includes(item.id)).length })));

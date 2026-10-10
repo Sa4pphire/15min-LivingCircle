@@ -24,7 +24,8 @@ REPRESENTATIVE_ROUTES_PER_CATEGORY = 5
 
 async def _collect_rule_pois(client, center, radius, geometry, *, region_id=None):
     """Reuse the existing five-category POI search and calibration rules."""
-    service = PoiService(client=client)
+    region = load_region_by_id(region_id) if region_id else load_region()
+    service = PoiService(client=client, region=region)
     points = [point for polygon in geometry.get('coordinates', []) for ring in polygon for point in ring]
     bounds = None
     if points:
@@ -35,7 +36,6 @@ async def _collect_rule_pois(client, center, radius, geometry, *, region_id=None
     records, info = await service.search(center, radius, CATEGORIES, bounds=bounds)
     project = None
     try:
-        region = load_region_by_id(region_id) if region_id else load_region()
         graph = region.graph()
         key = 'originWgs84' if 'originWgs84' in graph else 'originBd09'
         project, alignment = await service.frame({'coordType': 'wgs84ll' if key == 'originWgs84' else 'bd09ll',
