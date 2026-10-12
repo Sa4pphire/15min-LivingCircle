@@ -42,6 +42,8 @@ SYNTHETIC_NETWORK_PATH = _repo_path(os.getenv(
 class Settings:
     region_id: str = REGION_ID
     app_env: str = os.getenv("APP_ENV", "development")
+    local_container_editor: bool = os.getenv(
+        "LOCAL_CONTAINER_EDITOR", "false").strip().lower() in ("true", "1")
     static_dir: Path = Path(os.getenv("STATIC_DIR", "static"))
     cpp_engine_path: Path = Path(
         os.getenv("CPP_ENGINE_PATH", "cpp-engine/build/isochrone_engine")

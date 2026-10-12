@@ -2,16 +2,21 @@ services:
   app:
     build:
       context: .
+      args:
+        VITE_BAIDU_BROWSER_AK: ${VITE_BAIDU_BROWSER_AK:-}
     env_file:
       - path: .env
         required: false
     environment:
+      APP_ENV: development
       APP_HOST: 0.0.0.0
       APP_PORT: 8000
+      # Paired with the loopback-only published port below.
+      LOCAL_CONTAINER_EDITOR: "true"
       ANALYSIS_CACHE_DIR: /app/data/cache
       CPP_ENGINE_PATH: /app/bin/isochrone_engine
     ports:
-      - "8000:8000"
+      - "127.0.0.1:${LOCAL_PORT:-8000}:8000"
     volumes:
       - ./data:/app/data
     restart: unless-stopped

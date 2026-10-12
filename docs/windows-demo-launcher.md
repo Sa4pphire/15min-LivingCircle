@@ -25,6 +25,8 @@ API 默认在 `127.0.0.1:8000`。
 
 ## 首次运行
 
+按 [README 的本地运行步骤](../README.md#在评审电脑上运行)准备运行环境和 AK；本地后端配置从 `.env.windows.example` 创建，浏览器配置从 `frontend/.env.example` 创建。修改配置后再次双击 BAT 或执行 `restart`。
+
 需要已安装的 Python 虚拟环境、前端依赖、Node.js 和 C++ 编译器。脚本不安装依赖，
 不联网下载工具，不修改系统执行策略。BAT 的 `ExecutionPolicy Bypass` 仅适用于本次
 PowerShell 进程。PS1 使用 UTF-8 带 BOM，可由 Windows PowerShell 5.1 或 PowerShell 7 运行。
@@ -32,7 +34,7 @@ PowerShell 进程。PS1 使用 UTF-8 带 BOM，可由 Windows PowerShell 5.1 或
 ```powershell
 python -m venv .venv
 .venv/Scripts/python.exe -m pip install -r backend/requirements.txt
-npm --prefix frontend ci
+npm.cmd --prefix frontend ci
 ```
 
 引擎缺失或源码、头文件比可执行文件新时，启动器自动构建。优先使用 CMake；
@@ -58,9 +60,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\start-demo.ps1 -Action run
 
 ## 路网与坐标
 
-默认沿用当前项目的统一数据源 `data/networks/synthetic-preview.json`，同时联调
-900 秒合成分析和 180 秒局部实验。该文件是未经实地核实的合成路网，目前缺少设施
-及经核实的裁剪出口；不能据此声称真实设施匮乏。启动器不生成、修改或补造路网。
+默认区域为 `shanghai-new-jiangwan`，启动器从当前区域包的 `manifest.json` 解析
+路网和地图文件，同时检查 900 秒合成分析和 180 秒局部实验。未配置独立局部文件时，
+两者共用区域包内的 `network.json`。路网及设施入口仍需核查，不能据此声称真实设施
+匮乏。启动器不生成、修改或补造路网。
 
 如需小型三色契约样例，显式指定文件；该文件使用 BD-09 起点，而默认现有路网使用
 WGS-84，页面坐标类型和起点也应随之调整，不能只修改坐标类型标签。

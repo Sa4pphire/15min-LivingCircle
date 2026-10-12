@@ -116,7 +116,13 @@ def build_base_network(source: Path, context: Path, annotations: dict) -> dict:
 def _local_access(request: Request) -> None:
     host = request.client.host if request.client else ''
     try:
-        local = ipaddress.ip_address(host).is_loopback
+        address = ipaddress.ip_address(host)
+        local = address.is_loopback
+        # Docker's host connection arrives from its private bridge. This opt-in
+        # is enabled only by the Compose config publishing on 127.0.0.1.
+        if (not local and settings.local_container_editor and address.is_private and
+                request.url.hostname in ('localhost', '127.0.0.1', '::1')):
+            local = True
     except ValueError:
         local = host == 'testclient'
     origin = request.headers.get('origin')

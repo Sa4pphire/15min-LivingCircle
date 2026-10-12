@@ -1,9 +1,10 @@
 FROM node:22-bookworm-slim AS frontend-builder
+ARG VITE_BAIDU_BROWSER_AK=""
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
-RUN npm run build
+RUN VITE_BAIDU_BROWSER_AK="$VITE_BAIDU_BROWSER_AK" npm run build
 
 FROM debian:bookworm-slim AS cpp-builder
 RUN apt-get update \
@@ -27,6 +28,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     ANALYSIS_CACHE_DIR=/app/data/cache \
     REGION_ID=shanghai-new-jiangwan
 WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libstdc++6 \
+    && rm -rf /var/lib/apt/lists/*
 COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app/ ./app/
@@ -35,8 +39,8 @@ COPY data/regions/ ./data/regions/
 COPY contracts/engine-input.example.json ./contracts/engine-input.example.json
 COPY --from=frontend-builder /src/frontend/dist/ ./static/
 COPY --from=cpp-builder /src/cpp-engine/build/isochrone_engine ./bin/isochrone_engine
-RUN mkdir -p /app/data/cache
+RUN mkdir -p /app/data/cache && /app/bin/isochrone_engine --health
 EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=3)"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD ["python", "-m", "app.deployment_health"]
 CMD ["sh", "-c", "uvicorn app.main:app --host ${APP_HOST} --port ${APP_PORT}"]
