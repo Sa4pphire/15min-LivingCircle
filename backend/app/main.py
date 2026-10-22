@@ -1,7 +1,11 @@
 from pathlib import Path
 import asyncio
+from contextlib import asynccontextmanager
+from functools import partial
 import math
 import sqlite3
+import json
+import logging
 from time import perf_counter
 from uuid import uuid4
 
@@ -9,6 +13,7 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+from .analysis_scheduler import AnalysisScheduler, ScheduledAnalysis
 from .engine import EngineError, check_engine, run_engine
 from .local_experiment import (build_local_experiment_result,
                                load_local_experiment_request)
@@ -34,11 +39,30 @@ from .settings import settings
 from .network_editor import router as network_editor_router
 from .region_package import load_region, load_region_by_id, list_display_regions, validate_region_center
 
+analysis_logger = logging.getLogger("livingcircle.analysis")
+analysis_logger.setLevel(logging.INFO)
+analysis_logger.propagate = False
+
+if not analysis_logger.handlers:
+    analysis_logger.addHandler(logging.StreamHandler())
+
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    scheduler = AnalysisScheduler(workers=2, pending_limit=8)
+    application.state.analysis_scheduler = scheduler
+    await scheduler.start()
+    try:
+        yield
+    finally:
+        await scheduler.close()
+
 
 app = FastAPI(
     title="15-Minute Life Circle API",
     version="0.1.0",
     description="Competition demo API for walkability and facility coverage analysis.",
+    lifespan=lifespan,
 )
 app.include_router(network_editor_router)
 
@@ -313,32 +337,79 @@ async def _run_local_experiment(experiment_id: str, engine_input: dict,
         experiment.progress = Progress(stage="failed", percent=100)
 
 
-def _queue_analysis(request: AnalysisRequest, background_tasks: BackgroundTasks,
-                    network_path: Path | None = None) -> AnalysisAccepted:
-    started = perf_counter()
+def _load_analysis_input(request: AnalysisRequest, network_path: Path | None):
+    """Only file/input preparation runs in the thread pool, not admission/state."""
     region = _analysis_region(request.regionId)
     if region:
         network_path = region.file('network')
+    engine_input, network_meta = load_engine_request(
+        request.center, request.originEdgeId, network_path=network_path)
+    if region:
+        network_meta['regionId'] = region.manifest['id']
+    return engine_input, network_meta
+
+
+async def _prepare_analysis_input(request: AnalysisRequest, network_path: Path | None):
+    preparation = asyncio.create_task(asyncio.to_thread(_load_analysis_input, request, network_path))
     try:
-        engine_input, network_meta = load_engine_request(
-            request.center, request.originEdgeId, network_path=network_path)
-        if region:
-            network_meta['regionId'] = region.manifest['id']
-    except UnsupportedAreaError as exc:
-        raise HTTPException(
-            status_code=422,
-            detail={"code": "UNSUPPORTED_AREA", "message": str(exc)},
-        ) from exc
-    analysis_id = uuid4().hex
-    _analyses[analysis_id] = AnalysisState(
-        analysisId=analysis_id,
-        status="queued",
-        progress=Progress(stage="queued", percent=0),
-        timingsMs={"networkLoad": round((perf_counter() - started) * 1000, 3)},
-    )
-    background_tasks.add_task(_run_analysis, analysis_id, engine_input, network_meta,
-                              request.center, request.includePois, request.refreshPois)
-    return AnalysisAccepted(analysisId=analysis_id, status="queued")
+        return await asyncio.shield(preparation)
+    except asyncio.CancelledError:
+        # Cancelling to_thread's await does not stop its underlying thread.
+        # Keep the pending reservation until the actual preparation has ended.
+        while not preparation.done():
+            try:
+                await asyncio.shield(preparation)
+            except asyncio.CancelledError:
+                continue
+            except Exception:
+                break
+        if not preparation.cancelled():
+            preparation.exception()  # Retrieve any exception; cancellation stays authoritative.
+        raise
+
+
+def _analysis_busy() -> HTTPException:
+    return HTTPException(503, detail={"code": "ANALYSIS_BUSY", "message": "分析任务已满或服务正在关闭，请稍后重试"},
+                         headers={"Retry-After": "1"})
+
+
+async def _queue_analysis(request: AnalysisRequest,
+                          network_path: Path | None = None) -> AnalysisAccepted:
+    scheduler: AnalysisScheduler | None = getattr(app.state, "analysis_scheduler", None)
+    reservation = scheduler.reserve() if scheduler is not None else None
+    if reservation is None:
+        analysis_logger.info(json.dumps({"event": "analysis.rejected", "reason": "busy"}))
+        raise _analysis_busy()
+    assert scheduler is not None
+
+    started = perf_counter()
+    analysis_id: str | None = None
+    submitted = False
+    try:
+        try:
+            engine_input, network_meta = await _prepare_analysis_input(request, network_path)
+        except UnsupportedAreaError as exc:
+            raise HTTPException(422, detail={"code": "UNSUPPORTED_AREA", "message": str(exc)}) from exc
+        analysis_id = uuid4().hex
+        analysis = AnalysisState(analysisId=analysis_id, status="queued",
+                                 progress=Progress(stage="queued", percent=0),
+                                 timingsMs={"networkLoad": round((perf_counter() - started) * 1000, 3)})
+        _analyses[analysis_id] = analysis
+        job = ScheduledAnalysis(analysis, partial(_run_analysis, analysis_id, engine_input,
+                                                 network_meta, request.center,
+                                                 request.includePois, request.refreshPois))
+        submitted = scheduler.submit(reservation, job)
+        if not submitted:
+            raise _analysis_busy()
+        analysis_logger.info(json.dumps({"event": "analysis.accepted", "analysisId": analysis_id,
+                                         "status": "queued", "networkLoadMs": analysis.timingsMs["networkLoad"]},
+                                        ensure_ascii=False))
+        return AnalysisAccepted(analysisId=analysis_id, status="queued")
+    finally:
+        if not submitted:
+            if analysis_id is not None:
+                _analyses.pop(analysis_id, None)
+            scheduler.release(reservation)
 
 
 def _queue_local_experiment(request: LocalExperimentRequest,
@@ -365,9 +436,8 @@ def _queue_local_experiment(request: LocalExperimentRequest,
 
 
 @app.post("/api/v1/analyses", status_code=202, response_model=AnalysisAccepted)
-async def create_analysis(request: AnalysisRequest,
-                          background_tasks: BackgroundTasks) -> AnalysisAccepted:
-    return _queue_analysis(request, background_tasks)
+async def create_analysis(request: AnalysisRequest) -> AnalysisAccepted:
+    return await _queue_analysis(request)
 
 @app.post(
     "/api/v1/sampled-analyses",
@@ -409,10 +479,9 @@ async def create_sampled_analysis(
 
 @app.post("/api/v1/synthetic-analyses", status_code=202,
           response_model=AnalysisAccepted)
-async def create_synthetic_analysis(request: AnalysisRequest,
-                                    background_tasks: BackgroundTasks) -> AnalysisAccepted:
+async def create_synthetic_analysis(request: AnalysisRequest) -> AnalysisAccepted:
     """Run the clearly labelled synthetic fixture, independent of the real network setting."""
-    return _queue_analysis(request, background_tasks, settings.synthetic_network_path)
+    return await _queue_analysis(request, settings.synthetic_network_path)
 
 
 @app.post("/api/v1/local-experiments", status_code=202,

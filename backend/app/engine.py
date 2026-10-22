@@ -22,6 +22,74 @@ def _engine_path() -> Path:
     return path
 
 
+async def _finish_cleanup(cleanup: asyncio.Task[None]) -> None:
+    """Finish reaping even if shutdown cancels the caller more than once."""
+    cancelled = False
+    while True:
+        try:
+            await asyncio.shield(cleanup)
+            break
+        except asyncio.CancelledError:
+            if cleanup.cancelled():
+                raise
+            cancelled = True
+    if cancelled:
+        raise asyncio.CancelledError
+
+
+async def _terminate_and_reap(
+    process: asyncio.subprocess.Process,
+    communication: asyncio.Task[tuple[bytes, bytes]] | None = None,
+) -> None:
+    if process.returncode is None:
+        try:
+            process.kill()
+        except ProcessLookupError:
+            pass  # The child may exit between checking returncode and kill().
+    try:
+        if communication is None:
+            await process.communicate()
+        else:
+            await communication
+    except (Exception, asyncio.CancelledError):
+        pass  # Preserve the caller's original failure after reaping the child.
+    finally:
+        await process.wait()
+
+
+async def _start_process(*args: str, **kwargs: Any) -> asyncio.subprocess.Process:
+    # Retain the startup task: cancellation can arrive after the OS creates the
+    # child but before create_subprocess_exec returns its Process handle.
+    startup = asyncio.create_task(asyncio.create_subprocess_exec(*args, **kwargs))
+    try:
+        return await asyncio.shield(startup)
+    except asyncio.CancelledError:
+        async def cleanup_startup() -> None:
+            try:
+                process = await startup
+            except OSError:
+                return
+            await _terminate_and_reap(process)
+
+        await _finish_cleanup(asyncio.create_task(cleanup_startup()))
+        raise
+
+
+async def _communicate(
+    process: asyncio.subprocess.Process, input_data: bytes | None = None,
+    *, timeout: float,
+) -> tuple[bytes, bytes]:
+    # Keep one pipe reader alive through timeout/cancellation, then drain it
+    # after kill rather than starting a second communicate() on the same pipes.
+    communication = asyncio.create_task(process.communicate(input_data))
+    try:
+        return await asyncio.wait_for(asyncio.shield(communication), timeout=timeout)
+    except (Exception, asyncio.CancelledError):
+        await _finish_cleanup(asyncio.create_task(
+            _terminate_and_reap(process, communication)))
+        raise
+
+
 async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
     started = perf_counter()
     # Keep annotations in Python; compact only the v2 wire representation.
@@ -40,7 +108,7 @@ async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
         raise EngineError(f"C++ 引擎不可用：{engine_path}")
 
     try:
-        process = await asyncio.create_subprocess_exec(
+        process = await _start_process(
             str(engine_path),
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
@@ -50,10 +118,8 @@ async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
         raise EngineError(f"无法启动 C++ 引擎：{exc}") from exc
     spawned_at = perf_counter()
     try:
-        stdout, stderr = await asyncio.wait_for(process.communicate(encoded), timeout=25)
+        stdout, stderr = await _communicate(process, encoded, timeout=25)
     except TimeoutError as exc:
-        process.kill()
-        await process.communicate()
         raise EngineError("C++ 引擎计算超时") from exc
     received_at = perf_counter()
 
@@ -90,13 +156,13 @@ async def check_engine() -> EngineHealth:
         return EngineHealth(status="unavailable", detail=str(engine_path))
 
     try:
-        process = await asyncio.create_subprocess_exec(
+        process = await _start_process(
             str(engine_path),
             "--health",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=3)
+        stdout, stderr = await _communicate(process, timeout=3)
     except (OSError, TimeoutError) as exc:
         return EngineHealth(status="error", detail=str(exc))
 

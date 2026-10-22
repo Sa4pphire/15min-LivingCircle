@@ -1,0 +1,6 @@
+{
+  "detail": {
+    "code": "ANALYSIS_BUSY",
+    "message": "分析任务已满或服务正在关闭，请稍后重试"
+  }
+}
