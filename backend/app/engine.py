@@ -1,9 +1,13 @@
 import asyncio
+from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass
 import json
+import math
 import os
 from time import perf_counter
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Iterator
 
 from .schemas import EngineHealth
 from .settings import settings
@@ -11,7 +15,32 @@ from .walking_types import normalize_graph
 
 
 class EngineError(RuntimeError):
-    pass
+    def __init__(self, message: str, *, code: str = "ENGINE_ERROR") -> None:
+        super().__init__(message)
+        self.code = code
+
+
+class EngineBusy(EngineError):
+    def __init__(self, detail: str = "计算资源繁忙，请稍后重试") -> None:
+        super().__init__(f"ENGINE_BUSY: {detail}", code="ENGINE_BUSY")
+
+
+_engine_wait_timeout: ContextVar[float] = ContextVar("engine_wait_timeout", default=0.0)
+_engine_admitted_analysis: ContextVar[bool] = ContextVar("engine_admitted_analysis", default=False)
+
+
+@contextmanager
+def engine_wait_scope(wait_timeout: float = 5.0) -> Iterator[None]:
+    """Only admitted analysis jobs may wait for a business process permit."""
+    if not math.isfinite(wait_timeout) or wait_timeout < 0:
+        raise ValueError("wait_timeout must be finite and non-negative")
+    token = _engine_wait_timeout.set(wait_timeout)
+    admitted_token = _engine_admitted_analysis.set(True)
+    try:
+        yield
+    finally:
+        _engine_admitted_analysis.reset(admitted_token)
+        _engine_wait_timeout.reset(token)
 
 
 def _engine_path() -> Path:
@@ -90,7 +119,7 @@ async def _communicate(
         raise
 
 
-async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
+async def _run_engine(payload: dict[str, Any]) -> dict[str, Any]:
     started = perf_counter()
     # Keep annotations in Python; compact only the v2 wire representation.
     # Meter coordinates retain their original precision.
@@ -105,7 +134,7 @@ async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
     encoded_at = perf_counter()
     engine_path = _engine_path()
     if not engine_path.is_file():
-        raise EngineError(f"C++ 引擎不可用：{engine_path}")
+        raise EngineError(f"C++ 引擎不可用：{engine_path}", code="ENGINE_UNAVAILABLE")
 
     try:
         process = await _start_process(
@@ -115,31 +144,48 @@ async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
             stderr=asyncio.subprocess.PIPE,
         )
     except OSError as exc:
-        raise EngineError(f"无法启动 C++ 引擎：{exc}") from exc
+        raise EngineError(f"无法启动 C++ 引擎：{exc}", code="ENGINE_START_FAILED") from exc
     spawned_at = perf_counter()
     try:
         stdout, stderr = await _communicate(process, encoded, timeout=25)
     except TimeoutError as exc:
-        raise EngineError("C++ 引擎计算超时") from exc
+        raise EngineError("C++ 引擎计算超时", code="ENGINE_TIMEOUT") from exc
+    except OSError as exc:
+        raise EngineError(f"C++ 引擎通信失败：{exc}", code="ENGINE_COMMUNICATION_ERROR") from exc
     received_at = perf_counter()
 
     try:
         response = json.loads(stdout.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         detail = stderr.decode("utf-8", errors="replace").strip()[:300]
-        raise EngineError(f"C++ 引擎返回了无效 JSON：{detail}") from exc
+        if process.returncode != 0:
+            raise EngineError(f"C++ 引擎异常退出（{process.returncode}）：{detail}",
+                              code="ENGINE_EXIT_ERROR") from exc
+        raise EngineError(f"C++ 引擎返回了无效 JSON：{detail}",
+                          code="ENGINE_PROTOCOL_ERROR") from exc
     if not isinstance(response, dict) or response.get("schemaVersion") != 2:
-        raise EngineError("C++ 引擎响应版本不匹配")
-    if process.returncode != 0 or response.get("success") is not True:
-        error = response.get("error") or {}
-        if not isinstance(error, dict):
-            error = {}
-        raise EngineError(f"{error.get('code', 'ENGINE_ERROR')}: "
-                          f"{error.get('message', 'C++ 引擎计算失败')}")
+        raise EngineError("C++ 引擎响应版本不匹配", code="ENGINE_PROTOCOL_ERROR")
+    # The engine deliberately exits nonzero for valid business rejections.
+    # Preserve their structured code before classifying an unexplained exit.
+    if response.get("success") is False:
+        error = response.get("error")
+        if (not isinstance(error, dict) or not isinstance(error.get("code"), str)
+                or not error["code"] or not isinstance(error.get("message"), str)):
+            raise EngineError("C++ 引擎错误对象无效", code="ENGINE_PROTOCOL_ERROR")
+        raise EngineError(f"{error['code']}: {error['message']}", code=error["code"])
+    if response.get("success") is not True:
+        raise EngineError("C++ 引擎缺少有效的成功标记", code="ENGINE_PROTOCOL_ERROR")
+    if process.returncode != 0:
+        detail = stderr.decode("utf-8", errors="replace").strip()[:300]
+        raise EngineError(f"C++ 引擎异常退出（{process.returncode}）：{detail}",
+                          code="ENGINE_EXIT_ERROR")
     if not isinstance(response.get("result"), dict):
-        raise EngineError("C++ 引擎缺少结果对象")
+        raise EngineError("C++ 引擎缺少结果对象", code="ENGINE_PROTOCOL_ERROR")
+    diagnostics = response["result"].setdefault("diagnostics", {})
+    if not isinstance(diagnostics, dict):
+        raise EngineError("C++ 引擎诊断对象无效", code="ENGINE_PROTOCOL_ERROR")
     finished_at = perf_counter()
-    response["result"].setdefault("diagnostics", {})["invocation"] = {
+    diagnostics["invocation"] = {
         "encodeMs": round((encoded_at - started) * 1000, 3),
         "spawnMs": round((spawned_at - encoded_at) * 1000, 3),
         "roundTripMs": round((received_at - spawned_at) * 1000, 3),
@@ -150,7 +196,7 @@ async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
     return response["result"]
 
 
-async def check_engine() -> EngineHealth:
+async def _check_engine() -> EngineHealth:
     engine_path = _engine_path()
     if not engine_path.exists():
         return EngineHealth(status="unavailable", detail=str(engine_path))
@@ -171,3 +217,186 @@ async def check_engine() -> EngineHealth:
         return EngineHealth(status="error", detail=detail or "non-zero exit")
 
     return EngineHealth(status="ok", detail=stdout.decode().strip())
+
+
+@dataclass
+class _HealthProbe:
+    task: asyncio.Task[EngineHealth]
+    waiters: int = 0
+    retirement: asyncio.Task[None] | None = None
+
+
+class EngineRuntime:
+    """One event loop owns two business permits and one shared health probe."""
+
+    def __init__(self, capacity: int = 2, health_cache_ttl: float = 5.0,
+                 clock: Callable[[], float] = perf_counter) -> None:
+        if (not isinstance(capacity, int) or capacity < 1
+                or not math.isfinite(health_cache_ttl) or health_cache_ttl < 0):
+            raise ValueError("capacity must be a positive integer and health_cache_ttl finite and non-negative")
+        self._permits = asyncio.Semaphore(capacity)
+        self._health_cache_ttl = health_cache_ttl
+        self._clock = clock
+        self._calls: set[asyncio.Task[Any]] = set()
+        self._health_probe: _HealthProbe | None = None
+        self._health_cache: tuple[float, EngineHealth] | None = None
+        self._idle = asyncio.Event()
+        self._idle.set()
+        self._draining = False
+        self._closing = False
+        self._closed = False
+        self._close_task: asyncio.Task[None] | None = None
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
+
+    def begin_drain(self) -> None:
+        """Reject new direct calls while admitted analyses finish their stages."""
+        self._draining = True
+
+    def _sync_idle(self) -> None:
+        probe_running = self._health_probe is not None and not self._health_probe.task.done()
+        if not self._calls and not probe_running:
+            self._idle.set()
+        else:
+            self._idle.clear()
+
+    async def wait_idle(self) -> None:
+        # This observes current calls, not future stages of admitted analyses.
+        # The shutdown coordinator also waits for the scheduler's whole jobs.
+        await self._idle.wait()
+
+    async def run_engine(self, payload: dict[str, Any]) -> dict[str, Any]:
+        if self._closing or (self._draining and not _engine_admitted_analysis.get()):
+            raise EngineBusy("服务正在关闭")
+        caller = asyncio.current_task()
+        assert caller is not None
+        self._calls.add(caller)
+        self._sync_idle()
+        acquired = False
+        waiting_since = perf_counter()
+        try:
+            wait_timeout = _engine_wait_timeout.get()
+            if wait_timeout <= 0:
+                # No await can interleave locked() and the immediate acquire on
+                # this event loop; Semaphore also preserves existing waiters.
+                if self._permits.locked():
+                    raise EngineBusy()
+                await self._permits.acquire()
+            else:
+                try:
+                    await asyncio.wait_for(self._permits.acquire(), timeout=wait_timeout)
+                except TimeoutError as exc:
+                    raise EngineBusy("等待计算许可超时") from exc
+            acquired = True
+            permit_wait_ms = round((perf_counter() - waiting_since) * 1000, 3)
+            if self._closing:
+                raise EngineBusy("服务正在关闭")
+            result = await _run_engine(payload)
+            # Keep totalMs scoped to the original invocation; permit waiting
+            # is a separate Python diagnostic and never enters the C++ wire.
+            result.setdefault("diagnostics", {}).setdefault("invocation", {})[
+                "permitWaitMs"] = permit_wait_ms
+            return result
+        finally:
+            # _run_engine only unwinds after startup/communicate cleanup has
+            # terminated and reaped its child, including repeated cancellation.
+            if acquired:
+                self._permits.release()
+            self._calls.discard(caller)
+            self._sync_idle()
+
+    async def _probe_health(self) -> EngineHealth:
+        result = await _check_engine()
+        if not self._closing:
+            self._health_cache = (self._clock(), result.model_copy())
+        return result
+
+    async def _retire_probe(self, probe: _HealthProbe) -> None:
+        await asyncio.gather(probe.task, return_exceptions=True)
+        if self._health_probe is probe:
+            self._health_probe = None
+        self._sync_idle()
+
+    def _begin_probe_retirement(self, probe: _HealthProbe) -> asyncio.Task[None]:
+        if probe.retirement is None:
+            probe.task.cancel()
+            probe.retirement = asyncio.create_task(self._retire_probe(probe))
+        return probe.retirement
+
+    async def check_engine(self) -> EngineHealth:
+        while True:
+            if self._closing or self._draining:
+                return EngineHealth(status="error", detail="ENGINE_BUSY: 服务正在关闭")
+            probe = self._health_probe
+            if probe is not None and probe.retirement is not None:
+                # The last prior waiter cancelled its probe. Do not start a
+                # replacement while that old child's reaping is still pending.
+                await asyncio.shield(probe.retirement)
+                continue
+            if probe is not None and probe.task.done():
+                # Earlier waiters may not have resumed yet. A finished task
+                # must not bypass an expired cache by being joined again.
+                if self._health_probe is probe:
+                    self._health_probe = None
+                probe = None
+            if self._health_cache is not None:
+                finished_at, cached = self._health_cache
+                if self._clock() - finished_at < self._health_cache_ttl:
+                    return cached.model_copy()
+            if probe is None:
+                probe = _HealthProbe(asyncio.create_task(self._probe_health()))
+                self._health_probe = probe
+                probe.task.add_done_callback(lambda _: self._sync_idle())
+                self._sync_idle()
+            probe.waiters += 1
+            try:
+                # Cancelling one caller must not cancel other callers' probe.
+                return (await asyncio.shield(probe.task)).model_copy()
+            finally:
+                probe.waiters -= 1
+                if probe.waiters == 0:
+                    if not probe.task.done():
+                        self._begin_probe_retirement(probe)
+                    if probe.retirement is not None:
+                        await _finish_cleanup(probe.retirement)
+                    elif self._health_probe is probe:
+                        self._health_probe = None
+
+    async def _close(self) -> None:
+        pending: list[asyncio.Task[Any]] = list(self._calls)
+        for task in pending:
+            task.cancel()
+        if self._health_probe is not None:
+            pending.append(self._begin_probe_retirement(self._health_probe))
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
+        self._health_cache = None
+        self._closed = True
+
+    async def close(self) -> None:
+        if self._close_task is None:
+            self.begin_drain()
+            self._closing = True
+            self._close_task = asyncio.create_task(self._close())
+        await _finish_cleanup(self._close_task)
+
+
+def get_engine_runtime(*, restart: bool = False) -> EngineRuntime:
+    # An event-loop-owned value has no external registry retaining a closed
+    # loop through its semaphore/tasks. Only lifespan explicitly restarts it.
+    loop = asyncio.get_running_loop()
+    runtime: EngineRuntime | None = getattr(loop, "_livingcircle_engine_runtime", None)
+    if runtime is None or (restart and runtime.closed):
+        runtime = EngineRuntime()
+        setattr(loop, "_livingcircle_engine_runtime", runtime)
+    return runtime
+
+
+async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
+    return await get_engine_runtime().run_engine(payload)
+
+
+async def check_engine() -> EngineHealth:
+    return await get_engine_runtime().check_engine()

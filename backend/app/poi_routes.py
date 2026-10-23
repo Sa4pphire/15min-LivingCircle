@@ -136,6 +136,10 @@ class PoiRouteStore:
         while len(self.contexts) > self.capacity:
             self.contexts.popitem(last=False)
 
+    def forget(self, analysis_id: str) -> None:
+        """Drop the index reference; an already-running route may finish using its context."""
+        self.contexts.pop(analysis_id, None)
+
     async def route(self, analysis_id: str, poi_id: str) -> dict:
         context = self.contexts.get(analysis_id)
         if context is None:

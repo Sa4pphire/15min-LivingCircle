@@ -1,5 +1,6 @@
 from pathlib import Path
 import asyncio
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from functools import partial
 import math
@@ -9,12 +10,14 @@ import logging
 from time import perf_counter
 from uuid import uuid4
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from .analysis_scheduler import AnalysisScheduler, ScheduledAnalysis
-from .engine import EngineError, check_engine, run_engine
+from .analysis_errors import analysis_error_code
+from .engine import (EngineBusy, EngineError, check_engine, engine_wait_scope,
+                     get_engine_runtime, run_engine)
 from .local_experiment import (build_local_experiment_result,
                                load_local_experiment_request)
 from .network import UnsupportedAreaError, build_analysis_result, load_engine_request
@@ -36,6 +39,7 @@ from .schemas import (
     Progress,
 )
 from .settings import settings
+from .shutdown import shutdown_services
 from .network_editor import router as network_editor_router
 from .region_package import load_region, load_region_by_id, list_display_regions, validate_region_center
 
@@ -49,13 +53,19 @@ if not analysis_logger.handlers:
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    scheduler = AnalysisScheduler(workers=2, pending_limit=8)
+    global _sampled_task_semaphore
+    # A contended semaphore belongs to its event loop, just like the scheduler.
+    _sampled_task_semaphore = asyncio.Semaphore(1)
+    engine_runtime = get_engine_runtime(restart=True)
+    application.state.engine_runtime = engine_runtime
+    scheduler = AnalysisScheduler(workers=2, pending_limit=8,
+                                  forget_context=_poi_routes.forget)
     application.state.analysis_scheduler = scheduler
     await scheduler.start()
     try:
         yield
     finally:
-        await scheduler.close()
+        await shutdown_services(scheduler, engine_runtime)
 
 
 app = FastAPI(
@@ -65,6 +75,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(network_editor_router)
+
+
+@app.exception_handler(EngineBusy)
+async def engine_busy_response(_request: Request, exc: EngineBusy) -> JSONResponse:
+    return JSONResponse(status_code=503,
+                        content={"detail": {"code": "ENGINE_BUSY", "message": str(exc)}},
+                        headers={"Retry-After": "1"})
 
 
 @app.get("/api/v1/region")
@@ -170,6 +187,9 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
         analysis.timingsMs[prefix] = round(elapsed * 1000, 3)
         for name, value in result.get("diagnostics", {}).get("timingsMs", {}).items():
             analysis.timingsMs[f"{prefix}.{name}"] = round(value, 3)
+        invocation = result.get("diagnostics", {}).get("invocation", {})
+        if "permitWaitMs" in invocation:
+            analysis.timingsMs[f"{prefix}.permitWait"] = invocation["permitWaitMs"]
 
     def publish(result: dict, metadata: dict, geometry_revision: int = 1) -> None:
         before = perf_counter()
@@ -204,6 +224,7 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
     except (EngineError, BaiduApiError, OSError, KeyError, TypeError, ValueError) as exc:
         analysis.status = "failed"
         analysis.error = str(exc)
+        analysis.errorCode = analysis_error_code(exc)
         analysis.progress = Progress(stage="failed", percent=100)
         analysis.timingsMs["total"] = round((perf_counter() - started) * 1000, 3)
         return
@@ -230,7 +251,8 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
                 facility_result = await run_engine({**engine_input, "facilitiesOnly": True})
                 record_engine("facilityCpp", facility_result, perf_counter() - before)
                 if facility_result.get("displayGeometryMeters", {}).get("coordinates"):
-                    raise EngineError("当前引擎不支持设施专用计算，请重新构建 Debug 引擎")
+                    raise EngineError("当前引擎不支持设施专用计算，请重新构建 Debug 引擎",
+                                      code="ENGINE_PROTOCOL_ERROR")
                 engine_result = {**engine_result, "facilityTravelTimes": facility_result["facilityTravelTimes"]}
             reachable_length = sum(math.dist(a, b) for edge in engine_result["reachableEdges"]
                                    if edge.get("kind") in ("walkway", "sidewalk", "shared_way")
@@ -252,7 +274,8 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
     except (EngineError, BaiduApiError, OSError, sqlite3.Error, KeyError, TypeError, ValueError) as exc:
         analysis.poiStatus = "error"
         metadata = {**network_meta, "poi": {**network_meta.get("poi", {}),
-                    "status": "unavailable", "error": str(exc)}}
+                    "status": "unavailable", "error": str(exc),
+                    "errorCode": analysis_error_code(exc)}}
         analysis.result = add_poi_result(analysis.result, engine_result, metadata)
         analysis.resultRevision += 1
     finally:
@@ -305,6 +328,7 @@ async def _run_sampled_task(
     ) as exc:
         analysis.status = "failed"
         analysis.error = str(exc)
+        analysis.errorCode = analysis_error_code(exc)
         analysis.progress = Progress(
             stage="failed",
             percent=100,
@@ -334,6 +358,7 @@ async def _run_local_experiment(experiment_id: str, engine_input: dict,
     except (EngineError, BaiduApiError, OSError, KeyError, TypeError, ValueError) as exc:
         experiment.status = "failed"
         experiment.error = str(exc)
+        experiment.errorCode = analysis_error_code(exc)
         experiment.progress = Progress(stage="failed", percent=100)
 
 
@@ -346,11 +371,29 @@ def _load_analysis_input(request: AnalysisRequest, network_path: Path | None):
         request.center, request.originEdgeId, network_path=network_path)
     if region:
         network_meta['regionId'] = region.manifest['id']
-    return engine_input, network_meta
+    return (engine_input, network_meta, request.center,
+            request.includePois, request.refreshPois)
 
 
-async def _prepare_analysis_input(request: AnalysisRequest, network_path: Path | None):
-    preparation = asyncio.create_task(asyncio.to_thread(_load_analysis_input, request, network_path))
+def _load_sampled_input(request: AnalysisRequest):
+    region = _analysis_region(request.regionId)
+    try:
+        validate_region_center(request.center, region)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise UnsupportedAreaError(str(exc)) from exc
+    return request.center, request.regionId
+
+
+def _load_local_experiment_input(request: LocalExperimentRequest,
+                                 network_path: Path | None):
+    engine_input, network_meta = load_local_experiment_request(
+        request.center, request.originEdgeId, network_path=network_path)
+    return (engine_input, network_meta, request.center,
+            request.includePois, request.refreshPois)
+
+
+async def _prepare_analysis_input(prepare: Callable[[], tuple]):
+    preparation = asyncio.create_task(asyncio.to_thread(prepare))
     try:
         return await asyncio.shield(preparation)
     except asyncio.CancelledError:
@@ -373,8 +416,18 @@ def _analysis_busy() -> HTTPException:
                          headers={"Retry-After": "1"})
 
 
-async def _queue_analysis(request: AnalysisRequest,
-                          network_path: Path | None = None) -> AnalysisAccepted:
+async def _run_scheduled_analysis(execute: Callable[..., Awaitable[None]],
+                                   analysis_id: str, *prepared) -> None:
+    # Keep the admitted identity across all stages, including shutdown drain.
+    # Direct HTTP computations keep the adapter's default fast-fail policy.
+    with engine_wait_scope(wait_timeout=5.0):
+        await execute(analysis_id, *prepared)
+
+
+async def _submit_analysis(store: dict[str, AnalysisState],
+                           prepare: Callable[[], tuple],
+                           execute: Callable[..., Awaitable[None]]) -> AnalysisAccepted:
+    """Share admission/rollback while each analysis keeps its inputs and state store."""
     scheduler: AnalysisScheduler | None = getattr(app.state, "analysis_scheduler", None)
     reservation = scheduler.reserve() if scheduler is not None else None
     if reservation is None:
@@ -387,17 +440,16 @@ async def _queue_analysis(request: AnalysisRequest,
     submitted = False
     try:
         try:
-            engine_input, network_meta = await _prepare_analysis_input(request, network_path)
+            prepared = await _prepare_analysis_input(prepare)
         except UnsupportedAreaError as exc:
             raise HTTPException(422, detail={"code": "UNSUPPORTED_AREA", "message": str(exc)}) from exc
         analysis_id = uuid4().hex
         analysis = AnalysisState(analysisId=analysis_id, status="queued",
                                  progress=Progress(stage="queued", percent=0),
                                  timingsMs={"networkLoad": round((perf_counter() - started) * 1000, 3)})
-        _analyses[analysis_id] = analysis
-        job = ScheduledAnalysis(analysis, partial(_run_analysis, analysis_id, engine_input,
-                                                 network_meta, request.center,
-                                                 request.includePois, request.refreshPois))
+        store[analysis_id] = analysis
+        job = ScheduledAnalysis(analysis, partial(_run_scheduled_analysis, execute,
+                                                 analysis_id, *prepared), store=store)
         submitted = scheduler.submit(reservation, job)
         if not submitted:
             raise _analysis_busy()
@@ -408,31 +460,21 @@ async def _queue_analysis(request: AnalysisRequest,
     finally:
         if not submitted:
             if analysis_id is not None:
-                _analyses.pop(analysis_id, None)
+                store.pop(analysis_id, None)
             scheduler.release(reservation)
 
 
-def _queue_local_experiment(request: LocalExperimentRequest,
-                            background_tasks: BackgroundTasks,
-                            network_path: Path | None = None) -> AnalysisAccepted:
-    try:
-        engine_input, network_meta = load_local_experiment_request(
-            request.center, request.originEdgeId, network_path=network_path)
-    except UnsupportedAreaError as exc:
-        raise HTTPException(
-            status_code=422,
-            detail={"code": "UNSUPPORTED_AREA", "message": str(exc)},
-        ) from exc
-    experiment_id = uuid4().hex
-    _local_experiments[experiment_id] = AnalysisState(
-        analysisId=experiment_id,
-        status="queued",
-        progress=Progress(stage="queued", percent=0),
-    )
-    background_tasks.add_task(
-        _run_local_experiment, experiment_id, engine_input, network_meta,
-        request.center, request.includePois, request.refreshPois)
-    return AnalysisAccepted(analysisId=experiment_id, status="queued")
+async def _queue_analysis(request: AnalysisRequest,
+                          network_path: Path | None = None) -> AnalysisAccepted:
+    return await _submit_analysis(
+        _analyses, partial(_load_analysis_input, request, network_path), _run_analysis)
+
+
+async def _queue_local_experiment(request: LocalExperimentRequest,
+                                  network_path: Path | None = None) -> AnalysisAccepted:
+    return await _submit_analysis(
+        _local_experiments, partial(_load_local_experiment_input, request, network_path),
+        _run_local_experiment)
 
 
 @app.post("/api/v1/analyses", status_code=202, response_model=AnalysisAccepted)
@@ -444,37 +486,9 @@ async def create_analysis(request: AnalysisRequest) -> AnalysisAccepted:
     status_code=202,
     response_model=AnalysisAccepted,
 )
-async def create_sampled_analysis(
-    request: AnalysisRequest,
-    background_tasks: BackgroundTasks,
-) -> AnalysisAccepted:
-    region = _analysis_region(request.regionId)
-    try:
-        validate_region_center(request.center, region)
-    except (OSError, ValueError, KeyError, TypeError) as exc:
-        raise HTTPException(422, detail={"code": "UNSUPPORTED_AREA", "message": str(exc)}) from exc
-    analysis_id = uuid4().hex
-
-    _sampled_analyses[analysis_id] = AnalysisState(
-        analysisId=analysis_id,
-        status="queued",
-        progress=Progress(
-            stage="queued",
-            percent=0,
-        ),
-    )
-
-    background_tasks.add_task(
-        _run_sampled_task,
-        analysis_id,
-        request.center,
-        request.regionId,
-    )
-
-    return AnalysisAccepted(
-        analysisId=analysis_id,
-        status="queued",
-    )
+async def create_sampled_analysis(request: AnalysisRequest) -> AnalysisAccepted:
+    return await _submit_analysis(
+        _sampled_analyses, partial(_load_sampled_input, request), _run_sampled_task)
 
 
 @app.post("/api/v1/synthetic-analyses", status_code=202,
@@ -486,11 +500,9 @@ async def create_synthetic_analysis(request: AnalysisRequest) -> AnalysisAccepte
 
 @app.post("/api/v1/local-experiments", status_code=202,
           response_model=AnalysisAccepted)
-async def create_local_experiment(
-        request: LocalExperimentRequest,
-        background_tasks: BackgroundTasks) -> AnalysisAccepted:
+async def create_local_experiment(request: LocalExperimentRequest) -> AnalysisAccepted:
     """Use the existing synthetic graph by default, without inventing facility data."""
-    return _queue_local_experiment(request, background_tasks)
+    return await _queue_local_experiment(request)
 
 
 @app.post("/api/v1/pois/search")
@@ -523,6 +535,8 @@ async def route_analysis_poi(analysis_id: str, request: PoiRouteRequest) -> dict
     except RouteUnavailable as exc:
         raise HTTPException(status_code=409 if exc.code == "ROUTE_CONTEXT_EXPIRED" else 404,
                             detail={"code": exc.code, "message": str(exc)}) from exc
+    except EngineBusy:
+        raise
     except (EngineError, ValueError, KeyError, TypeError) as exc:
         raise HTTPException(status_code=503,
                             detail={"code": "POI_ROUTE_ENGINE_ERROR", "message": str(exc)}) from exc

@@ -17,7 +17,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
-from .engine import EngineError, run_engine
+from .engine import EngineBusy, EngineError, run_engine
 from .manual_graph_edits import (apply_manual_edits, graph_revision,
                                  make_manual_edits, validate_editor_graph)
 from .settings import REPO_ROOT, settings
@@ -295,6 +295,8 @@ async def validate_network(request: Request, payload: EditorGraph, regionId: str
     _local_access(request)
     try:
         return await check_candidate(payload, regionId)
+    except EngineBusy:
+        raise
     except EngineError as exc:
         raise HTTPException(422, detail={'message': f'C++ 检查未通过：{exc}'}) from exc
     except (OSError, ValueError, KeyError, TypeError, StopIteration) as exc:
@@ -328,6 +330,8 @@ async def put_network(request: Request, payload: EditorGraph, regionId: str | No
         result = await run_in_threadpool(save_editor, payload, REPO_ROOT, regionId)
         result['engine'] = checked['engine']
         return result
+    except EngineBusy:
+        raise
     except EngineError as exc:
         raise HTTPException(422, detail={'message': f'C++ 检查未通过，未保存：{exc}'}) from exc
     except (OSError, ValueError, KeyError, TypeError) as exc:
@@ -417,6 +421,8 @@ async def export_package(request: Request, payload: PackageExport, regionId: str
         return {**result, 'engine': checked['engine']}
     except FileExistsError as exc:
         raise HTTPException(409, detail={'message': str(exc)}) from exc
+    except EngineBusy:
+        raise
     except EngineError as exc:
         raise HTTPException(422, detail={'message': f'C++ 检查未通过，未生成区域包：{exc}'}) from exc
     except (OSError, ValueError, KeyError, TypeError) as exc:
