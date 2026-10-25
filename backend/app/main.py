@@ -16,6 +16,10 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from .analysis_scheduler import AnalysisScheduler, ScheduledAnalysis
 from .analysis_errors import analysis_error_code
+from .agent_api import router as agent_router
+from .agent_config import AgentConfig
+from .agent_runtime import AgentError, AgentRuntime
+from .agent_tools import ToolError
 from .engine import (EngineBusy, EngineError, check_engine, engine_wait_scope,
                      get_engine_runtime, run_engine)
 from .local_experiment import (build_local_experiment_result,
@@ -62,10 +66,37 @@ async def lifespan(application: FastAPI):
                                   forget_context=_poi_routes.forget)
     application.state.analysis_scheduler = scheduler
     await scheduler.start()
+    agent_runtime = AgentRuntime(AgentConfig.from_env(), _resolve_agent_context, _route_agent_poi)
+    application.state.agent_runtime = agent_runtime
     try:
         yield
     finally:
-        await shutdown_services(scheduler, engine_runtime)
+        # Stop all admissions together, before the first await. Agent cleanup
+        # must not postpone the existing shared five-second drain deadline.
+        scheduler.stop_accepting()
+        engine_runtime.begin_drain()
+        agent_runtime.closed = True
+
+        async def cleanup():
+            results = await asyncio.gather(agent_runtime.close(),
+                                           shutdown_services(scheduler, engine_runtime),
+                                           return_exceptions=True)
+            for result in results:
+                if isinstance(result, BaseException):
+                    raise result
+
+        owner = asyncio.create_task(cleanup(), name='application-agent-shutdown')
+        cancelled = False
+        while not owner.done():
+            try:
+                await asyncio.shield(owner)
+            except asyncio.CancelledError:
+                if owner.cancelled():
+                    raise
+                cancelled = True
+        owner.result()
+        if cancelled:
+            raise asyncio.CancelledError
 
 
 app = FastAPI(
@@ -75,6 +106,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(network_editor_router)
+app.include_router(agent_router)
 
 
 @app.exception_handler(EngineBusy)
@@ -147,6 +179,51 @@ _sampled_analyses: dict[str, AnalysisState] = {}
 _local_experiments: dict[str, AnalysisState] = {}
 _poi_routes = PoiRouteStore()
 _sampled_task_semaphore = asyncio.Semaphore(1)
+
+
+def _resolve_agent_context(context: dict) -> dict:
+    """Resolve browser references against completed server-owned analysis data."""
+    store = _sampled_analyses if context['mode'] == 'real' else _analyses
+    state = store.get(context['analysisId'])
+    if state is None:
+        raise AgentError('ROUTE_CONTEXT_EXPIRED', '当前分析已过期，请重新计算生活圈后开始新对话。')
+    if state.status != 'completed':
+        raise AgentError('ANALYSIS_NOT_READY', '请先等待当前生活圈分析完成。')
+    if not isinstance(state.result, dict):
+        raise AgentError('ROUTE_CONTEXT_EXPIRED', '当前分析结果不可用，请重新计算生活圈。')
+    report = state.result
+    region_id = report.get('regionId') or report.get('metadata', {}).get('regionId') or settings.region_id
+    actual_mode = ('real' if report.get('sourceMode') == 'baidu-sampled'
+                   else 'synthetic' if report.get('metadata', {}).get('networkSource') == 'synthetic' else None)
+    if (region_id != context['regionId'] or actual_mode != context['mode']
+            or state.resultRevision != context['resultRevision']):
+        raise AgentError('AGENT_CONTEXT_CHANGED', '区域、计算模式或分析版本已变化，请重新打开当前结果并开始新对话。')
+    if context['mode'] == 'synthetic':
+        route_context = _poi_routes.contexts.get(context['analysisId'])
+        if route_context is None:
+            raise AgentError('ROUTE_CONTEXT_EXPIRED', '当前分析的路线信息已过期，请重新计算生活圈。')
+        origin = route_context[0].get('originMeters', {})
+        # A private same-coordinate origin is only used for query ordering.
+        return {**report, '_agentOriginMeters': [origin.get('xMeters'), origin.get('yMeters')]}
+    return report
+
+
+async def _route_agent_poi(context: dict, poi_id: str) -> dict:
+    report = _resolve_agent_context(context)
+    try:
+        if context['mode'] == 'synthetic':
+            return await _poi_routes.route(context['analysisId'], poi_id)
+        client = BaiduClient(cache_enabled=True)
+        try:
+            return await route_sampled_poi(client, context['analysisId'], poi_id, report)
+        finally:
+            await client.aclose()
+    except RouteUnavailable as exc:
+        raise ToolError(exc.code, str(exc)) from exc
+    except EngineBusy as exc:
+        raise ToolError('ENGINE_BUSY', '路线计算服务较忙，当前设施未完成比较。') from exc
+    except (EngineError, BaiduApiError, OSError, sqlite3.Error, TimeoutError, ValueError, KeyError, TypeError) as exc:
+        raise ToolError('POI_ROUTE_UNAVAILABLE', '未能取得当前设施的有效路线；未据此判断它不存在或不可达。') from exc
 
 
 @app.get("/api/v1/health", response_model=HealthResponse)

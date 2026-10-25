@@ -124,7 +124,8 @@ export async function requestSampledMapAnalysis(
     ));
 
     if (state.status === "completed") {
-      return { ...normalizeSampledReport(state.result, candidate), analysisId: accepted.analysisId };
+      return { ...normalizeSampledReport(state.result, candidate), analysisId: accepted.analysisId,
+        resultRevision: state.resultRevision };
     }
     if (state.status === "failed") {
       throw new Error(state.error || "SAMPLED_ANALYSIS_FAILED");
@@ -145,6 +146,11 @@ export async function requestSampledPoiRoute({ analysisId, poiId }, { signal, fe
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ poiId }), signal,
     }));
+  return normalizeSampledPoiRoute(route, { analysisId, poiId });
+}
+
+// Agent replies carry the existing raw route, so drawing does not fetch again.
+export function normalizeSampledPoiRoute(route, { analysisId, poiId }) {
   const validPoint = point => Array.isArray(point) && point.length === 2 && point.every(Number.isFinite)
     && Math.abs(point[0]) <= 180 && Math.abs(point[1]) < 90;
   if (route?.analysisId !== analysisId || route.poiId !== poiId || route.algorithm !== 'baidu_walking' ||

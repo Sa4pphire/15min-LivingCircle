@@ -1,11 +1,13 @@
 <script setup>
-import { onUnmounted, ref, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import RealMapStage from "./RealMapStage.vue";
 import LifeCircleReport from "./LifeCircleReport.vue";
 import NeighborhoodFooter from "./NeighborhoodFooter.vue";
+import AgentChatPanel from "./AgentChatPanel.vue";
 import { visiblePois } from "./poiFacilities.js";
-import { requestCppMapAnalysis, requestCppPoiRoute } from "./cppAnalysisClient.js";
-import { requestSampledMapAnalysis, requestSampledPoiRoute } from "./sampledAnalysisClient.js";
+import { normalizeCppPoiRoute, requestCppMapAnalysis, requestCppPoiRoute } from "./cppAnalysisClient.js";
+import { normalizeSampledPoiRoute, requestSampledMapAnalysis, requestSampledPoiRoute } from "./sampledAnalysisClient.js";
+import { sameAgentContext } from "./agentClient.js";
 import { getActiveRegion } from "./regionLoader.js";
 
 const region = getActiveRegion();
@@ -44,6 +46,20 @@ let cppPoiRouteAbort;
 let cppPoiRouteSequence = 0;
 let cppPoiFocusSequence = 0;
 let cppAnalysisAbort;
+const agentMapError = ref('');
+const agentContext = computed(() => {
+  const result = mapMode.value === 'real' ? realAnalysisResult.value : cppAnalysisResult.value;
+  const state = mapMode.value === 'real' ? realAnalysisState.value : cppAnalysisState.value;
+  if (state !== 'complete' || !result?.analysisId || !Number.isInteger(result.resultRevision) || result.resultRevision < 0) return null;
+  return { regionId: region.id, mode: mapMode.value, analysisId: result.analysisId, resultRevision: result.resultRevision };
+});
+const agentResetKey = computed(() => {
+  const candidate = mapMode.value === 'real' ? realCandidate.value : cppCandidate.value;
+  const result = mapMode.value === 'real' ? realAnalysisResult.value : cppAnalysisResult.value;
+  const state = mapMode.value === 'real' ? realAnalysisState.value : cppAnalysisState.value;
+  return JSON.stringify([region.id, mapMode.value, candidate?.lng, candidate?.lat, candidate?.coordType,
+    candidate?.local?.x, candidate?.local?.y, state, result?.analysisId, result?.resultRevision]);
+});
 const livingLetters = Array.from("LIVING CIRCLE");
 let pageWheelDistance = 0;
 let pageTurnTimer;
@@ -194,6 +210,39 @@ function showReportPoiOnMap(poi) {
   realPoiFocusRequest.value = { id: target.id, sequence: ++realPoiFocusSequence };
   goToPage(0);
   void selectRealPoi(target);
+}
+
+function showAgentRoute({ context, action }) {
+  agentMapError.value = '';
+  if (!sameAgentContext(context, agentContext.value)) {
+    agentMapError.value = '地图分析已变化，请在当前分析中重新询问路线。';
+    return;
+  }
+  const result = context.mode === 'real' ? realAnalysisResult.value : cppAnalysisResult.value;
+  const target = visiblePois(result).find(entry => entry.id === action?.poiId);
+  if (action?.type !== 'show_route' || !target || action.route?.status !== 'ready') {
+    agentMapError.value = '这条路线不属于当前可展示的设施，请重新询问。';
+    return;
+  }
+  try {
+    // Validate and localize the authoritative result; do not request the route again.
+    const expected = { analysisId: context.analysisId, poiId: target.id };
+    if (context.mode === 'real') {
+      const route = normalizeSampledPoiRoute(action.route, expected);
+      clearRealPoiRoute();
+      realPoiFocusRequest.value = { id: target.id, sequence: ++realPoiFocusSequence };
+      realPoiRoute.value = { ...route, sequence: realPoiRouteSequence };
+    } else {
+      const route = normalizeCppPoiRoute(action.route, expected);
+      clearCppPoiRoute();
+      cppPoiFocusRequest.value = { id: target.id, sequence: ++cppPoiFocusSequence };
+      cppPoiRoute.value = { ...route, sequence: cppPoiRouteSequence };
+    }
+    showBlindZones.value = false;
+    goToPage(0);
+  } catch {
+    agentMapError.value = '路线数据无法用于当前地图，请重新计算生活圈后再试。';
+  }
 }
 
 function showReportServices() {
@@ -473,4 +522,6 @@ onUnmounted(() => {
       <button type="button" :aria-current="activePage === 1 ? 'page' : undefined" aria-label="生活圈结果" @click="goToPage(1)"><span></span></button>
     </nav>
   </div>
+  <AgentChatPanel :context="agentContext" :reset-key="agentResetKey" :region-name="region.name"
+    :route-error="agentMapError" @show-route="showAgentRoute" @reset="agentMapError = ''" />
 </template>

@@ -152,7 +152,7 @@ export async function requestCppMapAnalysis({ origin, includePois = true, refres
         normalized.routeSegments = latestResult.routeSegments;
         normalized.accessLink = latestResult.accessLink;
       }
-      latestResult = { ...normalized, analysisId: accepted.analysisId };
+      latestResult = { ...normalized, analysisId: accepted.analysisId, resultRevision: state.resultRevision };
       latestRevision = state.resultRevision ?? 1;
       onResult?.(latestResult, { complete: state.status === "completed", poiStatus: state.poiStatus });
     }
@@ -175,6 +175,11 @@ export async function requestCppPoiRoute({ analysisId, poiId }, { signal, fetchI
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ poiId }), signal,
     }));
+  return normalizeCppPoiRoute(route, { analysisId, poiId });
+}
+
+// Shared by direct POI requests and already-calculated Agent routes. No I/O.
+export function normalizeCppPoiRoute(route, { analysisId, poiId }) {
   if (route?.analysisId !== analysisId || route?.poiId !== poiId ||
     route.algorithm !== "dijkstra" || route.coordType !== previewCoordType() ||
     !["ready", "unmapped", "unreachable"].includes(route.status)) {
@@ -190,7 +195,8 @@ export async function requestCppPoiRoute({ analysisId, poiId }, { signal, fetchI
     return geometry.coordinates.map(point => wgsToLocal(point, previewOrigin()));
   };
   const points = localizePath(route.geometry);
-  if (!Array.isArray(route.segments) || !Number.isFinite(route.travelTimeSeconds) || route.travelTimeSeconds < 0) {
+  if (!Array.isArray(route.segments) || !Number.isFinite(route.travelTimeSeconds) || route.travelTimeSeconds < 0 ||
+      !Number.isFinite(route.lengthMeters) || route.lengthMeters < 0 || typeof route.withinThreshold !== 'boolean') {
     throw new Error("INVALID_CPP_POI_ROUTE");
   }
   let elapsed = 0;

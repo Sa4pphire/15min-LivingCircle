@@ -11,6 +11,112 @@ Vision China Terminal（中国观察终端）是面向社区步行可达性分�
 | 在线计算 | 使用在线地图信息查看步行范围、周边设施和规划路线；需联网及地图API配置，查询速度受网络和服务配额影响 | [在线计算算法](backend/README.md) |
 | 合成模拟 | 基于可编辑的本地区域路网和模拟算法进行计算，范围计算不依赖在线请求API | [合成模拟算法](cpp-engine/README.md) |
 
+## 可选生活圈对话助手
+
+完成当前起点的生活圈计算后，可向助手询问“最近的医院怎么走”“这两家哪家步行更快”等问题，并查看返回的设施与地图路线。首版使用本次分析中的医疗候选，包含医院和社区医疗中心；候选或路线查询不完整时会说明比较范围，不把结果表述为全区域绝对最近。在线计算与合成模拟分别复用各自的路线能力。
+
+模型 API 由使用者自行提供，默认关闭。按下面的教程填写配置即可接入；不用修改 Python 或前端代码。助手使用现有 `httpx` 依赖，无需另外安装模型 SDK。
+
+### 1. 确认模型 API 协议
+
+当前助手使用 **Responses API**，后端会向 `AGENT_API_BASE_URL` 后追加 `/responses` 发送请求。服务和所选模型需要支持函数工具调用（`tools`、`tool_choice`）、`store: false` 以及请求中的 `reasoning.encrypted_content`。只有 `/chat/completions` 文本接口的服务不能直接用于当前助手。
+
+模型 API 密钥和百度地图 AK 是两份独立配置：`AGENT_API_KEY` 用于理解问题和选择工具，`BAIDU_SERVER_AK` 用于在线地图与步行路线。填写模型密钥不会替代地图配置；合成模拟继续使用本地路网计算。
+
+### 2. 找到根目录 `.env`
+
+“根目录”指包含本文件、`start-demo.bat` 和 `docker-compose.yml` 的项目目录。实际填写的是这里的 **`.env` 文件**，不是 `frontend/.env.local`。本地配置和密钥不要提交到 GitHub。
+
+如果已经配置过项目，直接编辑已有 `.env`，保留其中的百度地图 AK、区域和引擎路径。如果还没有 `.env`，按运行方式从完整样例创建。以下命令只在文件不存在时复制，二选一执行：
+
+Windows 本地运行：
+
+```powershell
+if (-not (Test-Path -LiteralPath .env)) {
+    Copy-Item .env.windows.example .env
+}
+```
+
+Docker 本地运行：
+
+```powershell
+if (-not (Test-Path -LiteralPath .env)) {
+    Copy-Item .env.example .env
+}
+```
+
+在 Windows 中可执行 `notepad .env` 打开文件。找到 `AGENT_` 开头的配置并原位修改；旧配置文件没有这些条目时，复制下一节的配置块追加到文件末尾。每个配置项只保留一份。**不要用 Agent 配置块覆盖整个 `.env`**，否则会丢失原有地图和引擎配置。
+
+### 3. 填写服务地址、模型名称和密钥
+
+下面的地址和文字只是占位示例，需要替换成你提供的服务信息；时间与次数可先保持默认值：
+
+```dotenv
+AGENT_ENABLED=true
+AGENT_API_BASE_URL=https://your-api.example/v1
+AGENT_API_KEY=替换为你的模型API密钥
+AGENT_MODEL=替换为服务商支持的模型名称
+
+AGENT_TIMEOUT_SECONDS=90
+AGENT_MODEL_TIMEOUT_SECONDS=25
+AGENT_MAX_CONCURRENCY=2
+AGENT_MAX_MODEL_CALLS=4
+```
+
+| 配置项 | 填写方式 |
+| --- | --- |
+| `AGENT_ENABLED` | 填 `true` 启用；填 `false` 关闭，不影响原有地图功能 |
+| `AGENT_API_BASE_URL` | 填服务商提供的 API 根地址，通常以 `/v1` 结尾，**不包含 `/responses`**；程序会自动追加这一段路径 |
+| `AGENT_API_KEY` | 填模型服务的真实密钥，仅保存在服务端 `.env`；不要添加 `VITE_` 前缀或放入前端配置 |
+| `AGENT_MODEL` | 填该服务实际支持的模型标识，不能随意填写显示名称；模型需支持上述工具调用协议 |
+| `AGENT_TIMEOUT_SECONDS` | 默认 `90`，一轮对话的总时间预算，包含模型和路线工具执行 |
+| `AGENT_MODEL_TIMEOUT_SECONDS` | 默认 `25`，每一次模型请求的时间预算 |
+| `AGENT_MAX_CONCURRENCY` | 默认 `2`，单个后端进程同时处理的对话请求上限 |
+| `AGENT_MAX_MODEL_CALLS` | 默认 `4`，一轮对话允许请求模型的次数上限 |
+
+例如，根地址填写 `https://your-api.example/v1` 时，实际请求地址是 `https://your-api.example/v1/responses`。样例文件本身不会被自动加载；运行配置须写入根 `.env` 或服务端进程环境。
+
+### 4. 重启服务并使用助手
+
+Windows 本地运行，在项目根目录执行：
+
+```powershell
+.\start-demo.bat restart
+```
+
+也可重新双击 `start-demo.bat`。首次使用仍需先完成下方“部署与运行”中的环境安装。
+
+Docker 本地运行，执行以下命令重新构建并创建容器，使新配置和当前源码生效：
+
+```powershell
+docker compose up --build -d
+```
+
+Compose 已通过 `env_file` 读取根 `.env`，无需将模型密钥传给前端构建。服务重新启动后刷新页面，选择区域、计算模式和起点，完成一次生活圈分析，再打开“生活圈助手”，输入“附近有哪些医疗设施”或“最近的医院怎么走”。未完成分析时，助手会提示先计算范围。
+
+### 5. 配置自查与常见问题
+
+可按需打开后端的[助手状态接口](http://127.0.0.1:8000/api/v1/agent/status)。默认端口为 `8000`；Docker 修改过 `LOCAL_PORT` 时使用对应端口。配置启用且字段格式完整时，返回示例为：
+
+```json
+{"enabled": true, "configured": true}
+```
+
+这个接口只读取配置，**不会请求模型**。两个值为 `true` 不代表密钥有效、服务连通或模型支持工具调用；实际兼容性需要另行通过对话联调确认。
+
+| 现象 | 检查位置 |
+| --- | --- |
+| `enabled` 为 `false` | 根 `.env` 中的 `AGENT_ENABLED` 是否为 `true`，以及是否已重启后端 |
+| `configured` 为 `false` | 地址、密钥和模型名是否填写；地址是否错误地带有 `/responses`；数字配置是否为有效值 |
+| 修改后仍显示旧配置 | 是否改了根 `.env`；终端或系统已设置的同名环境变量优先于文件；Docker 需重新创建容器，不能只刷新网页 |
+| 模型鉴权失败 | 密钥是否属于当前服务、是否具备所选模型权限；不要填写百度 AK |
+| 提示未提供 Responses 接口或协议错误 | 服务地址是否正确，以及服务是否支持本节列出的 Responses 参数与工具调用协议 |
+| 提示分析或路线信息已过期 | 重新计算当前起点的生活圈，再开始新对话 |
+
+更多接口、资源边界及待执行的验收项目见 [生活圈 Agent 说明](docs/life-circle-agent.md)。
+
+OSM 自动建图及建模 Agent 当前仍是研究方案，见 [自动道路生成设计](docs/offline-road-generation-editor-design.md)，本次对话功能不开放路网写入。
+
 
 ## 部署与运行
 
@@ -138,6 +244,8 @@ AK 留空时，可用本地区域地图和“合成模拟”演示。区域包�
 - [在线计算算法与接口](backend/README.md)
 - [合成模拟算法与 C++ 构建](cpp-engine/README.md)
 - [Python ↔ C++ 数据契约](contracts/engine-v2.README.md)
+- [生活圈 Agent 配置与接口](docs/life-circle-agent.md)
+- [OSM 自动道路生成与建模 Agent 研究](docs/offline-road-generation-editor-design.md)
 - [API 文档](http://localhost:8000/docs) · [健康检查](http://localhost:8000/api/v1/health)
 
 项目代码采用 [MIT License](LICENSE)。OSM 衍生区域资源须保留 OpenStreetMap contributors 署名及 ODbL 来源说明；百度地图服务和数据另遵循其使用条件。
