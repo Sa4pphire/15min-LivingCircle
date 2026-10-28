@@ -355,7 +355,7 @@ void parse_local_experiment(const JsonValue& root, EngineInput& result) {
     for (const auto& node_id : array(field(*local, "boundaryNodeIds"))) {
       experiment.boundary_node_ids.push_back(string(node_id));
     }
-    result.local_experiment = std::move(experiment);
+    result.request.local_experiment = std::move(experiment);
   }
 }
 
@@ -367,10 +367,10 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
   if (nodes.size() > 30'000 || edges.size() > 50'000) {
     throw std::invalid_argument("walking graph exceeds engine limits");
   }
-  result.nodes.reserve(nodes.size());
-  result.edges.reserve(edges.size());
+  result.graph.nodes.reserve(nodes.size());
+  result.graph.edges.reserve(edges.size());
   for (const auto& value : nodes) {
-    result.nodes.push_back({string(field(value, "id")), point(value)});
+    result.graph.nodes.push_back({string(field(value, "id")), point(value)});
   }
   for (const auto& value : edges) {
     WalkEdge edge;
@@ -411,7 +411,7 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
     for (const auto& coordinate : array(field(value, "pathMeters"))) {
       edge.path.push_back(path_point(coordinate));
     }
-    result.edges.push_back(std::move(edge));
+    result.graph.edges.push_back(std::move(edge));
   }
   if (const auto* facilities = optional_field(root, "facilities")) {
     if (array(*facilities).size() > 10'000) {
@@ -444,7 +444,7 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
         facility.access_edge_id = string(field(value, "accessEdgeId"));
         facility.access_point = path_point(field(value, "accessPointMeters"));
       }
-      result.facilities.push_back(std::move(facility));
+      result.request.facilities.push_back(std::move(facility));
     }
   }
   if (const auto* categories = optional_field(root, "serviceCategories")) {
@@ -458,7 +458,7 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
       if (const auto* inventory = optional_field(value, "localInventoryStatus")) {
         category.local_inventory_status = string(*inventory);
       }
-      result.service_categories.push_back(std::move(category));
+      result.request.service_categories.push_back(std::move(category));
     }
   }
   validate_graph(result);
@@ -470,49 +470,49 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
 EngineInput parse_engine_input(std::string_view input) {
   const JsonValue root = parse_root(input);
   EngineInput result;
-  result.origin = point(field(root, "originMeters"));
+  result.request.origin = point(field(root, "originMeters"));
   if (const auto* value = optional_field(root, "originEdgeId")) {
     if (value->type != JsonValue::Type::null_value) {
-      result.origin_edge_id = string(*value);
+      result.request.origin_edge_id = string(*value);
     }
   }
   parse_local_experiment(root, result);
   if (const auto* target = optional_field(root, "routeFacilityId")) {
-    result.route_facility_id = string(*target);
+    result.request.route_facility_id = string(*target);
   }
   if (const auto* route_only = optional_field(root, "routeOnly")) {
-    result.route_only = boolean(*route_only);
+    result.request.route_only = boolean(*route_only);
   }
   if (const auto* facilities_only = optional_field(root, "facilitiesOnly")) {
-    result.facilities_only = boolean(*facilities_only);
+    result.request.facilities_only = boolean(*facilities_only);
   }
   if (const auto* threshold = optional_field(root, "thresholdSeconds")) {
-    result.threshold_seconds = number(*threshold);
-  } else if (result.local_experiment) {
-    result.threshold_seconds = 180.0;
+    result.request.threshold_seconds = number(*threshold);
+  } else if (result.request.local_experiment) {
+    result.request.threshold_seconds = 180.0;
   } else {
-    result.threshold_seconds = number(field(root, "thresholdSeconds"));
+    result.request.threshold_seconds = number(field(root, "thresholdSeconds"));
   }
-  result.walking_speed_meters_per_second =
+  result.request.walking_speed_meters_per_second =
       number(field(root, "walkingSpeedMetersPerSecond"));
-  result.crossing_wait_seconds = number(field(root, "crossingWaitSeconds"));
+  result.request.crossing_wait_seconds = number(field(root, "crossingWaitSeconds"));
   if (const auto* value = optional_field(root, "maxOriginSnapMeters")) {
-    result.max_origin_snap_meters = number(*value);
+    result.request.max_origin_snap_meters = number(*value);
   }
   if (const auto* value = optional_field(root, "allowOffNetworkOrigin")) {
-    result.allow_off_network_origin = boolean(*value);
+    result.request.allow_off_network_origin = boolean(*value);
   }
   if (const auto* value = optional_field(root, "displayBufferMeters")) {
-    result.display_buffer_meters = number(*value);
+    result.request.display_buffer_meters = number(*value);
   }
   if (const auto* value = optional_field(root, "displayAreaRadiusMeters")) {
-    result.display_area_radius_meters = number(*value);
+    result.request.display_area_radius_meters = number(*value);
   }
   if (const auto* value = optional_field(root, "displayMinHoleAreaSquareMeters")) {
-    result.display_min_hole_area_square_meters = number(*value);
+    result.request.display_min_hole_area_square_meters = number(*value);
   }
   if (const auto* value = optional_field(root, "displayGridStepMeters")) {
-    result.display_grid_step_meters = number(*value);
+    result.request.display_grid_step_meters = number(*value);
   }
   return parse_graph(root, std::move(result));
 }
@@ -525,14 +525,14 @@ EngineInput parse_synthetic_network(std::string_view input, Point origin,
     throw std::invalid_argument("file demo requires synthetic: true");
   }
   EngineInput result;
-  result.origin = origin;
-  result.origin_edge_id = std::move(origin_edge_id);
-  result.display_min_hole_area_square_meters = 2500.0;
-  result.allow_off_network_origin = !local_experiment;
-  result.max_origin_snap_meters = local_experiment ? 5.0 : 1170.0;
+  result.request.origin = origin;
+  result.request.origin_edge_id = std::move(origin_edge_id);
+  result.request.display_min_hole_area_square_meters = 2500.0;
+  result.request.allow_off_network_origin = !local_experiment;
+  result.request.max_origin_snap_meters = local_experiment ? 5.0 : 1170.0;
   if (local_experiment) {
-    result.threshold_seconds = 180.0;
-    result.local_experiment = LocalExperiment{};
+    result.request.threshold_seconds = 180.0;
+    result.request.local_experiment = LocalExperiment{};
     // Missing boundary declarations stay incomplete; never infer them from degree.
     parse_local_experiment(root, result);
   } else if (optional_field(root, "localExperiment")) {

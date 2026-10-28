@@ -5,6 +5,8 @@
 #include <limits>
 #include <stdexcept>
 
+#include "isochrone/execution_control.hpp"
+
 namespace isochrone {
 namespace {
 
@@ -16,6 +18,14 @@ bool near(const Point& first, const Point& second, const double tolerance) {
 
 std::vector<Ring> build_rings(const std::vector<Segment>& segments,
                               const double endpoint_tolerance_meters) {
+  const ExecutionControl control;
+  return build_rings(segments, endpoint_tolerance_meters, control);
+}
+
+std::vector<Ring> build_rings(const std::vector<Segment>& segments,
+                              const double endpoint_tolerance_meters,
+                              const ExecutionControl& control) {
+  control.Checkpoint();
   if (!std::isfinite(endpoint_tolerance_meters) ||
       endpoint_tolerance_meters < 0.0) {
     throw std::invalid_argument(
@@ -24,9 +34,11 @@ std::vector<Ring> build_rings(const std::vector<Segment>& segments,
 
   std::vector<Ring> rings;
   std::vector<bool> used(segments.size(), false);
+  control.Checkpoint();
 
   for (std::size_t start_index = 0; start_index < segments.size();
        ++start_index) {
+    control.Poll();
     if (used[start_index]) {
       continue;
     }
@@ -35,11 +47,13 @@ std::vector<Ring> build_rings(const std::vector<Segment>& segments,
     used[start_index] = true;
 
     while (true) {
+      control.Poll();
       std::size_t best_index = segments.size();
       bool best_matches_first = false;
       double best_distance = std::numeric_limits<double>::infinity();
 
       for (std::size_t index = 0; index < segments.size(); ++index) {
+        control.Poll();
         if (used[index]) {
           continue;
         }
@@ -87,15 +101,23 @@ std::vector<Ring> build_rings(const std::vector<Segment>& segments,
       rings.push_back(std::move(ring));
     }
   }
+  control.Checkpoint();
   return rings;
 }
 
 double signed_area(const Ring& ring) {
+  const ExecutionControl control;
+  return signed_area(ring, control);
+}
+
+double signed_area(const Ring& ring, const ExecutionControl& control) {
   if (ring.size() < 4) {
+    control.Checkpoint();
     return 0.0;
   }
   double twice_area = 0.0;
   for (std::size_t index = 0; index + 1 < ring.size(); ++index) {
+    control.Poll();
     twice_area += ring[index].x * ring[index + 1].y -
                   ring[index + 1].x * ring[index].y;
   }
@@ -103,12 +125,20 @@ double signed_area(const Ring& ring) {
 }
 
 bool contains_point(const Ring& ring, const Point& point) {
+  const ExecutionControl control;
+  return contains_point(ring, point, control);
+}
+
+bool contains_point(const Ring& ring, const Point& point,
+                    const ExecutionControl& control) {
   if (ring.size() < 4) {
+    control.Checkpoint();
     return false;
   }
   bool inside = false;
   for (std::size_t current = 0, previous = ring.size() - 1;
        current < ring.size(); previous = current++) {
+    control.Poll();
     const Point& a = ring[current];
     const Point& b = ring[previous];
     const bool crosses = ((a.y > point.y) != (b.y > point.y)) &&

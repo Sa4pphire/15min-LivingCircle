@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package livingcircle.engine.v1;
+
+service EngineService {
+  rpc Compute(ComputeRequest) returns (JsonReply);
+  rpc Health(HealthRequest) returns (JsonReply);
+}
+
+message ComputeRequest {
+  // The existing top-level engine v2 JSON is preserved inside this envelope.
+  bytes request_json = 1;
+}
+
+message HealthRequest {}
+
+message JsonReply {
+  // RPC OK is independent of JSON business success; inspect the JSON result.
+  bytes response_json = 1;
+}

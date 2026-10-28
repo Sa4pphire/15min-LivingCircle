@@ -2,7 +2,6 @@ import asyncio
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-import json
 import math
 import os
 from time import perf_counter
@@ -11,18 +10,10 @@ from typing import Any, Callable, Iterator
 
 from .schemas import EngineHealth
 from .settings import settings
-from .walking_types import normalize_graph
-
-
-class EngineError(RuntimeError):
-    def __init__(self, message: str, *, code: str = "ENGINE_ERROR") -> None:
-        super().__init__(message)
-        self.code = code
-
-
-class EngineBusy(EngineError):
-    def __init__(self, detail: str = "计算资源繁忙，请稍后重试") -> None:
-        super().__init__(f"ENGINE_BUSY: {detail}", code="ENGINE_BUSY")
+from .engine_cleanup import finish_cleanup as _finish_cleanup
+from .engine_errors import EngineBusy, EngineError
+from .engine_protocol import decode_engine_result, encode_engine_input
+from .engine_transport import EngineTransport
 
 
 _engine_wait_timeout: ContextVar[float] = ContextVar("engine_wait_timeout", default=0.0)
@@ -31,7 +22,7 @@ _engine_admitted_analysis: ContextVar[bool] = ContextVar("engine_admitted_analys
 
 @contextmanager
 def engine_wait_scope(wait_timeout: float = 5.0) -> Iterator[None]:
-    """Only admitted analysis jobs may wait for a business process permit."""
+    """Only admitted analysis jobs may wait for a business call permit."""
     if not math.isfinite(wait_timeout) or wait_timeout < 0:
         raise ValueError("wait_timeout must be finite and non-negative")
     token = _engine_wait_timeout.set(wait_timeout)
@@ -49,21 +40,6 @@ def _engine_path() -> Path:
     if os.name == "nt" and not path.is_file() and windows_path.is_file():
         return windows_path
     return path
-
-
-async def _finish_cleanup(cleanup: asyncio.Task[None]) -> None:
-    """Finish reaping even if shutdown cancels the caller more than once."""
-    cancelled = False
-    while True:
-        try:
-            await asyncio.shield(cleanup)
-            break
-        except asyncio.CancelledError:
-            if cleanup.cancelled():
-                raise
-            cancelled = True
-    if cancelled:
-        raise asyncio.CancelledError
 
 
 async def _terminate_and_reap(
@@ -121,16 +97,7 @@ async def _communicate(
 
 async def _run_engine(payload: dict[str, Any]) -> dict[str, Any]:
     started = perf_counter()
-    # Keep annotations in Python; compact only the v2 wire representation.
-    # Meter coordinates retain their original precision.
-    payload = normalize_graph(payload)
-    edge_fields = {"id", "from", "to", "kind", "accessMode", "pathMeters", "streetBlockId",
-                   "side", "sharedWayType", "widthMeters", "waitSeconds"}
-    wire = {**payload, "edges": [
-        {key: value for key, value in edge.items() if key in edge_fields}
-        for edge in payload.get("edges", [])]}
-    encoded = json.dumps(wire, ensure_ascii=False, allow_nan=False,
-                         separators=(",", ":")).encode("utf-8")
+    encoded = encode_engine_input(payload)
     encoded_at = perf_counter()
     engine_path = _engine_path()
     if not engine_path.is_file():
@@ -154,36 +121,8 @@ async def _run_engine(payload: dict[str, Any]) -> dict[str, Any]:
         raise EngineError(f"C++ 引擎通信失败：{exc}", code="ENGINE_COMMUNICATION_ERROR") from exc
     received_at = perf_counter()
 
-    try:
-        response = json.loads(stdout.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        detail = stderr.decode("utf-8", errors="replace").strip()[:300]
-        if process.returncode != 0:
-            raise EngineError(f"C++ 引擎异常退出（{process.returncode}）：{detail}",
-                              code="ENGINE_EXIT_ERROR") from exc
-        raise EngineError(f"C++ 引擎返回了无效 JSON：{detail}",
-                          code="ENGINE_PROTOCOL_ERROR") from exc
-    if not isinstance(response, dict) or response.get("schemaVersion") != 2:
-        raise EngineError("C++ 引擎响应版本不匹配", code="ENGINE_PROTOCOL_ERROR")
-    # The engine deliberately exits nonzero for valid business rejections.
-    # Preserve their structured code before classifying an unexplained exit.
-    if response.get("success") is False:
-        error = response.get("error")
-        if (not isinstance(error, dict) or not isinstance(error.get("code"), str)
-                or not error["code"] or not isinstance(error.get("message"), str)):
-            raise EngineError("C++ 引擎错误对象无效", code="ENGINE_PROTOCOL_ERROR")
-        raise EngineError(f"{error['code']}: {error['message']}", code=error["code"])
-    if response.get("success") is not True:
-        raise EngineError("C++ 引擎缺少有效的成功标记", code="ENGINE_PROTOCOL_ERROR")
-    if process.returncode != 0:
-        detail = stderr.decode("utf-8", errors="replace").strip()[:300]
-        raise EngineError(f"C++ 引擎异常退出（{process.returncode}）：{detail}",
-                          code="ENGINE_EXIT_ERROR")
-    if not isinstance(response.get("result"), dict):
-        raise EngineError("C++ 引擎缺少结果对象", code="ENGINE_PROTOCOL_ERROR")
-    diagnostics = response["result"].setdefault("diagnostics", {})
-    if not isinstance(diagnostics, dict):
-        raise EngineError("C++ 引擎诊断对象无效", code="ENGINE_PROTOCOL_ERROR")
+    result = decode_engine_result(stdout, returncode=process.returncode, stderr=stderr)
+    diagnostics = result["diagnostics"]
     finished_at = perf_counter()
     diagnostics["invocation"] = {
         "encodeMs": round((encoded_at - started) * 1000, 3),
@@ -193,7 +132,7 @@ async def _run_engine(payload: dict[str, Any]) -> dict[str, Any]:
         "totalMs": round((finished_at - started) * 1000, 3),
         "inputBytes": len(encoded), "outputBytes": len(stdout),
     }
-    return response["result"]
+    return result
 
 
 async def _check_engine() -> EngineHealth:
@@ -219,6 +158,20 @@ async def _check_engine() -> EngineHealth:
     return EngineHealth(status="ok", detail=stdout.decode().strip())
 
 
+class SubprocessTransport:
+    """Keep the original process entry points and their cleanup behavior."""
+
+    async def run_engine(self, payload: dict[str, Any]) -> dict[str, Any]:
+        return await _run_engine(payload)
+
+    async def check_engine(self) -> EngineHealth:
+        return await _check_engine()
+
+    async def aclose(self) -> None:
+        # Each invocation already owns and reaps its child.
+        pass
+
+
 @dataclass
 class _HealthProbe:
     task: asyncio.Task[EngineHealth]
@@ -227,13 +180,15 @@ class _HealthProbe:
 
 
 class EngineRuntime:
-    """One event loop owns two business permits and one shared health probe."""
+    """One event loop owns a transport, its permits and a shared health probe."""
 
     def __init__(self, capacity: int = 2, health_cache_ttl: float = 5.0,
-                 clock: Callable[[], float] = perf_counter) -> None:
+                 clock: Callable[[], float] = perf_counter, *,
+                 transport: EngineTransport | None = None) -> None:
         if (not isinstance(capacity, int) or capacity < 1
                 or not math.isfinite(health_cache_ttl) or health_cache_ttl < 0):
             raise ValueError("capacity must be a positive integer and health_cache_ttl finite and non-negative")
+        self._transport = transport if transport is not None else SubprocessTransport()
         self._permits = asyncio.Semaphore(capacity)
         self._health_cache_ttl = health_cache_ttl
         self._clock = clock
@@ -265,6 +220,7 @@ class EngineRuntime:
     async def wait_idle(self) -> None:
         # This observes current calls, not future stages of admitted analyses.
         # The shutdown coordinator also waits for the scheduler's whole jobs.
+        # In RPC mode idle describes local calls, not remote CPU completion.
         await self._idle.wait()
 
     async def run_engine(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -293,22 +249,22 @@ class EngineRuntime:
             permit_wait_ms = round((perf_counter() - waiting_since) * 1000, 3)
             if self._closing:
                 raise EngineBusy("服务正在关闭")
-            result = await _run_engine(payload)
+            result = await self._transport.run_engine(payload)
             # Keep totalMs scoped to the original invocation; permit waiting
             # is a separate Python diagnostic and never enters the C++ wire.
             result.setdefault("diagnostics", {}).setdefault("invocation", {})[
                 "permitWaitMs"] = permit_wait_ms
             return result
         finally:
-            # _run_engine only unwinds after startup/communicate cleanup has
-            # terminated and reaped its child, including repeated cancellation.
+            # Subprocess work has reaped its child; RPC work has finished its
+            # local call cleanup. Only the C++ service owns its remote CPU slot.
             if acquired:
                 self._permits.release()
             self._calls.discard(caller)
             self._sync_idle()
 
     async def _probe_health(self) -> EngineHealth:
-        result = await _check_engine()
+        result = await self._transport.check_engine()
         if not self._closing:
             self._health_cache = (self._clock(), result.model_copy())
         return result
@@ -332,7 +288,7 @@ class EngineRuntime:
             probe = self._health_probe
             if probe is not None and probe.retirement is not None:
                 # The last prior waiter cancelled its probe. Do not start a
-                # replacement while that old child's reaping is still pending.
+                # replacement while that probe's local cleanup is still pending.
                 await asyncio.shield(probe.retirement)
                 continue
             if probe is not None and probe.task.done():
@@ -370,10 +326,13 @@ class EngineRuntime:
             task.cancel()
         if self._health_probe is not None:
             pending.append(self._begin_probe_retirement(self._health_probe))
-        if pending:
-            await asyncio.gather(*pending, return_exceptions=True)
-        self._health_cache = None
-        self._closed = True
+        try:
+            if pending:
+                await asyncio.gather(*pending, return_exceptions=True)
+        finally:
+            self._health_cache = None
+            await self._transport.aclose()
+            self._closed = True
 
     async def close(self) -> None:
         if self._close_task is None:
@@ -389,7 +348,14 @@ def get_engine_runtime(*, restart: bool = False) -> EngineRuntime:
     loop = asyncio.get_running_loop()
     runtime: EngineRuntime | None = getattr(loop, "_livingcircle_engine_runtime", None)
     if runtime is None or (restart and runtime.closed):
-        runtime = EngineRuntime()
+        if settings.cpp_engine_transport == "grpc":
+            # Optional dependencies and generated modules are never imported
+            # by the default transport. Construct the channel on this loop.
+            from .engine_rpc import GrpcTransport
+            runtime = EngineRuntime(capacity=settings.cpp_engine_rpc_capacity,
+                                    transport=GrpcTransport(settings.cpp_engine_rpc_port))
+        else:
+            runtime = EngineRuntime()
         setattr(loop, "_livingcircle_engine_runtime", runtime)
     return runtime
 

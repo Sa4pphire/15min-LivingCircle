@@ -65,22 +65,25 @@ async def lifespan(application: FastAPI):
     scheduler = AnalysisScheduler(workers=2, pending_limit=8,
                                   forget_context=_poi_routes.forget)
     application.state.analysis_scheduler = scheduler
-    await scheduler.start()
-    agent_runtime = AgentRuntime(AgentConfig.from_env(), _resolve_agent_context, _route_agent_poi)
-    application.state.agent_runtime = agent_runtime
+    agent_runtime = None
     try:
+        await scheduler.start()
+        agent_runtime = AgentRuntime(AgentConfig.from_env(), _resolve_agent_context, _route_agent_poi)
+        application.state.agent_runtime = agent_runtime
         yield
     finally:
         # Stop all admissions together, before the first await. Agent cleanup
         # must not postpone the existing shared five-second drain deadline.
         scheduler.stop_accepting()
         engine_runtime.begin_drain()
-        agent_runtime.closed = True
+        if agent_runtime is not None:
+            agent_runtime.closed = True
 
         async def cleanup():
-            results = await asyncio.gather(agent_runtime.close(),
-                                           shutdown_services(scheduler, engine_runtime),
-                                           return_exceptions=True)
+            operations = [shutdown_services(scheduler, engine_runtime)]
+            if agent_runtime is not None:
+                operations.append(agent_runtime.close())
+            results = await asyncio.gather(*operations, return_exceptions=True)
             for result in results:
                 if isinstance(result, BaseException):
                     raise result

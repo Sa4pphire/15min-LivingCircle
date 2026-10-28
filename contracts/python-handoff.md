@@ -6,7 +6,21 @@
 
 - 输入：[engine-input.example.json](engine-input.example.json) 是完整混合路网样例；[engine-input.minimal.example.json](engine-input.minimal.example.json) 与 [engine-output.example.json](engine-output.example.json) 是可复现的最小往返样例。
 - Python 已有 `backend/app/network.py`：读取标注文件、转换 BD-09 ↔ 局部米制、构造引擎输入并把结果转换为最终地图数据。
-- Python 已有 `backend/app/engine.py`：以标准输入调用 C++ 可执行文件，25 秒超时，解析 v2 输出。调用顺序为 `load_engine_request(center) → run_engine(payload) → build_analysis_result(result, metadata)`。
+- Python 已有 `backend/app/engine.py`：默认以标准输入调用 C++ 可执行文件，单次通信等待25秒；可用 `CPP_ENGINE_TRANSPORT=grpc` 选择常驻 RPC 服务。调用顺序仍为 `load_engine_request(center) → run_engine(payload) → build_analysis_result(result, metadata)`，HTTP 和 v2 JSON 不更换。
+
+RPC 模式复用一个异步通道，客户端计算许可可配置、默认2，Health 独立；默认子进程仍为2个
+业务许可。业务错误继续检查 JSON success；RPC 繁忙必须有明确尾部元数据，
+不能把所有 RESOURCE_EXHAUSTED 当成繁忙。客户端取消不确认服务端计算结束，
+不自动重跑或切换传输。配置、可选依赖、显式代码生成与同机 Linux／WSL2
+使用步骤见[引擎说明第14节](../cpp-engine/README.md#14-第四阶段python-可选接入-c-rpc)。
+本轮只有源码／差异审阅，未安装、生成、编译或运行验证。
+
+第五阶段配置 `CPP_ENGINE_RPC_CAPACITY=N` 与 C++ `--compute-capacity N`，默认2，
+有效范围1–2147483647，启动时固定并由部署方保持一致。C++ 在业务解析前非阻塞
+争取容量，满额沿用 `RESOURCE_EXHAUSTED` 与 `ENGINE_BUSY` 尾部元数据，无应用
+等待队列。所有客户端共享服务端上限，Python 许可只管本地调用；取消后远端
+可能尚在清理，仍可拒绝下一请求。两侧设为1保留单槽配置；更大数值不自动增加
+Python 分析消费者或改变任务历史／排队语义。数据、Proto、HTTP及错误封套不变。
 
 ## 在线 POI 与共用缓存
 
@@ -29,7 +43,7 @@
 
 本轮直接复用现有建模文件，先检查“读文件 → 构造起点参数 → C++ → Python 转换”的结果是否一致，不需要等待或补充真实数据。15 分钟合成演示和 3 分钟局部实验共用 `SYNTHETIC_NETWORK_PATH`；只有明确要换独立局部图时才设置 `LOCAL_EXPERIMENT_NETWORK_PATH`。以后数据经核实后才能移除合成标记。修改契约时同步样例及相关测试。
 
-测试文件仅保留本地，不随仓库发布；若本机已有测试，可运行 `pytest backend/tests` 做 Python↔C++ 往返验证（需先构建引擎）。CI 只检查 Debug/Release C++ 编译及健康输出、Python 语法、前端与镜像构建，不代替算法验收。真实路网到位后，最后确认引擎计算加进程启动不超过 Python 现有的 25 秒超时。
+测试文件仅保留本地，不随仓库发布；只有用户明确要求运行验证后，才使用已有本地测试做 Python↔C++ 往返验证并执行必要构建。CI 的构建及健康检查不代替算法验收。子进程单次通信等待25秒；RPC 从发起调用起设置25秒 deadline，均不表示完整分析任务的总时限。
 
 ## 局部路网实验的独立对接
 

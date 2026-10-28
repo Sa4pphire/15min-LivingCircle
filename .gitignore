@@ -11,6 +11,10 @@ __pycache__/
 /backend/tests/
 /cpp-engine/tests/
 /frontend/tests/
+# Explicitly generated Python RPC bindings stay local/build artifacts.
+/backend/app/engine_rpc_generated/*_pb2.py
+/backend/app/engine_rpc_generated/*_pb2_grpc.py
+/backend/app/engine_rpc_generated/*_pb2.pyi
 .ruff_cache/
 .coverage
 htmlcov/

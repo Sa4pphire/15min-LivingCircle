@@ -1,50 +1,71 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(
-  isochrone_engine
-  VERSION 0.1.0
-  LANGUAGES CXX
-)
+project(isochrone_engine VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 if(MSVC)
+  # Preserve encoding/exception settings for optional local test targets too.
   add_compile_options(/utf-8 /EHsc)
 endif()
 
-add_library(
-  isochrone_core
+# Apply language and warning policy per target, including optional entry points.
+function(isochrone_target_defaults target)
+  target_compile_features(${target} PUBLIC cxx_std_20)
+  set_target_properties(${target} PROPERTIES CXX_EXTENSIONS OFF)
+  if(MSVC)
+    target_compile_options(${target} PRIVATE /W4 /permissive-)
+  else()
+    target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+  endif()
+endfunction()
+
+add_library(isochrone_geometry
   src/grid.cpp
   src/idw.cpp
-  src/engine.cpp
-  src/json_io.cpp
-  src/json_parser.cpp
   src/marching_squares.cpp
   src/road_enclosure.cpp
   src/ring_builder.cpp
   src/simplify.cpp
 )
+target_include_directories(isochrone_geometry PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include)
+isochrone_target_defaults(isochrone_geometry)
 
-target_include_directories(
-  isochrone_core
-  PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+# The computation library has no JSON, filesystem, gRPC or Protobuf dependency.
+add_library(isochrone_core
+  src/engine.cpp
+  src/road_graph.cpp
+  src/path_geometry.cpp
+  src/origin_snap.cpp
+  src/input_validation.cpp
+  src/graph_builder.cpp
+  src/shortest_path.cpp
+  src/facility_analysis.cpp
+  src/reachability.cpp
+  src/display_geometry.cpp
+  src/coverage_analysis.cpp
 )
+target_link_libraries(isochrone_core PUBLIC isochrone_geometry)
+isochrone_target_defaults(isochrone_core)
+
+# Link this adapter when using json_io.hpp. It carries the computation library
+# transitively; pure C++ callers can link isochrone_core on its own.
+add_library(isochrone_json src/json_io.cpp src/json_parser.cpp)
+target_link_libraries(isochrone_json PUBLIC isochrone_core)
+isochrone_target_defaults(isochrone_json)
 
 add_executable(isochrone_engine src/main.cpp)
-target_link_libraries(isochrone_engine PRIVATE isochrone_core)
+target_link_libraries(isochrone_engine PRIVATE isochrone_json)
+isochrone_target_defaults(isochrone_engine)
 target_compile_definitions(isochrone_engine PRIVATE
   ISOCHRONE_SYNTHETIC_NETWORK_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/networks/synthetic-preview.json"
 )
 
-if(MSVC)
-  target_compile_options(isochrone_core PRIVATE /W4 /permissive-)
-  target_compile_options(isochrone_engine PRIVATE /W4 /permissive-)
-else()
-  target_compile_options(isochrone_core PRIVATE -Wall -Wextra -Wpedantic)
-  target_compile_options(isochrone_engine PRIVATE -Wall -Wextra -Wpedantic)
+option(BUILD_RPC_SERVER "Build the optional Linux gRPC server and client" OFF)
+if(BUILD_RPC_SERVER)
+  include(cmake/EngineRpc.cmake)
 endif()
 
 option(BUILD_TESTING "Build local engine tests when present" OFF)

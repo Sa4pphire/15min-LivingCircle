@@ -48,6 +48,9 @@ class Settings:
     cpp_engine_path: Path = Path(
         os.getenv("CPP_ENGINE_PATH", "cpp-engine/build/isochrone_engine")
     )
+    cpp_engine_transport: str = os.getenv("CPP_ENGINE_TRANSPORT", "subprocess")
+    cpp_engine_rpc_port: int = int(os.getenv("CPP_ENGINE_RPC_PORT", "50051"))
+    cpp_engine_rpc_capacity: int = int(os.getenv("CPP_ENGINE_RPC_CAPACITY", "2"))
     analysis_cache_dir: Path = Path(
         os.getenv("ANALYSIS_CACHE_DIR", str(REPO_ROOT / "data/cache"))
     )
@@ -89,6 +92,15 @@ class Settings:
     poi_snap_meters: float = float(os.getenv("POI_SNAP_METERS", "3"))
     poi_map_asset_path: Path = _repo_path(os.getenv(
         "POI_MAP_ASSET_PATH", str(REGION_ROOT / "alignment.bd09.json")))
+
+    def __post_init__(self) -> None:
+        if self.cpp_engine_transport not in ("subprocess", "grpc"):
+            raise ValueError("CPP_ENGINE_TRANSPORT must be subprocess or grpc")
+        if type(self.cpp_engine_rpc_port) is not int or not 1 <= self.cpp_engine_rpc_port <= 65535:
+            raise ValueError("CPP_ENGINE_RPC_PORT must be an integer from 1 to 65535")
+        if (type(self.cpp_engine_rpc_capacity) is not int or
+                not 1 <= self.cpp_engine_rpc_capacity <= 2_147_483_647):
+            raise ValueError("CPP_ENGINE_RPC_CAPACITY must be an integer from 1 to 2147483647")
 
 
 settings = Settings()

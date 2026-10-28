@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <unordered_set>
 
+#include "isochrone/execution_control.hpp"
 #include "isochrone/ring_builder.hpp"
 
 namespace isochrone {
@@ -21,9 +22,11 @@ struct HalfEdge {
   double angle;
 };
 
-double departure_angle(const std::vector<Point>& path, bool reversed) {
+double departure_angle(const std::vector<Point>& path, bool reversed,
+                        const ExecutionControl& control) {
   const Point start = reversed ? path.back() : path.front();
   for (std::size_t i = 1; i < path.size(); ++i) {
+    control.Poll();
     const Point next = reversed ? path[path.size() - 1 - i] : path[i];
     if (std::hypot(next.x - start.x, next.y - start.y) > 1e-8) {
       return std::atan2(next.y - start.y, next.x - start.x);
@@ -32,13 +35,16 @@ double departure_angle(const std::vector<Point>& path, bool reversed) {
   return std::numeric_limits<double>::quiet_NaN();
 }
 
-void append_path(Ring& ring, const RoadLink& link, bool reversed) {
+void append_path(Ring& ring, const RoadLink& link, bool reversed,
+                 const ExecutionControl& control) {
   if (reversed) {
     for (auto point = link.path.rbegin(); point != link.path.rend(); ++point) {
+      control.Poll();
       if (ring.empty() || point != link.path.rbegin()) ring.push_back(*point);
     }
   } else {
     for (auto point = link.path.begin(); point != link.path.end(); ++point) {
+      control.Poll();
       if (ring.empty() || point != link.path.begin()) ring.push_back(*point);
     }
   }
@@ -48,10 +54,20 @@ void append_path(Ring& ring, const RoadLink& link, bool reversed) {
 
 std::vector<RoadFace> closed_road_faces(
     const std::vector<RoadLink>& links, std::size_t node_count) {
+  const ExecutionControl control;
+  return closed_road_faces(links, node_count, control);
+}
+
+std::vector<RoadFace> closed_road_faces(
+    const std::vector<RoadLink>& links, std::size_t node_count,
+    const ExecutionControl& control) {
+  control.Checkpoint();
   std::vector<std::vector<std::size_t>> incident(node_count);
   std::vector<std::size_t> degree(node_count, 0);
   std::vector<bool> active(links.size(), true);
+  control.Checkpoint();
   for (std::size_t i = 0; i < links.size(); ++i) {
+    control.Poll();
     const RoadLink& link = links[i];
     if (link.from >= node_count || link.to >= node_count ||
         link.from == link.to || link.path.size() < 2) {
@@ -67,12 +83,15 @@ std::vector<RoadFace> closed_road_faces(
   // faces, so a branch inside a cycle cannot turn that cycle into a non-ring.
   std::deque<std::size_t> leaves;
   for (std::size_t node = 0; node < node_count; ++node) {
+    control.Poll();
     if (degree[node] == 1) leaves.push_back(node);
   }
   while (!leaves.empty()) {
+    control.Poll();
     const std::size_t node = leaves.front();
     leaves.pop_front();
     for (const std::size_t link_index : incident[node]) {
+      control.Poll();
       if (!active[link_index]) continue;
       active[link_index] = false;
       const RoadLink& link = links[link_index];
@@ -82,13 +101,16 @@ std::vector<RoadFace> closed_road_faces(
     }
   }
 
+  control.Checkpoint();
   std::vector<HalfEdge> halves;
   std::vector<std::vector<std::size_t>> outgoing(node_count);
+  control.Checkpoint();
   for (std::size_t i = 0; i < links.size(); ++i) {
+    control.Poll();
     if (!active[i]) continue;
     const RoadLink& link = links[i];
-    const double forward = departure_angle(link.path, false);
-    const double backward = departure_angle(link.path, true);
+    const double forward = departure_angle(link.path, false, control);
+    const double backward = departure_angle(link.path, true, control);
     if (!std::isfinite(forward) || !std::isfinite(backward)) continue;
     const std::size_t first = halves.size();
     halves.push_back({link.from, link.to, i, false, forward});
@@ -96,24 +118,39 @@ std::vector<RoadFace> closed_road_faces(
     outgoing[link.from].push_back(first);
     outgoing[link.to].push_back(first + 1);
   }
+  control.Checkpoint();
   std::vector<std::size_t> positions(halves.size());
+  control.Checkpoint();
   for (auto& arcs : outgoing) {
+    control.Poll();
+    // Tiny per-node sorts use the surrounding work budget. Check around a
+    // larger sort without invoking the transport probe for every small node.
+    const bool large_sort = arcs.size() >= 256;
+    if (large_sort) control.Checkpoint();
     std::sort(arcs.begin(), arcs.end(), [&](std::size_t a, std::size_t b) {
       if (halves[a].angle != halves[b].angle) {
         return halves[a].angle < halves[b].angle;
       }
       return a < b;
     });
-    for (std::size_t i = 0; i < arcs.size(); ++i) positions[arcs[i]] = i;
+    if (large_sort) control.Checkpoint();
+    for (std::size_t i = 0; i < arcs.size(); ++i) {
+      control.Poll();
+      positions[arcs[i]] = i;
+    }
   }
 
+  control.Checkpoint();
   std::vector<RoadFace> faces;
   std::vector<bool> visited(halves.size(), false);
+  control.Checkpoint();
   for (std::size_t start = 0; start < halves.size(); ++start) {
+    control.Poll();
     if (visited[start]) continue;
     std::vector<std::size_t> boundary;
     std::size_t current = start;
     while (!visited[current]) {
+      control.Poll();
       visited[current] = true;
       boundary.push_back(current);
       const auto& arcs = outgoing[halves[current].to];
@@ -126,13 +163,14 @@ std::vector<RoadFace> closed_road_faces(
     std::unordered_set<std::size_t> seen_nodes;
     bool simple = true;
     for (const std::size_t arc_index : boundary) {
+      control.Poll();
       const HalfEdge& half = halves[arc_index];
       if (!seen_nodes.insert(half.from).second) {
         simple = false;
         break;
       }
       face.link_indices.push_back(half.link_index);
-      append_path(face.ring, links[half.link_index], half.reversed);
+      append_path(face.ring, links[half.link_index], half.reversed, control);
     }
     if (!simple || face.ring.size() < 4 ||
         std::hypot(face.ring.front().x - face.ring.back().x,
@@ -142,8 +180,9 @@ std::vector<RoadFace> closed_road_faces(
     face.ring.back() = face.ring.front();
     // With the face kept on the left, bounded faces wind counterclockwise;
     // the unbounded exterior winds clockwise and is not a street block.
-    if (signed_area(face.ring) > 1.0) faces.push_back(std::move(face));
+    if (signed_area(face.ring, control) > 1.0) faces.push_back(std::move(face));
   }
+  control.Checkpoint();
   return faces;
 }
 

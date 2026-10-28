@@ -12,7 +12,7 @@ async def _shutdown_services(scheduler: AnalysisScheduler, runtime: EngineRuntim
     try:
         try:
             # Cancel only these idle waiters at the deadline. The actual jobs
-            # and child processes continue until close explicitly cancels them.
+            # and engine calls continue until close explicitly cancels them.
             async with asyncio.timeout_at(deadline):
                 await asyncio.gather(scheduler.wait_idle(), runtime.wait_idle())
         except TimeoutError:
@@ -35,7 +35,8 @@ async def shutdown_services(scheduler: AnalysisScheduler, runtime: EngineRuntime
     """Stop admission, drain accepted work, then cancel and await real cleanup.
 
     The grace window is shared, not a separate budget for each owner. It is
-    not a hard limit on process reaping or other cancellation cleanup. Caller
+    not a hard limit on process reaping or other local cleanup. RPC cleanup
+    does not acknowledge remote CPU completion or stop the C++ server. Caller
     cancellation is propagated only after the owned shutdown task finishes.
     External input-preparation reservations still belong to their API callers.
     """

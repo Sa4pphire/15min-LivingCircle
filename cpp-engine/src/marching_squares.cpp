@@ -3,6 +3,8 @@
 #include <array>
 #include <cmath>
 
+#include "isochrone/execution_control.hpp"
+
 namespace isochrone {
 namespace {
 
@@ -30,6 +32,13 @@ void add_segment(std::vector<Segment>& segments,
 
 std::vector<Segment> extract_contour_segments(const Grid& grid,
                                               const double threshold) {
+  const ExecutionControl control;
+  return extract_contour_segments(grid, threshold, control);
+}
+
+std::vector<Segment> extract_contour_segments(
+    const Grid& grid, const double threshold, const ExecutionControl& control) {
+  control.Checkpoint();
   std::vector<Segment> segments;
   if (grid.rows < 2 || grid.columns < 2) {
     return segments;
@@ -37,6 +46,7 @@ std::vector<Segment> extract_contour_segments(const Grid& grid,
 
   for (std::size_t row = 0; row + 1 < grid.rows; ++row) {
     for (std::size_t column = 0; column + 1 < grid.columns; ++column) {
+      control.Poll();
       const std::array<Point, 4> corners{
           grid.point_at(row, column),
           grid.point_at(row, column + 1),
@@ -133,6 +143,7 @@ std::vector<Segment> extract_contour_segments(const Grid& grid,
       }
     }
   }
+  control.Checkpoint();
   return segments;
 }
 

@@ -1,194 +1,34 @@
 #pragma once
 
-#include <cstddef>
-#include <optional>
-#include <stdexcept>
-#include <string>
-#include <utility>
-#include <vector>
-
+#include "isochrone/analysis_request.hpp"
+#include "isochrone/analysis_result.hpp"
+#include "isochrone/engine_errors.hpp"
+#include "isochrone/execution_control.hpp"
+#include "isochrone/road_graph.hpp"
 #include "isochrone/types.hpp"
 
 namespace isochrone {
 
-enum class EdgeKind { walkway, turn, crossing };
-enum class WalkAccessMode { separated, shared };
-
-class OriginNotOnWalkway : public std::runtime_error {
- public:
-  using std::runtime_error::runtime_error;
-};
-
-class AmbiguousOriginSide : public std::runtime_error {
- public:
-  using std::runtime_error::runtime_error;
-};
-
-struct WalkNode {
-  std::string id;
-  Point point;
-};
-
-struct WalkEdge {
-  std::string id;
-  std::string from;
-  std::string to;
-  EdgeKind kind{EdgeKind::walkway};
-  std::vector<Point> path;
-  std::string street_block_id;
-  std::string side;
-  std::string shared_way_type;
-  double width_meters{};
-  std::optional<double> wait_seconds;
-  // One walking kind; retain the original lateral-access/side constraints.
-  WalkAccessMode access_mode{WalkAccessMode::separated};
-};
-
-[[nodiscard]] inline bool is_shared_walkway(const WalkEdge& edge) {
-  return edge.kind == EdgeKind::walkway && edge.access_mode == WalkAccessMode::shared;
-}
-
-struct FacilityEntrance {
-  std::string id;
-  std::string access_edge_id;
-  Point street_access_point;
-  std::vector<Point> access_path;
-};
-
-struct FacilityAccess {
-  std::string id;
-  // Retained for legacy single-entrance v2 input.
-  std::string access_edge_id;
-  Point access_point;
-  std::string category;
-  std::vector<FacilityEntrance> entrances;
-};
-
-struct ServiceCategory {
-  std::string id;
-  std::string data_status;
-  // Independent of online POI review: completeness inside the local patch.
-  std::string local_inventory_status{"incomplete"};
-};
-
-struct LocalExperiment {
-  // Every point at which the surveyed graph was cut, not genuine dead ends.
-  std::vector<std::string> boundary_node_ids;
-  // "verified" also asserts that every cut exit has been marked.
-  std::string topology_status{"incomplete"};
-};
-
+// v2 protocol envelope. Parsing keeps the JSON flat while assigning fields
+// to their owning domain objects.
 struct EngineInput {
   int schema_version{2};
-  Point origin;
-  std::optional<std::string> origin_edge_id;
-  double threshold_seconds{900.0};
-  double walking_speed_meters_per_second{1.3};
-  double crossing_wait_seconds{20.0};
-  double max_origin_snap_meters{30.0};
-  // Synthetic preview only: permit a straight-line, unverified connection
-  // from an off-network origin to the nearest walkable edge.
-  bool allow_off_network_origin{false};
-  double display_buffer_meters{15.0};
-  // Maximum visual extension from a reachable street into its surrounding block.
-  double display_area_radius_meters{80.0};
-  // Remove only small enclosed holes from the approximate isochrone surface.
-  double display_min_hole_area_square_meters{2500.0};
-  double display_grid_step_meters{10.0};
-  std::vector<WalkNode> nodes;
-  std::vector<WalkEdge> edges;
-  std::vector<FacilityAccess> facilities;
-  std::vector<ServiceCategory> service_categories;
-  std::optional<LocalExperiment> local_experiment;
-  // Optional, backward-compatible on-demand route using the same split graph.
-  std::optional<std::string> route_facility_id;
-  bool route_only{false};
-  // POI enrichment: compute all facility times, without surfaces or coverage.
-  bool facilities_only{false};
+  RoadGraph graph;
+  AnalysisRequest request;
 };
 
-struct ReachableEdge {
-  std::string edge_id;
-  EdgeKind kind;
-  std::vector<Point> path;
-  double width_meters{};
-};
-
-struct DisplayPolygon {
-  Ring outer;
-  std::vector<Ring> holes;
-};
-
-struct FacilityTravelTime {
-  std::string id;
-  std::string access_edge_id;
-  std::optional<double> travel_time_seconds;
-  bool reachable{};
-  std::string category;
-  std::optional<std::string> best_entrance_id;
-};
-
-struct RouteSegment {
-  std::string edge_id;
-  std::string kind;
-  std::vector<Point> path;
-  double travel_time_seconds{};
-};
-
-struct FacilityRoute {
-  std::string facility_id;
-  std::optional<std::string> entrance_id;
-  bool connected{};
-  bool within_threshold{};
-  std::optional<double> travel_time_seconds;
-  double length_meters{};
-  double crossing_wait_seconds{};
-  std::vector<Point> path;
-  std::vector<RouteSegment> segments;
-};
-
-struct GrayZone {
-  std::string category;
-  std::string status;
-  std::vector<ReachableEdge> uncovered_edges;
-  std::vector<DisplayPolygon> display_polygons;
-  double uncovered_length_meters{};
-  double reachable_length_meters{};
-};
-
-struct LocalGrayZone {
-  std::string category;
-  std::vector<ReachableEdge> covered_edges;
-  std::vector<ReachableEdge> candidate_uncovered_edges;
-  std::vector<ReachableEdge> unknown_edges;
-  double covered_length_meters{};
-  double candidate_uncovered_length_meters{};
-  double unknown_length_meters{};
-  std::vector<std::string> warnings;
-};
-
-struct EngineResult {
-  bool is_local_experiment{};
-  Point snapped_origin;
-  double snap_distance_meters{};
-  double origin_access_seconds{};
-  std::vector<ReachableEdge> reachable_edges;
-  std::vector<Point> frontier;
-  std::vector<DisplayPolygon> display_polygons;
-  std::vector<FacilityTravelTime> facility_travel_times;
-  std::vector<GrayZone> gray_zones;
-  std::vector<LocalGrayZone> local_gray_zones;
-  std::size_t reachable_node_count{};
-  std::size_t reachable_crossing_count{};
-  std::size_t closed_road_face_count{};
-  std::size_t road_closure_filled_cell_count{};
-  std::vector<std::string> warnings;
-  std::optional<FacilityRoute> facility_route;
-  std::vector<std::pair<std::string, double>> stage_timings_ms;
-};
-
-[[nodiscard]] const char* edge_kind_name(EdgeKind kind);
+// Compatibility entry point: validate the schema and the graph/request pair.
 void validate_graph(const EngineInput& input);
+// Inputs are borrowed only for this synchronous call. The caller keeps them
+// alive and unchanged; all temporary graph and search state is local.
+[[nodiscard]] EngineResult compute_reachability(
+    const RoadGraph& graph, const AnalysisRequest& request);
+// The request-local control is borrowed for this call. Cancellation is observed
+// at explicit checkpoints; it does not interrupt a single library operation.
+[[nodiscard]] EngineResult compute_reachability(
+    const RoadGraph& graph, const AnalysisRequest& request,
+    const ExecutionControl& control);
+// Compatibility entry point: check the schema, then delegate without copying.
 [[nodiscard]] EngineResult compute_reachability(const EngineInput& input);
 
 }  // namespace isochrone

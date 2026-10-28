@@ -7,6 +7,8 @@
 
 namespace isochrone {
 
+class ExecutionControl;
+
 struct RoadLink {
   std::size_t from{};
   std::size_t to{};
@@ -22,5 +24,8 @@ struct RoadFace {
 // Geometric crossings without a shared node never create a closure.
 [[nodiscard]] std::vector<RoadFace> closed_road_faces(
     const std::vector<RoadLink>& links, std::size_t node_count);
+[[nodiscard]] std::vector<RoadFace> closed_road_faces(
+    const std::vector<RoadLink>& links, std::size_t node_count,
+    const ExecutionControl& control);
 
 }  // namespace isochrone

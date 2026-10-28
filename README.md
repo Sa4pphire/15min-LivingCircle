@@ -243,6 +243,8 @@ AK 留空时，可用本地区域地图和“合成模拟”演示。区域包�
 
 - [在线计算算法与接口](backend/README.md)
 - [合成模拟算法与 C++ 构建](cpp-engine/README.md)
+- [Python 可选接入 C++ RPC](cpp-engine/README.md#14-第四阶段python-可选接入-c-rpc)：默认仍使用子进程，RPC 源码已接入、运行待验收；MySQL／Redis 仍为后续构想。
+- [C++ 有界并发执行层](cpp-engine/README.md#15-第五阶段c-有界并发执行层)：RPC 服务与客户端容量可配置，默认2；满额拒绝，无新增应用等待队列，源码交付、运行待验收。
 - [Python ↔ C++ 数据契约](contracts/engine-v2.README.md)
 - [生活圈 Agent 配置与接口](docs/life-circle-agent.md)
 - [OSM 自动道路生成与建模 Agent 研究](docs/offline-road-generation-editor-design.md)

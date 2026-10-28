@@ -94,11 +94,11 @@ int main(int argc, char* argv[]) {
     result.stage_timings_ms.emplace_back("inputParse", input_parse_ms);
     if (network_file) {
       result.warnings.push_back("SYNTHETIC_NETWORK_NOT_REAL_WORLD");
-      if (local_experiment && request.service_categories.empty()) {
+      if (local_experiment && request.request.service_categories.empty()) {
         result.warnings.push_back("LOCAL_FACILITY_DATA_NOT_PROVIDED");
       }
-      if (local_experiment && request.local_experiment->topology_status != "verified" &&
-          request.local_experiment->boundary_node_ids.empty()) {
+      if (local_experiment && request.request.local_experiment->topology_status != "verified" &&
+          request.request.local_experiment->boundary_node_ids.empty()) {
         result.warnings.push_back("LOCAL_BOUNDARY_NOT_MARKED");
       }
     }

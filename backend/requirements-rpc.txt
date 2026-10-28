@@ -1,0 +1,5 @@
+# Optional RPC support and its matching explicit code generator.
+# Install the base requirements separately; the default image does not use this.
+grpcio==1.84.0
+grpcio-tools==1.84.0
+protobuf==7.36.2

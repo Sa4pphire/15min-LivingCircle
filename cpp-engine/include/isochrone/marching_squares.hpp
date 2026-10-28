@@ -6,7 +6,11 @@
 
 namespace isochrone {
 
+class ExecutionControl;
+
 [[nodiscard]] std::vector<Segment> extract_contour_segments(
     const Grid& grid, double threshold);
+[[nodiscard]] std::vector<Segment> extract_contour_segments(
+    const Grid& grid, double threshold, const ExecutionControl& control);
 
 }  // namespace isochrone
