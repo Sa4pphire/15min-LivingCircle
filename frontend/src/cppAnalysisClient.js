@@ -76,12 +76,25 @@ export function normalizeCppReport(report, origin) {
         verified: false,
       }
     : null;
+  // Visual contours are kept separate from displayArea, which remains the raw
+  // engine polygon used by area summaries and POI membership consumers.
+  const boundarySmoothing = report.metadata.boundarySmoothing ?? null;
+  // Older reports may contain a bounded default contour. Do not label it as
+  // the current single-mode smoothing result.
+  const smoothedDisplayArea = boundarySmoothing?.mode === "unconstrained" &&
+    report.displayIsochrone?.geometry?.type === "MultiPolygon"
+    ? { type: "polygon", geometry: localizeGeometry(report.displayIsochrone.geometry) }
+    : null;
   return {
     schemaVersion: 1,
     source: "synthetic-cpp-engine",
     coordinateSystem: "preview-local-v1",
     origin: { x: origin.x, y: origin.y },
     displayArea: { type: "polygon", geometry: localizeGeometry(report.isochrone?.geometry) },
+    smoothedDisplayArea,
+    boundarySmoothing,
+    boundaryReviewFrontierPoints: (report.durationSamples ?? []).map(point =>
+      wgsToLocal([point.lng, point.lat], previewOrigin())),
     blindZones: localizeFeatureCollection(report.blindZones),
     blindZoneWalkways: localizeFeatureCollection(report.blindZoneWalkways),
     routeSegments,
@@ -149,6 +162,9 @@ export async function requestCppMapAnalysis({ origin, includePois = true, refres
       if (latestResult && normalized.geometryRevision !== null &&
           normalized.geometryRevision === latestResult.geometryRevision) {
         normalized.displayArea = latestResult.displayArea;
+        normalized.smoothedDisplayArea = latestResult.smoothedDisplayArea;
+        normalized.boundarySmoothing = latestResult.boundarySmoothing;
+        normalized.boundaryReviewFrontierPoints = latestResult.boundaryReviewFrontierPoints;
         normalized.routeSegments = latestResult.routeSegments;
         normalized.accessLink = latestResult.accessLink;
       }

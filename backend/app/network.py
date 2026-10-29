@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 from typing import Any
 
+from .boundary_smoothing import build_smoothed_display_geometry
 from .schemas import CenterPoint
 from .settings import settings
 from .walking_types import normalize_graph
@@ -206,6 +207,13 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None,
         "networkFile": path.name,
         "networkNodeCount": len(network["nodes"]),
         "networkEdgeCount": len(network["edges"]),
+        "displayGridStepMeters": payload["displayGridStepMeters"],
+        "displayGeometryParameters": {
+            key: payload[key] for key in (
+                "thresholdSeconds", "walkingSpeedMetersPerSecond",
+                "displayBufferMeters", "displayAreaRadiusMeters",
+                "displayMinHoleAreaSquareMeters", "displayGridStepMeters")
+        },
     }
     if network.get("selectionSource") == "network-path-extent":
         from .region_package import sha256
@@ -218,7 +226,8 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None,
 
 
 def build_analysis_result(engine_result: dict[str, Any],
-                          network_meta: dict[str, Any]) -> dict[str, Any]:
+                          network_meta: dict[str, Any], *,
+                          display_report: dict[str, Any] | None = None) -> dict[str, Any]:
     coord_type = network_meta.get("coordType", "bd09ll")
     origin = network_meta["originWgs84" if coord_type == "wgs84ll" else "originBd09"]
     display_geometry = engine_result.get("displayGeometryMeters")
@@ -236,6 +245,32 @@ def build_analysis_result(engine_result: dict[str, Any],
         [[_to_map_coordinate(point, origin) for point in ring] for ring in polygon]
         for polygon in polygon_meters
     ]
+    # Keep the engine contour canonical. Smoothing is an optional display layer
+    # in the same local meter frame, before either geometry is map-projected.
+    grid_step = network_meta.get("displayGridStepMeters", 10)
+    if display_report is not None:
+        # A POI-only publication reuses the same single display geometry.
+        display_feature = display_report["displayIsochrone"]
+        smoothing_metadata = display_report["metadata"]["boundarySmoothing"]
+    else:
+        smoothing = build_smoothed_display_geometry(
+            {"type": "MultiPolygon", "coordinates": polygon_meters},
+            grid_step_meters=grid_step,
+        )
+        display_feature = {
+            "type": "Feature",
+            "geometry": {"type": "MultiPolygon", "coordinates": [
+                [[_to_map_coordinate(point, origin) for point in ring] for ring in polygon]
+                for polygon in smoothing["geometry"]["coordinates"]
+            ]},
+            "properties": {"approximate": True, "coordType": coord_type,
+                           "displayOnly": True, "smoothingMode": "unconstrained"},
+        }
+        smoothing_metadata = {
+            **smoothing["metadata"],
+            "inputParameters": network_meta.get("displayGeometryParameters", {}),
+            "reference": "raw_cpp_display_geometry",
+        }
     walkways = []
     for edge in engine_result["reachableEdges"]:
         walkways.append({
@@ -377,6 +412,7 @@ def build_analysis_result(engine_result: dict[str, Any],
             "geometry": {"type": "MultiPolygon", "coordinates": polygons},
             "properties": {"approximate": True, "coordType": coord_type},
         },
+        "displayIsochrone": display_feature,
         "reachableWalkways": {"type": "FeatureCollection", "features": walkways},
         "durationSamples": [
             {"lng": position[0], "lat": position[1], "durationSeconds": 900}
@@ -410,6 +446,7 @@ def build_analysis_result(engine_result: dict[str, Any],
             "networkSource": network_meta["networkSource"],
             "coordType": coord_type,
             "isochroneApproximate": True,
+            "boundarySmoothing": smoothing_metadata,
             "grayZonePolygonsApproximate": True,
             "grayZoneBasis": ("synthetic preview; no verified facility coverage"
                               if network_meta["networkSource"] == "synthetic"

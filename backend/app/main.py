@@ -273,7 +273,13 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
 
     def publish(result: dict, metadata: dict, geometry_revision: int = 1) -> None:
         before = perf_counter()
-        report = add_poi_result(build_analysis_result(result, metadata), result, metadata)
+        previous = analysis.result
+        display_report = previous if (previous is not None and
+            previous.get("metadata", {}).get("geometryRevision") == geometry_revision and
+            previous.get("metadata", {}).get("boundarySmoothing", {}).get("mode") == "unconstrained" and
+            "displayIsochrone" in previous) else None
+        report = add_poi_result(build_analysis_result(
+            result, metadata, display_report=display_report), result, metadata)
         if metadata.get('regionId'):
             report['metadata']['regionId'] = metadata['regionId']
         analysis.timingsMs["report"] = round((perf_counter() - before) * 1000, 3)

@@ -222,8 +222,18 @@ function routeDelay(segment, result) {
   return `${0.08 + Math.max(0, Math.min(1, progress)) * 0.48}s`;
 }
 
-function localAreaPath(result) {
-  return geometryToSvgPath(result.displayArea.geometry, (point) => point);
+function localAreaPath(result, area = result.displayArea) {
+  return geometryToSvgPath(area.geometry, (point) => point);
+}
+
+// Render the accepted smoothing result directly. Business geometry and
+// blind-zone clipping continue to use the original displayArea.
+function renderedDisplayArea(result) {
+  return props.analysisMode === "cpp" &&
+    result?.source === "synthetic-cpp-engine" &&
+    result.boundarySmoothing?.mode === "unconstrained" &&
+    result.smoothedDisplayArea?.type === "polygon"
+    ? result.smoothedDisplayArea : result.displayArea;
 }
 
 const fallbackDemoResult = computed(() => {
@@ -270,11 +280,15 @@ const liveDemoResult = computed(() => {
   };
   const projectPath = points => (result.coordinateSystem === "preview-local-v1"
     ? sampleLocalPath(points) : points).map(project);
+  const areaPath = area => area.type === "circle"
+    ? circlePath(area.center, area.radius, project)
+    : geometryToSvgPath(result.coordinateSystem === "preview-local-v1"
+      ? sampleLocalArea(area.geometry) : area.geometry, project);
+  const displayArea = renderedDisplayArea(result);
+  const rawArea = areaPath(result.displayArea);
   return {
-    area: result.displayArea.type === "circle"
-      ? circlePath(result.displayArea.center, result.displayArea.radius, project)
-      : geometryToSvgPath(result.coordinateSystem === "preview-local-v1"
-        ? sampleLocalArea(result.displayArea.geometry) : result.displayArea.geometry, project),
+    area: displayArea === result.displayArea ? rawArea : areaPath(displayArea),
+    rawArea,
     routes: [],
     poiRoutes: (props.analysisMode === "preview" && !props.poiRoute ? result.routeSegments ?? [] : []).map((segment) => ({
       id: segment.id,
@@ -992,7 +1006,7 @@ onUnmounted(() => {
         <path :d="fallbackBoundary" class="real-boundary-outline" />
         <g v-if="fallbackDemoResult" class="real-demo-result" aria-hidden="true">
           <circle v-if="analysisMode !== 'cpp' && fallbackDemoResult.displayArea.type === 'circle'" :cx="fallbackDemoResult.displayArea.center.x" :cy="fallbackDemoResult.displayArea.center.y" :r="fallbackDemoResult.displayArea.radius" class="real-demo-area" />
-          <path v-else-if="fallbackDemoResult.displayArea.type === 'polygon'" :d="localAreaPath(fallbackDemoResult)" class="real-demo-area" fill-rule="evenodd" />
+          <path v-else-if="fallbackDemoResult.displayArea.type === 'polygon'" :d="localAreaPath(fallbackDemoResult, renderedDisplayArea(fallbackDemoResult))" class="real-demo-area" fill-rule="evenodd" />
           <path v-for="segment in analysisMode === 'cpp' ? [] : fallbackDemoResult.routeSegments" :key="segment.id" :d="linePath(segment.points)" class="real-demo-route" pathLength="1" :style="{ '--route-delay': routeDelay(segment, fallbackDemoResult) }" />
           <path v-if="analysisMode !== 'cpp' && fallbackDemoResult.accessLink?.length > 2" :d="linePath(fallbackDemoResult.accessLink.points)" class="real-demo-access" />
         </g>
@@ -1018,7 +1032,7 @@ onUnmounted(() => {
     >
       <defs>
         <clipPath :id="`${blindClipId}-live`" clipPathUnits="userSpaceOnUse">
-          <path :d="liveDemoResult?.area || projectedResult?.area || ''" clip-rule="evenodd" fill-rule="evenodd" />
+          <path :d="liveDemoResult?.rawArea || projectedResult?.area || ''" clip-rule="evenodd" fill-rule="evenodd" />
         </clipPath>
       </defs>
       <path v-if="projectedResult?.area" :d="projectedResult.area" class="real-analysis-area" fill-rule="evenodd" />
@@ -1031,7 +1045,7 @@ onUnmounted(() => {
       <path :d="liveBoundaryPath" class="real-live-boundary-fill" fill-rule="evenodd" />
       <path :d="liveBoundaryPath" class="real-live-boundary-outline" />
       <g v-if="liveDemoResult" class="real-demo-result">
-        <path :d="liveDemoResult.area" class="real-demo-area" />
+        <path :d="liveDemoResult.area" class="real-demo-area" fill-rule="evenodd" />
         <path v-for="segment in liveDemoResult.routes" :key="segment.id" :d="segment.d" class="real-demo-route" pathLength="1" :style="{ '--route-delay': segment.delay }" />
         <path v-for="segment in liveDemoResult.samplingRoutes" :key="`sample-${segment.id}`" :d="segment.d" class="real-sampled-route" pathLength="1" :style="{ '--route-delay': segment.delay }" />
         <path v-for="segment in liveDemoResult.poiRoutes" :key="`poi-${segment.id}`" :d="segment.d" class="real-poi-route" pathLength="1" :style="{ '--route-delay': segment.delay }" />
