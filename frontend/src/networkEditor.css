@@ -25,7 +25,76 @@ body { margin: 0; }
 .ne-tools b { font-family: 'Segoe UI Symbol', sans-serif; font-size: 18px; font-weight: 400; width: 19px; text-align: center; }
 .ne-tools kbd { color: #8a9da8; font-size: 10px; margin-left: 2px; }.ne-app .ne-tools .active { color: #126984; background: #e0edf2; border-color: #a9c6d3; }
 .ne-history { display: flex; gap: 5px; white-space: nowrap; }
-.ne-tools .ne-multi-toggle { margin-left: 8px; border-color: #c8d9e2; }
+.ne-toolbar { flex-shrink: 0; flex-wrap: wrap; gap: 12px; padding: 12px 16px; }
+.ne-tool-levels, .ne-tool-groups, .ne-workflow-tabs { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.ne-tool-levels { padding: 4px; background: #e8eff3; border-radius: 8px; }
+.ne-tool-levels button, .ne-tool-groups button, .ne-workflow-tabs button { background: transparent; border-color: transparent; padding: 8px 12px; }
+.ne-app .ne-tool-levels button.active { color: #185e76; background: #fff; border-color: #cad8df; font-weight: 600; }
+.ne-app .ne-tool-groups button.active, .ne-app .ne-workflow-tabs button.active, .ne-app .ne-layer-trigger.active { background: #e0edf2; border-color: #a9c6d3; color: #126984; }
+.ne-tool-groups { flex: 1; }
+.ne-tool-options { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 56px; padding: 8px 16px; background: #fff; flex-shrink: 0; }
+.ne-tool-description { margin: 0; color: #5b7483; font-size: 12px; line-height: 20px; }
+.ne-pending-work { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 16px; background: #fff7e9; color: #956716; flex-shrink: 0; font-size: 12px; }
+.ne-pending-work button { padding: 4px 8px; color: #795619; border-color: #e1cda4; }
+.ne-panel-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.ne-publication-result { margin-top: 16px; padding: 12px; border: 1px solid #bcd9d1; border-radius: 8px; background: #f2faf7; }
+.ne-publication-result strong { font-size: 14px; line-height: 20px; color: #266757; }
+.ne-publication-result code { display: block; overflow-wrap: anywhere; font-size: 12px; line-height: 20px; color: #486b65; margin: 8px 0; }
+.ne-inspector .ne-publication-notice { color: #8b6022; padding: 12px; background: #fff7e9; border: 1px solid #eedfbf; border-radius: 8px; }
+.ne-toolbar button:focus-visible, .ne-tool-options button:focus-visible, .ne-pending-work button:focus-visible, .ne-inspector button:focus-visible, .ne-inspector .ne-button:focus-within { outline: 2px solid #246e87; outline-offset: 2px; }
+.ne-toolbar button:active:not(:disabled), .ne-tool-options button:active:not(:disabled), .ne-panel-actions button:active:not(:disabled) { transform: translateY(1px); }
+@media (max-width: 720px) { .ne-tool-groups { order: 3; flex-basis: 100%; }.ne-tool-options { padding: 8px 12px; }.ne-pending-work { padding: 8px 12px; }.ne-panel-actions>* { flex: 1 1 auto; text-align: center; } }
+.ne-inspector .ne-generation-panel { margin: 12px; padding: 16px; border: 1px solid #cadde2; border-radius: 8px; background: #f8fbfc; }
+.ne-generation-panel h2 { font-size: 16px; line-height: 24px; margin-bottom: 12px; text-wrap: balance; }
+.ne-generation-panel p { font-size: 12px; line-height: 16px; text-wrap: pretty; }
+.ne-generation-panel button { padding: 8px 12px; font-size: 12px; line-height: 16px; }
+.ne-generation-panel button:active:not(:disabled), .ne-generation-trigger:active:not(:disabled) { transform: translateY(1px); }
+.ne-generation-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 16px 0; }
+.ne-generation-counts div { padding: 8px; border: 1px solid #d6e3e7; border-radius: 4px; background: #fff; }
+.ne-generation-counts dt { color: #5b7483; font-size: 12px; line-height: 16px; }
+.ne-generation-counts dd { margin: 4px 0 0; color: #246e87; font-size: 20px; line-height: 28px; font-weight: 600; }
+.ne-generation-visibility { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.ne-generation-panel .ne-generation-legend { display: grid; gap: 4px; margin-bottom: 12px; }
+.ne-generation-legend span:first-child { color: #07846f; }.ne-generation-legend span:nth-child(2) { color: #6f7980; }.ne-generation-legend span:last-child { color: #99601b; }
+.ne-generation-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ne-generation-actions .ne-primary { padding: 8px 12px; }
+.ne-generation-filter { display: block; margin-top: 16px; }
+.ne-generation-filter select { margin-top: 8px; }
+.ne-generation-list { display: grid; gap: 8px; max-height: 320px; overflow-y: auto; margin: 12px 0; }
+.ne-generation-list button { display: grid; gap: 4px; text-align: left; width: 100%; border-radius: 4px; overflow-wrap: anywhere; }
+.ne-generation-list button strong { font-size: 12px; line-height: 16px; font-weight: 600; }
+.ne-generation-list button>span { font-size: 12px; line-height: 16px; color: #5b7483; }
+.ne-generation-list button.active { border-color: #07846f; background: #e8f4ef; }
+.ne-generation-skeleton { display: grid; gap: 8px; margin: 16px 0; }
+.ne-generation-skeleton span { display: block; height: 16px; background: #dde8ed; border-radius: 4px; }
+.ne-generation-skeleton span:last-child { width: 64%; }
+.ne-inspector .ne-refinement-panel { margin: 12px; padding: 16px; border: 1px solid #d6cdb7; border-radius: 8px; background: #fffdf8; }
+.ne-refinement-panel h2 { margin-bottom: 12px; font-size: 16px; line-height: 24px; text-wrap: balance; }
+.ne-refinement-panel h3 { font-size: 14px; line-height: 20px; font-weight: 600; text-wrap: balance; }
+.ne-refinement-panel p { margin: 8px 0; color: #576c77; font-size: 12px; line-height: 16px; text-wrap: pretty; }
+.ne-refinement-panel button { padding: 8px 12px; font-size: 12px; line-height: 16px; }
+.ne-refinement-panel button:active:not(:disabled) { transform: translateY(1px); }
+.ne-refinement-origin { display: grid; justify-items: start; gap: 8px; margin: 16px 0; }
+.ne-refinement-origin code { max-width: 100%; overflow-wrap: anywhere; color: #315cc5; font-size: 12px; line-height: 16px; }
+.ne-refinement-inputs { display: grid; gap: 12px; margin: 16px 0; }
+.ne-refinement-panel label { display: grid; gap: 8px; font-size: 12px; line-height: 16px; }
+.ne-refinement-panel textarea { width: 100%; resize: vertical; min-height: 80px; padding: 8px; border: 1px solid #cad8df; border-radius: 4px; background: #fff; color: #243e4d; font: inherit; font-size: 12px; line-height: 16px; }
+.ne-refinement-panel .ne-refinement-warning { color: #8b6022; }
+.ne-refinement-counts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 16px 0; }
+.ne-refinement-counts div { padding: 8px; border: 1px solid #e2d9c7; border-radius: 4px; background: #fff; }
+.ne-refinement-counts dt { color: #687d88; font-size: 12px; line-height: 16px; }
+.ne-refinement-counts dd { margin: 4px 0 0; color: #8b6022; font-size: 20px; line-height: 28px; font-weight: 600; }
+.ne-refinement-list { display: grid; gap: 8px; max-height: 320px; margin: 16px 0; overflow-y: auto; }
+.ne-refinement-list button { display: grid; gap: 4px; text-align: left; overflow-wrap: anywhere; border-radius: 4px; }
+.ne-refinement-list button strong { font-size: 12px; line-height: 16px; font-weight: 600; }
+.ne-refinement-list button>span { color: #5b7483; font-size: 12px; line-height: 16px; }
+.ne-refinement-list button.active { border-color: #b78d44; background: #fcf3df; }
+.ne-refinement-actions, .ne-refinement-pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.ne-refinement-pagination span { font-size: 12px; line-height: 16px; }
+.ne-refinement-assumptions { margin: 16px 0; color: #576c77; font-size: 12px; line-height: 16px; }
+.ne-refinement-assumptions summary { cursor: pointer; }
+.ne-refinement-review { display: grid; gap: 12px; margin-top: 16px; padding: 12px; border: 1px solid #dfd1b6; border-radius: 4px; background: #fff; }
+.ne-refinement-review p { margin: 0; }
 .ne-selection-bar { position: absolute; left: 18px; bottom: 80px; display: flex; align-items: center; gap: 13px; padding: 7px 10px; background: #ffffffed; border: 1px solid #d7b6c1; border-radius: 5px; color: #b94366; font-size: 12px; }
 .ne-selection-bar button { font-size: 11px; padding: 5px 8px; }
 .ne-workspace { display: grid; grid-template-columns: minmax(0,1fr) 302px; flex: 1; min-height: 0; }

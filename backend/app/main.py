@@ -8,10 +8,10 @@ import sqlite3
 import json
 import logging
 from time import perf_counter
+from typing import Any
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 
 from .analysis_scheduler import AnalysisScheduler, ScheduledAnalysis
@@ -44,8 +44,8 @@ from .schemas import (
 )
 from .settings import settings
 from .shutdown import shutdown_services
-from .network_editor import router as network_editor_router
 from .region_package import load_region, load_region_by_id, list_display_regions, validate_region_center
+from .region_storage import initialize_region_storage, close_region_storage
 
 analysis_logger = logging.getLogger("livingcircle.analysis")
 analysis_logger.setLevel(logging.INFO)
@@ -67,6 +67,8 @@ async def lifespan(application: FastAPI):
     application.state.analysis_scheduler = scheduler
     agent_runtime = None
     try:
+        # Pin SQL releases once for this lifetime. No database work on requests.
+        await _prepare_analysis_input(initialize_region_storage)
         await scheduler.start()
         agent_runtime = AgentRuntime(AgentConfig.from_env(), _resolve_agent_context, _route_agent_poi)
         application.state.agent_runtime = agent_runtime
@@ -83,10 +85,13 @@ async def lifespan(application: FastAPI):
             operations = [shutdown_services(scheduler, engine_runtime)]
             if agent_runtime is not None:
                 operations.append(agent_runtime.close())
-            results = await asyncio.gather(*operations, return_exceptions=True)
-            for result in results:
-                if isinstance(result, BaseException):
-                    raise result
+            try:
+                results = await asyncio.gather(*operations, return_exceptions=True)
+                for result in results:
+                    if isinstance(result, BaseException):
+                        raise result
+            finally:
+                close_region_storage()
 
         owner = asyncio.create_task(cleanup(), name='application-agent-shutdown')
         cancelled = False
@@ -108,8 +113,17 @@ app = FastAPI(
     description="Competition demo API for walkability and facility coverage analysis.",
     lifespan=lifespan,
 )
-app.include_router(network_editor_router)
+if settings.network_editor_enabled:
+    from .network_editor import router as network_editor_router
+    app.include_router(network_editor_router)
 app.include_router(agent_router)
+
+
+@app.get("/api/v1/capabilities")
+async def runtime_capabilities() -> JSONResponse:
+    # Publish only UI capabilities, never configuration or credentials.
+    return JSONResponse({"networkEditor": settings.network_editor_enabled},
+                        headers={"Cache-Control": "no-store"})
 
 
 @app.exception_handler(EngineBusy)
@@ -171,7 +185,9 @@ async def display_region_asset(region_id: str, asset: str) -> FileResponse:
 
 def _analysis_region(identity: str | None):
     if identity is None:
-        return None
+        if settings.region_storage_backend == 'file':
+            return None
+        identity = settings.region_id
     region = _display_region(identity)
     if not region.graph()['edges']:
         raise HTTPException(422, detail={'code': 'REGION_NOT_READY', 'message': '该区域尚无路网，请先在编辑器中保存步行通道。'})
@@ -282,6 +298,8 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
             result, metadata, display_report=display_report), result, metadata)
         if metadata.get('regionId'):
             report['metadata']['regionId'] = metadata['regionId']
+        if metadata.get('packageVersionId'):
+            report['metadata']['packageVersionId'] = metadata['packageVersionId']
         analysis.timingsMs["report"] = round((perf_counter() - before) * 1000, 3)
         report["metadata"].update({"timingsMs": dict(analysis.timingsMs),
                                   "engineBuildMode": result.get("diagnostics", {}).get("buildMode", "unknown"),
@@ -439,6 +457,9 @@ async def _run_local_experiment(experiment_id: str, engine_input: dict,
             engine_result = await run_engine(engine_input)
         experiment.result = add_poi_result(build_local_experiment_result(engine_result, network_meta),
                                           engine_result, network_meta)
+        for key in ('regionId', 'packageVersionId'):
+            if network_meta.get(key):
+                experiment.result['metadata'][key] = network_meta[key]
         experiment.status = "completed"
         experiment.progress = Progress(stage="completed", percent=100)
     except (EngineError, BaiduApiError, OSError, KeyError, TypeError, ValueError) as exc:
@@ -457,6 +478,7 @@ def _load_analysis_input(request: AnalysisRequest, network_path: Path | None):
         request.center, request.originEdgeId, network_path=network_path)
     if region:
         network_meta['regionId'] = region.manifest['id']
+        network_meta['packageVersionId'] = region.storage_version
     return (engine_input, network_meta, request.center,
             request.includePois, request.refreshPois)
 
@@ -472,13 +494,19 @@ def _load_sampled_input(request: AnalysisRequest):
 
 def _load_local_experiment_input(request: LocalExperimentRequest,
                                  network_path: Path | None):
+    region = load_region() if settings.region_storage_backend == 'mysql' else None
+    if region is not None:
+        network_path = region.file('network')
     engine_input, network_meta = load_local_experiment_request(
         request.center, request.originEdgeId, network_path=network_path)
+    if region is not None:
+        network_meta['regionId'] = region.manifest['id']
+        network_meta['packageVersionId'] = region.storage_version
     return (engine_input, network_meta, request.center,
             request.includePois, request.refreshPois)
 
 
-async def _prepare_analysis_input(prepare: Callable[[], tuple]):
+async def _prepare_analysis_input(prepare: Callable[[], Any]):
     preparation = asyncio.create_task(asyncio.to_thread(prepare))
     try:
         return await asyncio.shield(preparation)
@@ -684,8 +712,3 @@ async def get_sampled_analysis(
         )
 
     return analysis
-
-
-static_dir = Path(settings.static_dir)
-if static_dir.exists():
-    app.mount("/", StaticFiles(directory=static_dir, html=True), name="frontend")

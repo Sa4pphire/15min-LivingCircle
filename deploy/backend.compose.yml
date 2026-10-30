@@ -1,0 +1,30 @@
+# Standalone API release; no frontend sources or container dependency.
+services:
+  backend:
+    image: ${BACKEND_IMAGE:-vct-backend:local}
+    env_file:
+      - path: ${BACKEND_ENV_FILE:-../.env}
+        required: false
+    environment:
+      APP_ENV: production
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      LOCAL_CONTAINER_EDITOR: "false"
+      # The shared deployment env file also initializes MySQL; the API needs
+      # only MYSQL_USER/MYSQL_PASSWORD, never the database root credential.
+      MYSQL_ROOT_PASSWORD: ""
+      CPP_ENGINE_PATH: /app/bin/isochrone_engine
+      CPP_ENGINE_TRANSPORT: subprocess
+      ANALYSIS_CACHE_DIR: /app/data/cache
+    ports:
+      - "${BACKEND_BIND_HOST:-127.0.0.1}:${BACKEND_PORT:-8001}:8000"
+    volumes:
+      - ${DATA_DIR:-../data}:/app/data
+    networks:
+      - deployment
+    restart: unless-stopped
+
+networks:
+  deployment:
+    external: true
+    name: ${DEPLOY_NETWORK:-vct}

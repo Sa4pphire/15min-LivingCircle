@@ -45,6 +45,8 @@ def sha256(path: Path) -> str:
 class RegionPackage:
     root: Path
     manifest: dict
+    storage_backend: str = 'file'
+    storage_version: str | None = None
 
     def file(self, key: str) -> Path:
         relative = self.manifest['files'].get(key)
@@ -86,6 +88,8 @@ class RegionPackage:
         from .region_pois import read_region_pois
         pois = read_region_pois(self)
         return {'id': self.manifest['id'], 'name': self.manifest['name'],
+                'storageBackend': self.storage_backend,
+                'packageVersionId': self.storage_version,
                 'source': self.manifest.get('source', {}),
                 'version': self.manifest['version'], 'revision': revision,
                 'synthetic': graph.get('synthetic', False),
@@ -105,6 +109,9 @@ class RegionPackage:
 
 
 def load_region(root: Path | None = None, *, verify: bool = True) -> RegionPackage:
+    if root is None and settings.region_storage_backend == 'mysql':
+        from .region_storage import stored_region
+        return stored_region(settings.region_id)
     directory = root or (REPO_ROOT / 'data/regions' / settings.region_id)
     directory = directory.resolve()
     manifest = json.loads((directory / 'manifest.json').read_text(encoding='utf-8'))
@@ -137,6 +144,9 @@ def load_region(root: Path | None = None, *, verify: bool = True) -> RegionPacka
 def load_region_by_id(identity: str) -> RegionPackage:
     if not isinstance(identity, str) or not re.fullmatch(r'[a-z0-9][a-z0-9_-]{0,79}', identity):
         raise ValueError('区域标识无效')
+    if settings.region_storage_backend == 'mysql':
+        from .region_storage import stored_region
+        return stored_region(identity)
     directory = REPO_ROOT / 'data/regions' / identity
     if not directory.resolve().is_relative_to((REPO_ROOT / 'data/regions').resolve()):
         raise ValueError('区域目录超出数据范围')
@@ -147,6 +157,12 @@ def load_region_by_id(identity: str) -> RegionPackage:
 
 
 def list_display_regions() -> dict:
+    if settings.region_storage_backend == 'mysql':
+        from .region_storage import stored_regions
+        return {'items': [region.public_metadata(
+                    asset_base=f"/api/v1/regions/{region.manifest['id']}/assets") |
+                    {'displayReady': True} for region in stored_regions()],
+                'defaultRegionId': settings.region_id}
     items = []
     directory = REPO_ROOT / 'data/regions'
     for path in sorted(directory.iterdir()) if directory.is_dir() else []:
@@ -167,6 +183,8 @@ def list_display_regions() -> dict:
 
 
 def refresh_manifest(region: RegionPackage) -> None:
+    if region.storage_backend != 'file':
+        raise ValueError('数据库发布快照只读，请从本地区域包导入新版本')
     manifest = dict(region.manifest)
     graph = json.loads(region.file('network').read_text(encoding='utf-8'))
     if graph.get('authoringWorkspace'):

@@ -112,7 +112,6 @@ onUnmounted(() => { disposed = true; previewController?.abort(); listController?
             <svg viewBox="0 0 36 36" aria-hidden="true" fill="none"><circle cx="18" cy="18" r="13.5" stroke="currentColor" stroke-width="1.5"/><circle cx="18" cy="18" r="8.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="18" cy="18" r="3.2" fill="currentColor"/></svg>
             <span><span class="brand-name-full">Vision China Terminal</span><span class="brand-name-short" aria-label="Vision China Terminal">VCT</span><small>15 分钟可达性体检</small></span>
           </div>
-          <a class="region-editor-link" href="/?mode=editor">路网编辑器</a>
         </header>
         <div class="region-library-body">
           <section class="region-library-choice" aria-labelledby="region-library-title">
@@ -125,7 +124,7 @@ onUnmounted(() => { disposed = true; previewController?.abort(); listController?
             <fieldset class="region-package-list" :disabled="opening || loading">
               <legend class="region-visually-hidden">选择生活圈展示区域</legend>
               <p v-if="loading" class="region-list-message" role="status">正在读取区域包…</p>
-              <p v-else-if="!packages.length" class="region-list-message">暂无区域包，请先在路网编辑器中创建或导入。</p>
+              <p v-else-if="!packages.length" class="region-list-message">暂无可展示的区域包，请联系维护者准备并导入区域数据。</p>
               <label v-for="item in packages" :key="item.id" class="region-package-row"
                 :class="{ 'is-selected': selected === item.id, 'is-unavailable': !item.displayReady }">
                 <input v-model="selected" type="radio" name="display-region" :value="item.id" :disabled="!item.displayReady">

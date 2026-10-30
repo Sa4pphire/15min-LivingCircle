@@ -3,11 +3,13 @@
 双击仓库根目录的 `start-demo.bat`，会直接启动服务并自动打开生活圈展示页，无需选择菜单：
 
 - 生活圈展示：`http://127.0.0.1:5173/`
-- 路网编辑器：`http://127.0.0.1:5173/?mode=editor`（服务已就绪，按需手动打开）
+- 路网编辑器：`http://127.0.0.1:5174/`（独立页面，按需手动打开）
 
-两页面共用前端 5173 / 后端 8000，只启动一套服务。双击时会重启启动器管理的服务，
+主站监听 5173，编辑器监听 5174，分别启动 Vite 进程，共用后端 8000。主站不再提供编辑入口，旧 `?mode=editor` 地址不再进入编辑器。双击时会重启启动器管理的三个服务，
 让最新代码和区域配置生效；全部启动检查成功后才打开展示页。启动失败时保留窗口显示错误。
-服务在后台运行，关闭浏览器不会停止服务；运行 `start-demo.bat stop` 可停止。
+服务在后台运行，关闭浏览器不会停止服务；运行 `start-demo.bat stop` 可一起停止后端、主站和编辑器。
+
+浏览器本地草稿按端口隔离。切换前先在旧编辑页恢复草稿并保存到后端，或恢复草稿后使用“导出 JSON”，再到新编辑器导入；已有后端区域文件继续共用。“下载草稿”得到的是恢复材料，不能直接当作完整路网 JSON 导入。
 
 以下命令在仓库根目录执行；使用 BAT 的绝对路径时，也可从其他目录调用：
 
@@ -25,7 +27,7 @@ API 默认在 `127.0.0.1:8000`。
 
 ## 首次运行
 
-按 [README 的本地运行步骤](../README.md#在评审电脑上运行)准备运行环境和 AK；本地后端配置从 `.env.windows.example` 创建，浏览器配置从 `frontend/.env.example` 创建。修改配置后再次双击 BAT 或执行 `restart`。
+按 [README 的 Windows 快速开始](../README.md#windows-快速开始)准备运行环境和 AK；本地后端配置从 `.env.windows.example` 创建，浏览器配置从 `frontend/.env.example` 创建。修改配置后再次双击 BAT 或执行 `restart`。
 
 需要已安装的 Python 虚拟环境、前端依赖、Node.js 和 C++ 编译器。脚本不安装依赖，
 不联网下载工具，不修改系统执行策略。BAT 的 `ExecutionPolicy Bypass` 仅适用于本次
@@ -79,20 +81,22 @@ start-demo.bat restart -LocalNetworkPath "contracts/engine-local-experiment.inpu
 
 ## 端口冲突与配置更新
 
-8000／5173 被手工启动的服务占用时，启动器明确报错，既不接管也不停止它们。
+8000／5173／5174 被手工启动的服务占用时，启动器明确报错，既不接管也不停止它们。
 请在原终端停止旧服务，或者用另一组端口启动；代理会自动指向同组后端。
 同一组启动器进程、路网及代码未变时，重复 `start` 不会再次启动；检测到配置
 或源码变化时要求 `restart`，防止继续使用旧引擎和旧后端。
 
 ```bat
-start-demo.bat start -BackendPort 8129 -FrontendPort 5182
+start-demo.bat start -BackendPort 8129 -FrontendPort 5182 -EditorPort 5183
 start-demo.bat status -BackendPort 8129 -FrontendPort 5182
 start-demo.bat stop -BackendPort 8129 -FrontendPort 5182
 ```
 
-更换端口后，启停命令都必须带同一组端口。手工 `npm run dev` 的 Vite 配置不变，
-只有启动器专用的 `frontend/scripts/demo-vite.mjs` 支持该代理覆盖，并使用独立的
-Vite 依赖缓存，不与手工启动的开发服务共用预构建缓存。
+后端与主站端口决定进程登记文件，启停命令必须带相同的 `BackendPort` / `FrontendPort`。`status` 从登记文件显示实际编辑器端口，`stop` 按已登记进程停止，因此这两个命令不必重复传入 `EditorPort`。需要改变编辑器端口时使用 `restart -EditorPort 新端口`，会先停止同组旧服务。三个端口必须互不相同。
+
+启动器保留旧版两进程的登记文件定位方式，允许 `stop` / `restart` 清理自身登记的旧版服务；普通 `start` 不会把缺少独立编辑器的旧服务当成新版复用。
+
+启动器专用的 `frontend/scripts/demo-vite.mjs` 将两个前端的 `/api` 都代理到本组后端，并为主站和编辑器使用各自的 Vite 依赖缓存。手动开发可分别使用 `npm --prefix frontend run dev` 和 `npm --prefix frontend run dev:editor`；`API_UPSTREAM` 可指定代理地址，默认后端为 `http://127.0.0.1:8000`。
 
 ## 日志和自检
 
@@ -111,3 +115,5 @@ start-demo.bat check
 ```
 
 `check` 不自动编译；引擎过期时提示通过 `start` 或 `restart -BuildEngine` 构建。
+
+2026-10-30 的独立编辑器改动只完成源码和差异静态审阅。本轮没有执行本页任何启动、检查、构建或测试命令；上述自检是脚本在用户后续运行时的行为，尚不是本轮运行证据。

@@ -3,12 +3,14 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
+from importlib.util import find_spec
 import ipaddress
 import json
 import os
 from pathlib import Path
 import threading
 import re
+from typing import Literal
 from urllib.parse import urlparse
 from uuid import uuid4
 
@@ -28,6 +30,11 @@ from .region_export import crop_graph, create_region, region_zip
 from .region_creation import create_blank_region
 from .region_context import generate_context
 from .baidu.errors import BaiduApiError
+from .junction_generation import generate_network_junctions
+from .refinement_inputs import build_refinement_inputs, apply_refinement_decision
+from .refinement_impact import plan_refinements
+from .region_pois import read_region_pois
+from .mysql_regions import MySQLRegionRepository, RegionStoreError
 
 router = APIRouter(prefix='/api/v1/network-editor', tags=['local-network-editor'])
 _lock = threading.RLock()
@@ -37,6 +44,26 @@ class EditorGraph(BaseModel):
     revision: str = Field(min_length=1, max_length=100)
     nodes: list[dict] = Field(max_length=30000)
     edges: list[dict] = Field(max_length=50000)
+
+
+class RegionPublication(BaseModel):
+    # Publishing uses the saved package, never a submitted canvas snapshot.
+    model_config = {'extra': 'forbid'}
+    revision: str = Field(min_length=1, max_length=100)
+
+
+class RefinementPlan(EditorGraph):
+    originNodeId: str = Field(min_length=1, max_length=512)
+    budget: int = Field(default=10, ge=1, le=30)
+    lowWaitSeconds: float = Field(default=0, ge=0, le=300, allow_inf_nan=False)
+    highWaitSeconds: float = Field(default=60, ge=0, le=300, allow_inf_nan=False)
+
+
+class RefinementDecision(EditorGraph):
+    inputId: str = Field(min_length=1, max_length=128)
+    decision: Literal['open', 'closed', 'set_wait']
+    waitSeconds: float = Field(default=20, ge=0, le=300, allow_inf_nan=False)
+    evidenceNote: str = Field(min_length=5, max_length=1000)
 
 
 class NewRegion(BaseModel):
@@ -126,7 +153,7 @@ def _local_access(request: Request) -> None:
     except ValueError:
         local = host == 'testclient'
     origin = request.headers.get('origin')
-    if (not local or settings.app_env != 'development' or
+    if (not local or not settings.network_editor_enabled or
             request.headers.get('sec-fetch-site') == 'cross-site' or
             (origin and urlparse(origin).hostname not in ('localhost', '127.0.0.1', '::1'))):
         raise HTTPException(403, detail={'message': '路网编辑仅支持本机开发服务'})
@@ -207,6 +234,146 @@ def save_editor(payload: EditorGraph, root: Path = REPO_ROOT, region_id: str | N
 
 def _bad_data(exc: Exception) -> HTTPException:
     return HTTPException(422, detail={'message': f'路网检查失败：{exc}'})
+
+
+def publication_configuration() -> dict:
+    """Inspect local configuration only; this does not open a SQL connection."""
+    try:
+        MySQLRegionRepository()
+    except RegionStoreError as exc:
+        return {'configured': False, 'message': str(exc)}
+    if find_spec('pymysql') is None or find_spec('cryptography') is None:
+        return {'configured': False,
+                'message': '请先在后端安装 backend/requirements-mysql.txt 中的可选依赖'}
+    return {'configured': True,
+            'message': '数据库配置与依赖已准备；连接和数据表将在发布时检查。请先保存本地修改。'}
+
+
+def publish_saved_region(payload: RegionPublication, root: Path = REPO_ROOT,
+                         region_id: str | None = None) -> dict:
+    """Import and publish the saved complete package without changing local files."""
+    configuration = publication_configuration()
+    if not configuration['configured']:
+        raise HTTPException(503, detail={'message': configuration['message']})
+    # Reuse the editor's save lock so its own file writes cannot interleave with
+    # reading a package for publication. SQL work runs in the endpoint's worker.
+    with _lock:
+        saved_revision = read_editor(root, region_id)['revision']
+        if saved_revision != payload.revision:
+            raise HTTPException(409, detail={
+                'message': '本地区域包已变化，请重新加载并确认保存内容后再发布'})
+        region = editor_region(region_id, root)
+        result = MySQLRegionRepository().import_directory(region.root, publish=True)
+        return {'regionId': result['region_id'], 'versionId': result['version_id'],
+                'packageVersion': result['package_version'], 'created': result['created'],
+                'published': True, 'requiresBackendRestart': True,
+                'revision': saved_revision,
+                'message': '已发布完整区域包。读取 MySQL 的展示后端重启后使用此版本；本地编辑服务无需切换模式。'}
+
+
+@router.get('/publication')
+def get_publication(request: Request) -> dict:
+    _local_access(request)
+    return publication_configuration()
+
+
+@router.post('/publication')
+async def post_publication(request: Request, payload: RegionPublication,
+                           regionId: str | None = None) -> dict:
+    _local_access(request)
+    try:
+        return await run_in_threadpool(publish_saved_region, payload, REPO_ROOT, regionId)
+    except RegionStoreError as exc:
+        # Repository errors deliberately omit driver SQL and credentials.
+        raise HTTPException(503, detail={'message': str(exc)}) from None
+    except OSError:
+        raise HTTPException(422, detail={
+            'message': '无法读取完整本地区域包，请检查文件是否齐全及可读取'}) from None
+    except (ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(422, detail={'message': f'区域包校验失败：{exc}'}) from None
+
+
+def generate_editor_preview(payload: EditorGraph, root: Path = REPO_ROOT,
+                            region_id: str | None = None) -> dict:
+    """Build a draft from the submitted canvas; saving remains the existing PUT."""
+    with _lock:
+        graph = candidate_graph(payload, root, region_id)
+        paths = editor_paths(root, region_id)
+        source = json.loads(paths[2].read_text(encoding='utf-8'))
+        annotations = json.loads(paths[1].read_text(encoding='utf-8'))
+        if source.get('coordinateSystem') != 'preview-local-v1':
+            raise ValueError('当前区域没有可识别的 OSM 道路源图；空白区域请先导入道路源数据')
+        result = generate_network_junctions(source, annotations, graph)
+        result['audit'] = validate_editor_graph(result['graph'])
+        result['revision'] = payload.revision
+        if file_revision(paths) != payload.revision:
+            raise HTTPException(409, detail={'message': '生成期间源文件已变化，请重新加载后生成'})
+        return result
+
+
+@router.post('/generation/preview')
+async def preview_generation(request: Request, payload: EditorGraph,
+                             regionId: str | None = None) -> dict:
+    _local_access(request)
+    try:
+        return await run_in_threadpool(generate_editor_preview, payload, REPO_ROOT, regionId)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise _bad_data(exc) from exc
+
+
+def _refinement_inputs(graph: dict, root: Path, region_id: str | None) -> list[dict]:
+    paths = editor_paths(root, region_id)
+    source = json.loads(paths[2].read_text(encoding='utf-8'))
+    annotations = json.loads(paths[1].read_text(encoding='utf-8'))
+    region = editor_region(region_id, root)
+    inventory = read_region_pois(region)
+    return build_refinement_inputs(graph, source, annotations,
+                                   inventory['items'] if inventory is not None else None)
+
+
+def plan_editor_refinement(payload: RefinementPlan, root: Path = REPO_ROOT,
+                           region_id: str | None = None) -> dict:
+    with _lock:
+        graph = candidate_graph(payload, root, region_id)
+        inputs = _refinement_inputs(graph, root, region_id)
+        result = plan_refinements(graph, inputs, payload.originNodeId,
+                                  budget=payload.budget, low_wait_seconds=payload.lowWaitSeconds,
+                                  high_wait_seconds=payload.highWaitSeconds)
+        if file_revision(editor_paths(root, region_id)) != payload.revision:
+            raise HTTPException(409, detail={'message': '评估期间源文件已变化，请重新加载后评估'})
+        return {**result, 'revision': payload.revision, 'canvasRevision': graph_revision(graph),
+                'inputModelVersion': 1, 'coordinateSystem': 'engine-local-meters'}
+
+
+def apply_editor_refinement(payload: RefinementDecision, root: Path = REPO_ROOT,
+                            region_id: str | None = None) -> dict:
+    with _lock:
+        graph = candidate_graph(payload, root, region_id)
+        draft = apply_refinement_decision(graph, _refinement_inputs(graph, root, region_id),
+            payload.inputId, payload.decision, payload.waitSeconds, payload.evidenceNote)
+        audit = validate_editor_graph(draft)
+        if file_revision(editor_paths(root, region_id)) != payload.revision:
+            raise HTTPException(409, detail={'message': '审阅期间源文件已变化，请重新加载后应用'})
+        return {'graph': draft, 'audit': audit, 'revision': payload.revision,
+                'note': '核查选择已加入草案，仍标为人工审阅未实地核实；可撤销，保存后写入区域'}
+
+
+@router.post('/refinement/plan')
+async def refinement_plan(request: Request, payload: RefinementPlan, regionId: str | None = None):
+    _local_access(request)
+    try:
+        return await run_in_threadpool(plan_editor_refinement, payload, REPO_ROOT, regionId)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise _bad_data(exc) from exc
+
+
+@router.post('/refinement/apply')
+async def refinement_apply(request: Request, payload: RefinementDecision, regionId: str | None = None):
+    _local_access(request)
+    try:
+        return await run_in_threadpool(apply_editor_refinement, payload, REPO_ROOT, regionId)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise _bad_data(exc) from exc
 
 
 @router.post('/context/preview')

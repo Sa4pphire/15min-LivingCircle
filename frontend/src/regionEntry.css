@@ -5,7 +5,6 @@
 .region-library-brand { display: flex; align-items: center; gap: 13px; font-size: 19px; font-weight: 700; }
 .region-library-brand svg { width: 36px; height: 36px; color: #a9e6bf; }
 .region-library-brand small { display: block; margin-top: 4px; color: #a3c9b9; font-size: 10px; font-weight: 400; }
-.region-editor-link { color: #d8eee1; font-size: 12px; text-decoration: none; padding: 8px 0; border-bottom: 1px solid #6a9686; }
 .region-library-body { width: min(1440px, 100%); flex: 1; display: grid; grid-template-columns: minmax(320px, .9fr) minmax(0, 1.1fr); align-items: center; gap: clamp(36px, 6vw, 96px); margin-inline: auto; padding: clamp(28px, 4vh, 64px) clamp(24px, 5vw, 84px); }
 .region-library-title { margin: 0; font-size: clamp(28px, 3vw, 44px); font-weight: 650; letter-spacing: -.055em; line-height: 1.5; outline: none; }
 .region-library-heading > p { margin: 18px 0 36px; max-width: 32em; font-size: 13px; line-height: 1.8; color: #638074; }

@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "dev:editor": "vite --mode editor --host 127.0.0.1",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "build:editor": "vite build --mode editor",
+    "preview": "vite preview --host 0.0.0.0",
+    "preview:editor": "vite preview --mode editor --host 127.0.0.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.9",

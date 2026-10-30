@@ -1,0 +1,16 @@
+# Standalone frontend release. Uses an already-built image.
+services:
+  frontend:
+    image: ${FRONTEND_IMAGE:-vct-frontend:local}
+    environment:
+      API_UPSTREAM: ${API_UPSTREAM:-http://backend:8000}
+    ports:
+      - "${FRONTEND_BIND_HOST:-127.0.0.1}:${LOCAL_PORT:-8000}:80"
+    networks:
+      - deployment
+    restart: unless-stopped
+
+networks:
+  deployment:
+    external: true
+    name: ${DEPLOY_NETWORK:-vct}

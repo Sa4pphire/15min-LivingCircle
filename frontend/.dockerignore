@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-editor
+.env
+.env.*
+.git
+tests
+npm-debug.log*
+public/demo-connectivity-*.svg
+public/demo-road-graph.svg
+public/walking-*.svg

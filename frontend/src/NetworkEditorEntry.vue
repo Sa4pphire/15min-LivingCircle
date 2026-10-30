@@ -63,7 +63,7 @@ onMounted(list);
 <template>
   <NetworkEditor v-if="opened" :key="opened.id" @choose-region="chooseRegion" />
   <main v-else class="ne-library">
-    <header><a href="/?mode=synthetic">返回生活圈</a><span>路网编辑器</span></header>
+    <header><span>VCT · 路网编辑器</span><span>区域包工作台</span></header>
     <div class="ne-library-body">
       <section class="ne-library-intro"><span class="ne-library-symbol" aria-hidden="true">▧</span><h1>选择要处理的区域</h1><p>打开已有区域继续校对，或输入地点创建一份新的路网。</p><div class="ne-library-buttons"><button :disabled="loading || opening || creating" @click="list">刷新区域列表</button><button class="ne-primary" :disabled="opening || creating" @click="showCreate = !showCreate">创建新区域包</button></div>
         <form v-if="showCreate" class="ne-create-form" @submit.prevent="create"><h2>从一个地点开始</h2><label>大概位置<input v-model="newLocation" placeholder="例如：广东广州、广州天河区" minlength="2" maxlength="120" required :disabled="creating" /></label><label>区域名称（可选）<input v-model="newName" placeholder="默认使用输入的地点" maxlength="80" :disabled="creating" /></label><p>百度底图会定位到这个地点。进入后新增节点、连接步行通道，保存为自己的区域包。</p><button class="ne-primary" type="submit" :disabled="creating || !newLocation.trim()">{{ creating ? createStage : '创建并打开编辑器' }}</button><p v-if="error" class="ne-library-error" role="alert">{{ error }}</p></form>

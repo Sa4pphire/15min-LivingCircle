@@ -3,6 +3,8 @@ setlocal
 if not "%~1"=="" goto command_line
 
 echo Starting Living Circle and Network Editor...
+echo Main page: http://127.0.0.1:5173/
+echo Network editor: http://127.0.0.1:5174/
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0start-demo.ps1" -Action restart
 if errorlevel 1 (
   echo.

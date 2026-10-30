@@ -10,13 +10,9 @@
 **/.pytest-*
 backend/tests
 cpp-engine/tests
-frontend/tests
+# The root context builds only the backend; frontend has its own context.
+frontend
 data/networks/*.svg
-frontend/public/demo-connectivity-*.svg
-frontend/public/demo-road-graph.svg
-frontend/public/walking-*.svg
-frontend/node_modules
-frontend/dist
 cpp-engine/build
 data/cache
 work

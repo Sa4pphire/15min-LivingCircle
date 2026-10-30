@@ -7,7 +7,8 @@ param(
     [ValidateSet('Debug', 'Release')][string]$EngineConfiguration = 'Debug',
     [string]$LocalNetworkPath,
     [ValidateRange(1024, 65535)][int]$BackendPort = 8000,
-    [ValidateRange(1024, 65535)][int]$FrontendPort = 5173
+    [ValidateRange(1024, 65535)][int]$FrontendPort = 5173,
+    [ValidateRange(1024, 65535)][int]$EditorPort = 5174
 )
 
 $ErrorActionPreference = 'Stop'
@@ -15,9 +16,12 @@ $repoRoot = [System.IO.Path]::GetFullPath((Split-Path -Parent $PSCommandPath))
 $frontendDir = Join-Path $repoRoot 'frontend'
 $python = Join-Path $repoRoot '.venv/Scripts/python.exe'
 $logDir = Join-Path $repoRoot 'data/cache'
+# Retain the original state location so restart can stop version-1 services.
+# The editor port can change on restart without losing the old process records.
 $statePath = Join-Path $logDir "demo-service-$BackendPort-$FrontendPort.json"
 $apiUrl = "http://127.0.0.1:$BackendPort"
 $frontendUrl = "http://127.0.0.1:$FrontendPort"
+$editorUrl = "http://127.0.0.1:$EditorPort"
 $ownedProcesses = @()
 $ownedSessionId = $null
 $environmentBackup = @{}
@@ -85,6 +89,13 @@ function Test-FrontendReady {
     } catch { return $false }
 }
 
+function Test-EditorReady {
+    try {
+        $response = Invoke-WebRequest -Uri "$editorUrl/" -UseBasicParsing -TimeoutSec 2
+        return $response.StatusCode -eq 200 -and $response.Content.Contains('/src/editorEntry.js')
+    } catch { return $false }
+}
+
 function Get-ProcessRecord($process, [string]$role, [switch]$Primary, [string]$Executable) {
     $process.Refresh()
     return [pscustomobject]@{
@@ -110,7 +121,7 @@ function Get-MatchingProcess($record) {
 function Read-ServiceState {
     if (-not (Test-Path -LiteralPath $statePath -PathType Leaf)) { return $null }
     $state = Get-Content -LiteralPath $statePath -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ($state.version -ne 1 -or $state.repoRoot -ne $repoRoot -or
+    if ($state.version -notin @(1, 2) -or $state.repoRoot -ne $repoRoot -or
         $state.backendPort -ne $BackendPort -or $state.frontendPort -ne $FrontendPort) {
         throw "Invalid launcher state: $statePath. No process was stopped."
     }
@@ -364,7 +375,10 @@ function Test-AnalysisRoundTrip($request, [string]$endpoint, [string]$resultEndp
 $mutexKey = Get-TextHash "$repoRoot|$BackendPort|$FrontendPort"
 $mutex = New-Object System.Threading.Mutex($false, "Local\LivingCircleDemo-$mutexKey")
 try {
-    if ($BackendPort -eq $FrontendPort) { throw 'Backend and frontend ports must be different.' }
+    if ($Action -notin @('stop', 'status') -and
+        ($BackendPort -eq $FrontendPort -or $BackendPort -eq $EditorPort -or $FrontendPort -eq $EditorPort)) {
+        throw 'Backend, main page and editor ports must be different.'
+    }
     try { $lockHeld = $mutex.WaitOne(0) } catch [System.Threading.AbandonedMutexException] { $lockHeld = $true }
     if (-not $lockHeld) { throw 'Another launcher command is in progress. Try again shortly.' }
     if ($Action -eq 'stop') { Stop-Service; return }
@@ -378,12 +392,19 @@ try {
                 $label = if ($record.primary) { $record.role } else { "$($record.role) child" }
                 Write-Host "${label}: $status (PID $($record.id))"
             }
-            Write-Host "Page: $frontendUrl/?mode=local"
+            Write-Host "Main page: $frontendUrl/"
+            if ($state.version -eq 2) {
+                Write-Host "Network editor: http://127.0.0.1:$($state.editorPort)/"
+            } else {
+                Write-Host 'Legacy two-service session. Run restart to add the separate editor page.'
+            }
             Write-Host "Engine: $($state.engine)"
             Write-Host "Local network: $($state.localNetwork)"
         }
         Write-Host "Port $BackendPort listening: $(Test-PortOpen $BackendPort)"
         Write-Host "Port $FrontendPort listening: $(Test-PortOpen $FrontendPort)"
+        $reportedEditorPort = if ($state -and $state.version -eq 2) { [int]$state.editorPort } else { $EditorPort }
+        Write-Host "Editor port $reportedEditorPort listening: $(Test-PortOpen $reportedEditorPort)"
         return
     }
     if (-not (Test-Path -LiteralPath $python -PathType Leaf)) { throw "Required file missing: $python" }
@@ -408,21 +429,25 @@ try {
         $live = @($existing.processes | Where-Object { $null -ne (Get-MatchingProcess $_) })
         if ($live.Count -gt 0) {
             $livePrimary = @($live | Where-Object { $_.primary })
-            if ($livePrimary.Count -eq 2 -and -not $BuildEngine -and $existing.fingerprint -eq $fingerprint -and
-                (Test-ApiReady) -and (Test-FrontendReady)) {
-                Write-Host "Managed services are already running: $frontendUrl/?mode=local"
+            if ($livePrimary.Count -eq 3 -and $existing.version -eq 2 -and
+                $existing.editorPort -eq $EditorPort -and -not $BuildEngine -and
+                $existing.fingerprint -eq $fingerprint -and
+                (Test-ApiReady) -and (Test-FrontendReady) -and (Test-EditorReady)) {
+                Write-Host "Main page is already running: $frontendUrl/"
+                Write-Host "Network editor is already running: $editorUrl/"
                 $keepServices = $true
                 return
             }
-            if ($BuildEngine -or $existing.fingerprint -ne $fingerprint) {
-                throw 'Source code or network configuration changed. Run restart to reload it.'
+            if ($BuildEngine -or $existing.fingerprint -ne $fingerprint -or
+                $existing.version -ne 2 -or $existing.editorPort -ne $EditorPort) {
+                throw 'Source code, network or editor port configuration changed. Run restart to reload it.'
             }
             throw 'A managed service exited or is unhealthy. Check the logs and run restart.'
         }
         Remove-Item -LiteralPath $statePath -Force
     }
     if ($Action -ne 'check') {
-        foreach ($port in @($BackendPort, $FrontendPort)) {
+        foreach ($port in @($BackendPort, $FrontendPort, $EditorPort)) {
             if (Test-PortOpen $port) {
                 throw "Port $port is occupied by a service not owned by this launcher. Stop it yourself or select other ports. It was NOT reused or stopped."
             }
@@ -438,6 +463,7 @@ try {
     Set-LaunchEnvironment 'POI_MAP_ASSET_PATH' $regionConfiguration.poiMapAssetPath
     Set-LaunchEnvironment 'DEMO_BACKEND_PORT' $BackendPort.ToString()
     Set-LaunchEnvironment 'DEMO_FRONTEND_PORT' $FrontendPort.ToString()
+    Set-LaunchEnvironment 'DEMO_EDITOR_PORT' $EditorPort.ToString()
     Set-LaunchEnvironment 'PYTHONIOENCODING' 'utf-8'
     $preflightText = & $python -B (Join-Path $repoRoot 'backend/scripts/demo_preflight.py')
     if ($LASTEXITCODE -ne 0) { throw 'Python/network preflight failed; see the preceding error.' }
@@ -447,7 +473,8 @@ try {
     Write-Host "Local network: $localPath ($($preflight.localSource); no unverified real-world claims)"
     if ($Action -eq 'check') { Write-Host 'Dependencies, network inputs and engine contract passed.'; return }
     $state = [pscustomobject]@{
-        version = 1; repoRoot = $repoRoot; backendPort = $BackendPort; frontendPort = $FrontendPort
+        version = 2; repoRoot = $repoRoot; backendPort = $BackendPort; frontendPort = $FrontendPort
+        editorPort = $EditorPort
         sessionId = [Guid]::NewGuid().ToString(); fingerprint = $fingerprint
         engine = $engine; localNetwork = $localPath; processes = @()
         regionId = $preflight.regionId; regionRevision = $preflight.regionRevision
@@ -461,7 +488,14 @@ try {
     Wait-ForReady { Test-ApiReady } $backend 'Python API'
     $frontend = Start-LoggedProcess $nodeCommand.Source @((Join-Path $frontendDir 'scripts/demo-vite.mjs')) $frontendDir 'frontend'
     $ownedProcesses += Get-ProcessRecord $frontend 'frontend' -Primary -Executable $nodeCommand.Source
+    $state.processes = $ownedProcesses
+    Save-ServiceState $state
     Wait-ForReady { Test-FrontendReady } $frontend 'Vite frontend'
+    $editor = Start-LoggedProcess $nodeCommand.Source @((Join-Path $frontendDir 'scripts/demo-vite.mjs'), '--editor') $frontendDir 'editor'
+    $ownedProcesses += Get-ProcessRecord $editor 'editor' -Primary -Executable $nodeCommand.Source
+    $state.processes = $ownedProcesses
+    Save-ServiceState $state
+    Wait-ForReady { Test-EditorReady } $editor 'Vite network editor'
     # Persist known descendants too, so an exited venv shim does not hide its Python child.
     $snapshot = @(Get-CimInstance Win32_Process -ErrorAction Stop)
     $descendants = @()
@@ -478,7 +512,8 @@ try {
     Test-AnalysisRoundTrip $preflight.syntheticRequest 'synthetic-analyses' 'analyses' ''
     Test-AnalysisRoundTrip $preflight.localRequest 'local-experiments' 'local-experiments' 'local_experiment'
     Write-Host 'Verified: region package and frontend proxy -> Python -> C++, for both synthetic and local modes.'
-    Write-Host "Open $frontendUrl/?mode=local"
+    Write-Host "Main page: $frontendUrl/"
+    Write-Host "Network editor: $editorUrl/"
     Write-Host 'These demo data do not establish a verified real-world facility report.'
     $mutex.ReleaseMutex()
     $lockHeld = $false
@@ -486,7 +521,7 @@ try {
         Write-Host 'Press Ctrl+C to stop the services started by this invocation.'
         while ($true) {
             Start-Sleep -Seconds 1
-            foreach ($service in @($backend, $frontend)) {
+            foreach ($service in @($backend, $frontend, $editor)) {
                 $service.Refresh()
                 if ($service.HasExited) { throw "Service process $($service.Id) exited." }
             }

@@ -1,183 +1,49 @@
 # Vision China Terminal（VCT）
 
-<img width="1393" height="220" alt="QQ20261010-124208" src="https://github.com/user-attachments/assets/b22a5c45-8fc3-4965-83aa-dd90fc563a1d" />
+<img width="1393" height="220" alt="Vision China Terminal 项目横幅" src="https://github.com/user-attachments/assets/b22a5c45-8fc3-4965-83aa-dd90fc563a1d" />
 
-Vision China Terminal（中国观察终端）是面向社区步行可达性分析的 Web 演示项目。用户选择区域和起点，查看 15 分钟步行范围、周边民生设施、到设施的路线及服务覆盖提示。该仓库通过加载不同区域的区域数据包来实现不同区域的分析演示。在保留较高精度计算结果的同时做到了不同区域的灵活迁移。该仓库内置上海-新江湾城演示区域包，也包含了网页版的路网编辑器，可以通过路网编辑器维护、创建和导出区域数据。
+Vision China Terminal（中国观察终端）是一个面向社区步行可达性分析的 Web 项目。选择区域和起点后，可以查看 15 分钟步行范围、周边生活设施、参考路线和服务覆盖提示。项目内置上海新江湾城区域包，支持制作自己的区域数据，并通过 MySQL 管理完整区域包的发布版本。
 
-## 两种计算模式
+项目由生活圈展示页、独立路网编辑器、Python 业务 API 和 C++ 计算引擎组成。主站用于分析与展示，编辑器用于制作路网，前后端可以分别构建和部署。
 
-| 模式 | 模式特点 | 算法文档 |
+## 计算模式
+
+| 模式 | 数据与计算方式 | 使用条件 |
 | --- | --- | --- |
-| 在线计算 | 使用在线地图信息查看步行范围、周边设施和规划路线；需联网及地图API配置，查询速度受网络和服务配额影响 | [在线计算算法](backend/README.md) |
-| 合成模拟 | 基于可编辑的本地区域路网和模拟算法进行计算，范围计算不依赖在线请求API | [合成模拟算法](cpp-engine/README.md) |
+| 在线计算 | 使用百度步行路线采样、插值与等时圈提取，查询地点和参考路线 | 需要网络、地图 AK 和可用 API 配额 |
+| C++ 路网模式（合成模拟） | 在区域包的步行图上计算可达范围与设施覆盖，使用显式节点、路段、过街和等待参数 | 范围计算使用本地模型；在线底图和在线地点刷新另需网络 |
 
-## 可选生活圈对话助手
+路网模型和设施清单的完整性会影响结果。未经核实的入口、通行关系和设施数据不能直接作为真实生活服务缺失的证明。算法说明见 [在线计算](backend/README.md) 和 [C++ 路网计算](cpp-engine/README.md)。
 
-完成当前起点的生活圈计算后，可向助手询问“最近的医院怎么走”“这两家哪家步行更快”等问题，并查看返回的设施与地图路线。首版使用本次分析中的医疗候选，包含医院和社区医疗中心；候选或路线查询不完整时会说明比较范围，不把结果表述为全区域绝对最近。在线计算与合成模拟分别复用各自的路线能力。
+## 架构与目录
 
-模型 API 由使用者自行提供，默认关闭。按下面的教程填写配置即可接入；不用修改 Python 或前端代码。助手使用现有 `httpx` 依赖，无需另外安装模型 SDK。
-
-### 1. 确认模型 API 协议
-
-当前助手使用 **Responses API**，后端会向 `AGENT_API_BASE_URL` 后追加 `/responses` 发送请求。服务和所选模型需要支持函数工具调用（`tools`、`tool_choice`）、`store: false` 以及请求中的 `reasoning.encrypted_content`。只有 `/chat/completions` 文本接口的服务不能直接用于当前助手。
-
-模型 API 密钥和百度地图 AK 是两份独立配置：`AGENT_API_KEY` 用于理解问题和选择工具，`BAIDU_SERVER_AK` 用于在线地图与步行路线。填写模型密钥不会替代地图配置；合成模拟继续使用本地路网计算。
-
-### 2. 找到根目录 `.env`
-
-“根目录”指包含本文件、`start-demo.bat` 和 `docker-compose.yml` 的项目目录。实际填写的是这里的 **`.env` 文件**，不是 `frontend/.env.local`。本地配置和密钥不要提交到 GitHub。
-
-如果已经配置过项目，直接编辑已有 `.env`，保留其中的百度地图 AK、区域和引擎路径。如果还没有 `.env`，按运行方式从完整样例创建。以下命令只在文件不存在时复制，二选一执行：
-
-Windows 本地运行：
-
-```powershell
-if (-not (Test-Path -LiteralPath .env)) {
-    Copy-Item .env.windows.example .env
-}
+```mermaid
+flowchart LR
+    Main[生活圈展示页] -->|HTTP /api| API[FastAPI 业务服务]
+    Editor[独立路网编辑器] -->|HTTP /api| API
+    API -->|计算请求| Engine[C++ 引擎]
+    API -->|文件模式制作与读取| Files[本地区域包]
+    API -->|发布或启动时加载版本| DB[(MySQL 可选)]
 ```
 
-Docker 本地运行：
+浏览器只访问 HTTP API，数据库凭据保留在后端。默认引擎通过子进程调用；源码还提供可选 gRPC 传输，当前 Docker 后端仍使用 C++ CLI，没有拆成独立 RPC 容器。
 
-```powershell
-if (-not (Test-Path -LiteralPath .env)) {
-    Copy-Item .env.example .env
-}
-```
-
-在 Windows 中可执行 `notepad .env` 打开文件。找到 `AGENT_` 开头的配置并原位修改；旧配置文件没有这些条目时，复制下一节的配置块追加到文件末尾。每个配置项只保留一份。**不要用 Agent 配置块覆盖整个 `.env`**，否则会丢失原有地图和引擎配置。
-
-### 3. 填写服务地址、模型名称和密钥
-
-下面的地址和文字只是占位示例，需要替换成你提供的服务信息；时间与次数可先保持默认值：
-
-```dotenv
-AGENT_ENABLED=true
-AGENT_API_BASE_URL=https://your-api.example/v1
-AGENT_API_KEY=替换为你的模型API密钥
-AGENT_MODEL=替换为服务商支持的模型名称
-
-AGENT_TIMEOUT_SECONDS=90
-AGENT_MODEL_TIMEOUT_SECONDS=25
-AGENT_MAX_CONCURRENCY=2
-AGENT_MAX_MODEL_CALLS=4
-```
-
-| 配置项 | 填写方式 |
+| 目录／文件 | 用途 |
 | --- | --- |
-| `AGENT_ENABLED` | 填 `true` 启用；填 `false` 关闭，不影响原有地图功能 |
-| `AGENT_API_BASE_URL` | 填服务商提供的 API 根地址，通常以 `/v1` 结尾，**不包含 `/responses`**；程序会自动追加这一段路径 |
-| `AGENT_API_KEY` | 填模型服务的真实密钥，仅保存在服务端 `.env`；不要添加 `VITE_` 前缀或放入前端配置 |
-| `AGENT_MODEL` | 填该服务实际支持的模型标识，不能随意填写显示名称；模型需支持上述工具调用协议 |
-| `AGENT_TIMEOUT_SECONDS` | 默认 `90`，一轮对话的总时间预算，包含模型和路线工具执行 |
-| `AGENT_MODEL_TIMEOUT_SECONDS` | 默认 `25`，每一次模型请求的时间预算 |
-| `AGENT_MAX_CONCURRENCY` | 默认 `2`，单个后端进程同时处理的对话请求上限 |
-| `AGENT_MAX_MODEL_CALLS` | 默认 `4`，一轮对话允许请求模型的次数上限 |
+| `frontend/` | Vue 主站与独立编辑器，分别构建 |
+| `backend/app/` | API、区域包、发布仓储及计算编排 |
+| `backend/sql/` | MySQL 首版建表 SQL |
+| `cpp-engine/` | C++20 路网计算与可选 RPC 服务 |
+| `data/regions/` | 本地完整区域包及编辑源文件 |
+| `deploy/` | 独立前端、后端、MySQL 的 Compose 配置 |
+| `contracts/` | Python 与 C++ 的数据契约 |
+| `start-demo.bat` | Windows 本地启停入口 |
 
-例如，根地址填写 `https://your-api.example/v1` 时，实际请求地址是 `https://your-api.example/v1/responses`。样例文件本身不会被自动加载；运行配置须写入根 `.env` 或服务端进程环境。
+## Windows 快速开始
 
-### 4. 重启服务并使用助手
+以下命令在仓库根目录的 PowerShell 中执行。准备 Python 3.12+、Node.js 22.12+ 的 22.x 版本，以及支持 C++20 的编译器；使用 CMake 时需 3.20+ 和匹配的工具链。首次安装依赖需要联网。
 
-Windows 本地运行，在项目根目录执行：
-
-```powershell
-.\start-demo.bat restart
-```
-
-也可重新双击 `start-demo.bat`。首次使用仍需先完成下方“部署与运行”中的环境安装。
-
-Docker 本地运行，执行以下命令重新构建并创建容器，使新配置和当前源码生效：
-
-```powershell
-docker compose up --build -d
-```
-
-Compose 已通过 `env_file` 读取根 `.env`，无需将模型密钥传给前端构建。服务重新启动后刷新页面，选择区域、计算模式和起点，完成一次生活圈分析，再打开“生活圈助手”，输入“附近有哪些医疗设施”或“最近的医院怎么走”。未完成分析时，助手会提示先计算范围。
-
-### 5. 配置自查与常见问题
-
-可按需打开后端的[助手状态接口](http://127.0.0.1:8000/api/v1/agent/status)。默认端口为 `8000`；Docker 修改过 `LOCAL_PORT` 时使用对应端口。配置启用且字段格式完整时，返回示例为：
-
-```json
-{"enabled": true, "configured": true}
-```
-
-这个接口只读取配置，**不会请求模型**。两个值为 `true` 不代表密钥有效、服务连通或模型支持工具调用；实际兼容性需要另行通过对话联调确认。
-
-| 现象 | 检查位置 |
-| --- | --- |
-| `enabled` 为 `false` | 根 `.env` 中的 `AGENT_ENABLED` 是否为 `true`，以及是否已重启后端 |
-| `configured` 为 `false` | 地址、密钥和模型名是否填写；地址是否错误地带有 `/responses`；数字配置是否为有效值 |
-| 修改后仍显示旧配置 | 是否改了根 `.env`；终端或系统已设置的同名环境变量优先于文件；Docker 需重新创建容器，不能只刷新网页 |
-| 模型鉴权失败 | 密钥是否属于当前服务、是否具备所选模型权限；不要填写百度 AK |
-| 提示未提供 Responses 接口或协议错误 | 服务地址是否正确，以及服务是否支持本节列出的 Responses 参数与工具调用协议 |
-| 提示分析或路线信息已过期 | 重新计算当前起点的生活圈，再开始新对话 |
-
-更多接口、资源边界及待执行的验收项目见 [生活圈 Agent 说明](docs/life-circle-agent.md)。
-
-OSM 自动建图及建模 Agent 当前仍是研究方案，见 [自动道路生成设计](docs/offline-road-generation-editor-design.md)，本次对话功能不开放路网写入。
-
-
-## 部署与运行
-
-前端、Python 后端和 C++ 计算引擎都在评审电脑上运行，通过 localhost 访问，地图 AK 由评审自行配置。可以使用 Docker 统一构建运行环境，也可以使用 Windows BAT 启动。以下命令在仓库根目录的 PowerShell 中执行。
-
-AK是百度地图的API密钥，需要用户自行在开发者平台申请并按照文档补充。否则将无法使用在线计算路线服务，仅能通过合成计算模式体验VCT。
-
-### 方式一：Docker 本地运行
-
-安装并启动 [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/)，使用 Linux containers，Docker Compose 需 2.24+。Python、Node.js 和 C++ 引擎在镜像内构建，评审电脑只需准备 Docker 运行环境。首次构建需要联网下载镜像和依赖。
-
-#### 1. 配置 AK
-
-根目录配置文件不存在时，从空白样例创建：
-
-```powershell
-if (-not (Test-Path -LiteralPath .env)) {
-    Copy-Item .env.example .env
-}
-```
-
-在根目录 `.env` 填写：
-
-| 配置项 | 用途 |
-| --- | --- |
-| `BAIDU_SERVER_AK` | 服务端在线步行计算和地图查询 |
-| `VITE_BAIDU_BROWSER_AK` | 百度底图和地点定位，需允许 `localhost` / `127.0.0.1` 来源 |
-| `REGION_ID` | 默认区域，初始值为 `shanghai-new-jiangwan` |
-| `LOCAL_PORT` | 本机访问端口，默认 `8000` |
-
-浏览器 AK 在镜像构建时读取，服务端 AK 在容器启动时读取。Docker 构建会排除本地私密配置文件，只将浏览器 AK 传给前端构建。AK 留空时可用“合成模拟”和包内地点快照演示。
-
-#### 2. 构建与启动
-
-```powershell
-docker compose up --build -d
-docker compose ps
-```
-
-构建会生成前端和 Release C++ 引擎。启动后等待状态变为 `healthy`，打开 [生活圈展示](http://localhost:8000/)；[路网编辑器](http://localhost:8000/?mode=editor)使用同一套服务。设置其他 `LOCAL_PORT` 时，访问地址使用对应端口。
-
-Compose 将 `./data` 挂载到容器，区域修改和缓存保存在项目目录。迁移时保留完整的 `data/regions/`；ZIP 区域包需先解压到对应目录。修改 AK、默认区域或源码后，再执行 `docker compose up --build -d`，然后刷新页面。
-
-```powershell
-docker compose logs -f app
-docker compose down
-```
-
-第一条命令查看日志；第二条停止本次演示。服务端与浏览器 AK 的含义也见下方 Windows 配置说明。
-
-### 方式二：Windows 本地运行
-
-#### 在评审电脑上运行
-
-##### 1. 准备运行环境
-
-- Python 3.12 或以上。
-- Node.js 22.12 或以上的 22.x 版本，包含 npm。
-- 支持 C++20 的编译器，例如已加入 PATH 的 MinGW `g++`。如使用 CMake，需安装 CMake 3.20+ 及匹配的编译工具链。
-
-首次安装依赖需要联网：
+### 1. 安装依赖
 
 ```powershell
 python -m venv .venv
@@ -185,9 +51,9 @@ python -m venv .venv
 npm.cmd --prefix frontend ci
 ```
 
-##### 2. 配置地图 AK
+### 2. 创建配置
 
-从空白样例创建配置文件；已有文件时保留原配置：
+已有配置文件时保留原内容，不重复覆盖：
 
 ```powershell
 if (-not (Test-Path -LiteralPath .env)) {
@@ -198,56 +64,253 @@ if (-not (Test-Path -LiteralPath frontend/.env.local)) {
 }
 ```
 
-用文本编辑器填写：
-
-| 配置文件 | 配置项 | 用途 |
+| 文件 | 配置 | 用途 |
 | --- | --- | --- |
-| 根目录 `.env` | `BAIDU_SERVER_AK` | 在线步行计算、路线查询和按需 POI 检索 |
-| `frontend/.env.local` | `VITE_BAIDU_BROWSER_AK` | 百度底图和编辑器中的地点定位；需允许实际使用的 `localhost` / `127.0.0.1` 来源 |
-| 根目录 `.env` | `REGION_ID` | 默认区域，初始值为 `shanghai-new-jiangwan` |
+| 根 `.env` | `BAIDU_SERVER_AK` | 服务端在线路线与地点查询 |
+| `frontend/.env.local` | `VITE_BAIDU_BROWSER_AK` | 百度底图与编辑器地点定位 |
+| 根 `.env` | `REGION_ID` | 默认区域，初始为 `shanghai-new-jiangwan` |
+| 根 `.env` | `REGION_STORAGE_BACKEND=file` | 本地编辑与文件模式读取 |
 
-本地配置使用 [.env.windows.example](.env.windows.example)，引擎和区域文件路径由启动器自动解析。服务端 AK 只填写 `BAIDU_SERVER_AK`，前端文件只填写浏览器 AK；真实密钥不随仓库提交。
+地图 AK 由使用者自行申请。浏览器 AK 需允许实际使用的本机来源；服务端 AK 和数据库密码不要放进 `VITE_` 变量。AK 留空时仍可使用包内地图、路网与地点快照体验合成模拟。
 
-AK 留空时，可用本地区域地图和“合成模拟”演示。区域包内的 `pois.json` 保存地点快照，新江湾城包当前含 642 个去重地点，迁移后可直接读取。在线计算、百度在线路线和百度底图需要对应的 AK 与网络连接。
+### 3. 启动与停止
 
-##### 3. 双击启动
-
-完成首次安装和配置后，双击仓库根目录的 `start-demo.bat`。脚本会按需编译引擎、启动前后端并检查计算链路，成功后自动打开生活圈展示页。
-
-- [生活圈展示](http://127.0.0.1:5173/)
-- [路网编辑器](http://127.0.0.1:5173/?mode=editor)：共用已经启动的服务，按需手动打开。
-- [后端健康检查](http://127.0.0.1:8000/api/v1/health)
-
-也可在终端使用以下命令，启动后手动打开上面的页面：
+双击 `start-demo.bat`，或执行：
 
 ```powershell
 .\start-demo.bat start
 .\start-demo.bat status
-.\start-demo.bat stop
-.\start-demo.bat restart
 ```
 
-服务在后台运行，关闭网页不会停止；结束演示后执行 `stop`。修改 AK 或默认区域后，再次双击脚本或执行 `restart`，然后刷新网页。启动失败时查看窗口提示和 `data/cache/demo-*.log`；端口 8000 / 5173 冲突及其他参数说明见 [Windows 启动说明](docs/windows-demo-launcher.md)。
+| 服务 | 默认地址 |
+| --- | --- |
+| 生活圈主站 | [http://127.0.0.1:5173/](http://127.0.0.1:5173/) |
+| 独立路网编辑器 | [http://127.0.0.1:5174/](http://127.0.0.1:5174/) |
+| 后端 API 文档 | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
 
-##### 4. 迁移到另一台电脑
+启动器会按需构建引擎，启动共用后端和两个独立前端进程，并执行既有的计算链路检查。双击 BAT 只自动打开主站，编辑器手动访问；主站已移除编辑入口，旧 `?mode=editor` 地址不再打开编辑器。
 
-复制或克隆项目源码，保留 `frontend/package-lock.json` 和完整的 `data/regions/` 区域数据。新电脑按上述步骤创建 `.venv`、安装前端依赖并填写自己的 AK。原电脑的虚拟环境、依赖目录和密钥无需复制。
+```powershell
+.\start-demo.bat restart
+.\start-demo.bat stop
+# 可选：改用其他编辑器端口
+.\start-demo.bat restart -EditorPort 5274
+```
 
-自定义区域将完整目录放到 `data/regions/<id>/`，可在页面选择；需要更改默认区域时，在 `.env` 设置 `REGION_ID=<id>` 并重启。ZIP 区域包需先解压到对应目录。选定起点并完成计算后，页面只显示范围内的地点。
+`stop` 会停止本启动器登记的三个进程。修改后端配置后使用 `restart`；端口冲突、日志和其他参数见 [Windows 启动说明](docs/windows-demo-launcher.md)。以上是脚本的使用说明，本次改造未执行启动或测试。
 
-区域数据格式、维护与打包见 [区域包说明](docs/region-packages.md)，手动建图见 [路网编辑器说明](docs/network-editor.md)。
+## 路网编辑器
 
-<img width="1261" height="999" alt="QQ20261010-124504" src="https://github.com/user-attachments/assets/9146381d-2e70-41e1-961c-667809c82826" />
+编辑器按工作用途组织工具，右侧只展开当前功能需要的面板：
 
-## 开发入口
+| 类别 | 统一入口 |
+| --- | --- |
+| 基础工具 | 选择与属性、绘制道路、调整结构 |
+| 进阶工具 | 检查与优化、自动建图、区域与发布 |
+| 常用操作 | 保存本地、撤销、重做、图层 |
 
-- [在线计算算法与接口](backend/README.md)
-- [合成模拟算法与 C++ 构建](cpp-engine/README.md)
-- [Python 可选接入 C++ RPC](cpp-engine/README.md#14-第四阶段python-可选接入-c-rpc)：默认仍使用子进程，RPC 源码已接入、运行待验收；MySQL／Redis 仍为后续构想。
-- [C++ 有界并发执行层](cpp-engine/README.md#15-第五阶段c-有界并发执行层)：RPC 服务与客户端容量可配置，默认2；满额拒绝，无新增应用等待队列，源码交付、运行待验收。
+可以创建区域、绘制和修正道路、检查路径、审阅局部精化建议、从已有 OSM 道路源图生成路口草案，或框选子区域打包。路网生成与底图轮廓生成分别预览、采纳；空白区域尚不支持一键下载 OSM 并生成完整步行路网。
+
+保存和发布是两个动作：
+
+1. **保存本地**：校验并更新区域包，保留修改前备份。
+2. **进阶 → 区域与发布 → 发布已保存版本**：将完整区域包导入 MySQL 并切换发布指针，前提是已配置数据库。
+
+存在未保存修改或未处理的生成预览时，先处理并保存。旧 `5173` 端口的浏览器草稿不会自动迁移到 `5174`；切换前应在旧编辑页恢复并保存，或导出完整路网 JSON。已保存到后端的区域继续共用。详见 [编辑器操作与发布](docs/network-editor.md)。
+
+## MySQL 初始化、构建与发布
+
+MySQL 是可选组件，默认文件模式无需数据库。首版完整保存区域包版本，包含清单、路网、POI、标定、底图与编辑源文件；没有将节点和路段拆成关系表。
+
+| 模式 | 配置 | 行为 |
+| --- | --- | --- |
+| 本地制作 | `APP_ENV=development`、`REGION_STORAGE_BACKEND=file` | 编辑本地文件，也可通过按钮发布到 MySQL |
+| 数据库展示 | `REGION_STORAGE_BACKEND=mysql` | 启动时加载已发布版本，关闭编辑器 API |
+
+### 1. 创建数据库与业务账号
+
+选择下面一种方式。创建数据库和账号需要数据库管理权限；项目的 `init` 命令只建表，不创建数据库或用户。
+
+**方式 A：使用项目提供的 MySQL 8.4 容器。** 先准备 Docker Desktop 的 Linux containers 和 Docker Compose 2.24+，创建配置：
+
+```powershell
+if (-not (Test-Path -LiteralPath .env.mysql)) {
+    Copy-Item .env.mysql.example .env.mysql
+}
+```
+
+在 `.env.mysql` 填写 `MYSQL_PASSWORD` 和 `MYSQL_ROOT_PASSWORD`，保留默认数据库 `livingcircle` 与业务账号 `livingcircle`，或统一改成自己的值。共享网络已存在时直接复用：
+
+```powershell
+docker network create vct
+# Windows 编辑器需要连接数据库时，附加仅本机开放端口的覆盖配置。
+docker compose --env-file .env.mysql -p vct-mysql -f deploy/mysql.compose.yml -f deploy/mysql.local.compose.yml up -d
+```
+
+首次启动空数据卷时，MySQL 镜像根据这些变量创建数据库和业务账号。等待数据库初始化完成后再建表；已有数据卷不会因为修改环境文件而重设账号密码。只在 Docker 内部使用数据库时，省略 `-f deploy/mysql.local.compose.yml`，不发布主机端口。
+
+**方式 B：使用已有 MySQL 8.4。** 例如编辑服务通过本机 TCP 连接数据库，可由管理员在 MySQL 客户端执行下列 SQL，先替换密码占位文字：
+
+```sql
+CREATE DATABASE livingcircle
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+CREATE USER 'livingcircle'@'127.0.0.1'
+  IDENTIFIED BY '替换为你自己的数据库密码';
+GRANT SELECT, INSERT, UPDATE, CREATE, REFERENCES
+  ON livingcircle.* TO 'livingcircle'@'127.0.0.1';
+```
+
+这是本机来源账号示例；若应用来自容器或其他主机，账号的 Host 应匹配实际允许的客户端来源，`MYSQL_HOST` 则填写数据库地址。已有账号按需补充授权，不重复创建。上述权限覆盖当前首版建表、读取和发布操作；账号与授权语义见 [MySQL 官方说明](https://dev.mysql.com/doc/refman/8.4/en/creating-accounts.html)。已有实例还需由管理员配置足够的 `max_allowed_packet`，本项目 Compose 使用 `128M`。
+
+### 2. 配置本地编辑后端并初始化表
+
+根 `.env` 保持文件模式，填写业务账号连接信息。使用方式 A 的本机端口映射时，示例为：
+
+```dotenv
+APP_ENV=development
+REGION_STORAGE_BACKEND=file
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_DATABASE=livingcircle
+MYSQL_USER=livingcircle
+MYSQL_PASSWORD=替换为上一步业务账号的密码
+```
+
+Windows 进程不能用 Docker 内部服务名 `mysql` 连接数据库。若配置了其他 `MYSQL_LOCAL_PORT`，这里的 `MYSQL_PORT` 也要对应修改。此处填写业务账号密码，不是 `MYSQL_ROOT_PASSWORD`。
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements-mysql.txt
+Push-Location backend
+try {
+    ..\.venv\Scripts\python.exe -m app.region_store_cli init
+} finally {
+    Pop-Location
+}
+```
+
+初始化创建三张表：`regions` 保存发布指针，`region_versions` 保存版本与原始清单，`region_files` 保存文件原字节和摘要。API 启动和编辑器发布不会隐式建表。
+
+### 3. 导入与发布区域包
+
+重启本地后端，在编辑器中保存区域，再点击“发布已保存版本”。也可以通过命令导入指定目录：
+
+```powershell
+Push-Location backend
+try {
+    ..\.venv\Scripts\python.exe -m app.region_store_cli import ../data/regions/shanghai-new-jiangwan --publish
+    ..\.venv\Scripts\python.exe -m app.region_store_cli list
+} finally {
+    Pop-Location
+}
+```
+
+保存返回的 `version_id`。相同内容重复导入会复用版本，内容改变则生成新的内容版本；导入和可选发布在同一事务中提交。省略 `--publish` 可只导入，之后用 `publish REGION_ID VERSION_ID` 发布。`export REGION_ID VERSION_ID DIRECTORY` 可导出到一个尚不存在的目录，详见 [版本导出与回退](docs/mysql-region-storage.md#导出与回退)。
+
+编辑器显示“配置已具备”只说明服务端参数和驱动存在，不代表数据库在线或表已初始化。发布失败保留此前的本地保存，不自动重试。
+
+### 4. 构建并运行 MySQL 展示后端
+
+`.env.mysql.example` 默认使用容器内部地址 `MYSQL_HOST=mysql`，以及 `REGION_STORAGE_BACKEND=mysql`、`BACKEND_IMAGE=vct-backend:mysql`、`BACKEND_ENV_FILE=../.env.mysql`。使用同一 Docker 网络时保留这些值；连接外部 MySQL 时改为容器可访问的数据库地址与账号。
+
+```powershell
+docker build --build-arg WITH_MYSQL=true -t vct-backend:mysql .
+```
+
+如果未通过本地 Python 完成建表和首次导入，可使用镜像中的管理命令完成这两步：
+
+```powershell
+docker compose --env-file .env.mysql -p vct-backend -f deploy/backend.compose.yml run --rm --no-deps backend python -m app.region_store_cli init
+docker compose --env-file .env.mysql -p vct-backend -f deploy/backend.compose.yml run --rm --no-deps backend python -m app.region_store_cli import /app/data/regions/shanghai-new-jiangwan --publish
+```
+
+默认区域已有发布版本后再启动展示后端：
+
+```powershell
+docker compose --env-file .env.mysql -p vct-backend -f deploy/backend.compose.yml up -d
+```
+
+后端默认映射到本机 `8001`。`--env-file` 为 Compose 提供替换变量，`BACKEND_ENV_FILE` 指定注入后端容器的配置，两者用途不同。此服务不会自动继承另一份根 `.env` 的全部配置，需要的服务端地图与助手配置应加入 `.env.mysql`。
+
+新版本发布后，已经运行的 MySQL 展示后端仍使用旧快照，需要显式重启：
+
+```powershell
+docker compose --env-file .env.mysql -p vct-backend -f deploy/backend.compose.yml restart backend
+```
+
+每个服务实例在启动时为每个已发布区域生成一份临时文件快照，现有计算流程读取该快照，运行期间不逐边查询 SQL。启动加载失败不回退仓库旧图；发布不会自动热切换。文件模式编辑服务继续读本地包，不需要改成 MySQL 模式。
+
+### 存储边界
+
+- 单文件上限为 **32 MiB**；Compose 的 `max_allowed_packet` 为 **128 MiB**，列类型的理论容量不代表项目输入上限。
+- 历史版本完整保留，尚无跨版本文件去重或自动清理；运行时仍需要临时磁盘快照。
+- MySQL 保存区域包，不持久化当前分析任务或 Agent 会话；重启后不能继续查询原进程内任务。
+- 数据库账号和密码仅配置在后端。完整配置、操作与回退说明见 [MySQL 区域包存储](docs/mysql-region-storage.md)。
+
+## Docker 前后端部署
+
+前端镜像只包含生活圈主站；独立编辑器目前使用 Windows／Vite 工作流，没有单独的编辑器 Docker 服务。后端镜像包含 FastAPI 和 C++ CLI，MySQL 驱动通过 `WITH_MYSQL=true` 选择安装。
+
+### 本机文件模式演示
+
+从 [.env.example](.env.example) 创建或补充 Docker 使用的根 `.env`，填写 `VITE_BAIDU_BROWSER_AK`、`BAIDU_SERVER_AK` 和 `REGION_ID`。这与 Windows 的配置路径用途不同，切换方式时按样例调整，不覆盖已有密钥。
+
+```powershell
+docker compose up --build -d
+docker compose logs -f frontend backend
+```
+
+默认访问 [http://localhost:8000/](http://localhost:8000/)。它与 Windows 后端默认端口相同，选择一种运行方式，或修改 Docker 的 `LOCAL_PORT`。`docker compose down` 停止本组容器，区域数据仍保存在绑定的 `./data` 目录。
+
+### 连接独立 MySQL 展示后端
+
+完成上一节的 `vct-backend` 部署后，在 `.env.mysql` 中增加前端使用的设置：
+
+```dotenv
+VITE_BAIDU_BROWSER_AK=替换为你的浏览器AK
+FRONTEND_IMAGE=vct-frontend:local
+API_UPSTREAM=http://backend:8000
+LOCAL_PORT=8080
+```
+
+仅使用包内地图时浏览器 AK 可留空。随后分别构建并发布前端：
+
+```powershell
+docker compose --env-file .env.mysql build frontend
+docker compose --env-file .env.mysql -p vct-frontend -f deploy/frontend.compose.yml up -d
+```
+
+访问 [http://localhost:8080/](http://localhost:8080/)。前端 Nginx 通过同一 Docker 网络访问后端，浏览器仍请求相对地址 `/api`。默认端口只绑定本机回环；域名、远程入口和 HTTPS 需另行配置，并不因容器启动而自动发布到公网。
+
+前后端可以分别构建、更新和重建。只改后端地址时调整 `API_UPSTREAM` 并重建前端容器，无需重建 Vue；修改浏览器 AK 时需要重建前端制品。详细步骤见 [前后端独立部署](docs/frontend-backend-deployment.md)。
+
+## 可选生活圈助手
+
+助手默认关闭。完成当前起点的生活圈分析后，可询问“最近的医院怎么走”“这两家哪家步行更快”，由助手调用现有地点和路线工具。候选不完整时会说明比较范围。
+
+在实际加载的后端 `.env` 中配置：
+
+```dotenv
+AGENT_ENABLED=true
+AGENT_API_BASE_URL=https://your-api.example/v1
+AGENT_API_KEY=替换为你的模型API密钥
+AGENT_MODEL=替换为服务商支持的模型名称
+```
+
+服务需支持 Responses API、函数工具调用、`store:false` 和 `reasoning.encrypted_content`；后端会在根地址后追加 `/responses`。模型密钥与地图 AK 独立，均不进入前端。超时、并发和调用次数沿用默认值，配置与接口见 [生活圈 Agent 说明](docs/life-circle-agent.md)。
+
+## 数据、文档与当前状态
+
+迁移区域时保留完整的 `data/regions/<id>/`，ZIP 包先解压再使用。迁移到另一台电脑后重新安装依赖并配置自己的密钥，不复制旧虚拟环境和前端依赖目录。
+
+- [区域包格式、制作与打包](docs/region-packages.md)
+- [路网编辑器与工具栏](docs/network-editor.md)
+- [Windows 启动参数](docs/windows-demo-launcher.md)
+- [MySQL 初始化、发布与回退](docs/mysql-region-storage.md)
+- [前后端独立部署](docs/frontend-backend-deployment.md)
+- [在线算法与后端接口](backend/README.md)
+- [C++ 算法、构建与可选 gRPC](cpp-engine/README.md)
 - [Python ↔ C++ 数据契约](contracts/engine-v2.README.md)
-- [生活圈 Agent 配置与接口](docs/life-circle-agent.md)
-- [OSM 自动道路生成与建模 Agent 研究](docs/offline-road-generation-editor-design.md)
-- [API 文档](http://localhost:8000/docs) · [健康检查](http://localhost:8000/api/v1/health)
+
+本次编辑器拆分、工具栏整理与 MySQL 接入已完成源码、配置和文档静态审阅，尚未执行新增功能的数据库连接、导入发布、镜像构建或运行测试。本文命令是使用说明，不是本次运行验收记录；没有性能提升或容量上限的实测结论。Redis 与 C++ 直接加载数据库版本仍为后续工作。
 
 项目代码采用 [MIT License](LICENSE)。OSM 衍生区域资源须保留 OpenStreetMap contributors 署名及 ODbL 来源说明；百度地图服务和数据另遵循其使用条件。

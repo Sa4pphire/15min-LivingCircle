@@ -17,6 +17,17 @@ const basemap = ref(region.authoringWorkspace ? 'baidu' : 'local'), basemapState
 const packageBounds = ref(null), packagePrompt = ref(false), packagePreview = ref(null), packageResult = ref(null);
 const packageForm = ref({ id: '', name: '', version: '0.1.0' });
 const contourBounds = ref(null), contourPrompt = ref(false), contourPreview = shallowRef(null);
+const generationPreview = shallowRef(null), generationLoading = ref(false), showGeneration = ref(true);
+const generationFilter = ref('generated'), generationFocus = ref(null);
+const refinementPlan = shallowRef(null), refinementLoading = ref(false), refinementOrigin = ref('');
+const refinementFocus = ref(null), refinementPage = ref(0), refinementPageSize = 50;
+const refinementForm = ref({ budget: 10, lowWaitSeconds: 0, highWaitSeconds: 60 });
+const refinementReview = ref({ decision: 'open', waitSeconds: 20, evidenceNote: '' });
+const toolbarLevel = ref('basic'), toolGroup = ref('select');
+const reviewMode = ref('check'), generationMode = ref('roads');
+const publicationConfig = ref(null), publicationLoading = ref(false), publishing = ref(false);
+const publicationResult = ref(null);
+const importInput = ref(null);
 let baiduController, baiduGeneration = 0, disposed = false;
 const revision = ref(''), tick = ref(0), loading = ref(true), busy = ref(false), dirty = ref(false);
 const message = ref('正在读取现有 C++ 路网…'), error = ref(''), tool = ref('select');
@@ -52,6 +63,72 @@ const tools = [
   { id: 'package', label: '框选打包', key: 'B', icon: '▣' },
   { id: 'context', label: '本地轮廓', key: 'C', icon: '◫' },
 ];
+const toolGroups = [
+  { id: 'select', level: 'basic', label: '选择与属性', tools: ['select'], defaultTool: 'select' },
+  { id: 'draw', level: 'basic', label: '绘制道路', tools: ['draw', 'node', 'connect'], defaultTool: 'draw' },
+  { id: 'structure', level: 'basic', label: '调整结构', tools: ['move', 'split', 'delete-node'], defaultTool: 'move' },
+  { id: 'review', level: 'advanced', label: '检查与优化', tools: ['route'], defaultTool: 'select' },
+  { id: 'generation', level: 'advanced', label: '自动建图', tools: ['context'], defaultTool: 'select' },
+  { id: 'files', level: 'advanced', label: '区域与发布', tools: ['package'], defaultTool: 'select' },
+];
+const activeToolGroup = computed(() => toolGroups.find(group => group.id === toolGroup.value));
+const groupTools = computed(() => tools.filter(item => activeToolGroup.value?.tools.includes(item.id)));
+const propertyGroup = computed(() => ['select', 'draw', 'structure'].includes(toolGroup.value));
+const publicationBlocked = computed(() => {
+  if (loading.value || !graph.value) return '请先加载区域路网。';
+  if (dirty.value) return '当前画布有未保存修改，请先点击“保存本地”。';
+  if (!graph.value.nodes.length || !graph.value.edges.length) return '当前区域尚无完整路网，请先绘制并保存。';
+  if (generationPreview.value || contourPreview.value) return '请先处理路网或轮廓预览，再发布已保存的区域包。';
+  if (publicationLoading.value) return '正在读取服务端发布配置…';
+  if (!publicationConfig.value?.configured) return publicationConfig.value?.message || '尚未读取发布配置，请刷新配置状态。';
+  return '';
+});
+watch([revision, dirty], () => { publicationResult.value = null; });
+
+function showGroup(id) {
+  toolGroup.value = id;
+  const group = toolGroups.find(item => item.id === id);
+  if (group) toolbarLevel.value = group.level;
+}
+function openGroup(id) {
+  if (busy.value) return;
+  const group = toolGroups.find(item => item.id === id);
+  setTool(group?.defaultTool || 'select', false);
+  showGroup(id);
+  if (id === 'files' && publicationConfig.value === null) void refreshPublicationStatus();
+}
+function selectToolbarLevel(level) {
+  if (busy.value) return;
+  openGroup(level === 'basic' ? 'select' : 'review');
+}
+function openGeneration(mode) {
+  openGroup('generation'); generationMode.value = mode;
+}
+function openReview(mode) {
+  openGroup('review'); reviewMode.value = mode;
+}
+async function refreshPublicationStatus() {
+  if (publicationLoading.value || publishing.value) return;
+  publicationLoading.value = true;
+  try {
+    const result = await api('GET', '/publication');
+    if (!disposed) publicationConfig.value = result;
+  } catch (exc) {
+    if (!disposed) publicationConfig.value = { configured: false, message: exc.message };
+  } finally { publicationLoading.value = false; }
+}
+async function publishRegion() {
+  if (busy.value || publicationBlocked.value) return;
+  busy.value = true; publishing.value = true; error.value = ''; publicationResult.value = null;
+  message.value = '正在校验并发布已保存的完整区域包…';
+  try {
+    const result = await api('POST', '/publication', { revision: revision.value });
+    if (disposed) return;
+    publicationResult.value = result;
+    message.value = '数据库版本已发布，使用 MySQL 的展示后端重启后生效。';
+  } catch (exc) { error.value = exc.message; message.value = '数据库发布未完成，本地保存状态保持不变。'; }
+  finally { busy.value = false; publishing.value = false; }
+}
 const selected = computed(() => {
   tick.value;
   return selection.value?.type === 'node' ? nodes.get(selection.value.id) : edges.get(selection.value?.id);
@@ -62,6 +139,20 @@ const selectionPages = computed(() => Math.ceil(selectedEdges.value.length / sel
 const selectedLength = computed(() => selectedEdges.value.reduce((sum, edge) => sum + pathLength(edge.pathMeters), 0));
 const showToolNodes = computed(() => ['node', 'draw', 'connect', 'move', 'route', 'delete-node'].includes(tool.value));
 const stats = computed(() => { tick.value; return graph.value ? { nodes: graph.value.nodes.length, edges: graph.value.edges.length } : null; });
+const generationCandidates = computed(() => generationPreview.value?.candidates.filter(item => item.status === generationFilter.value) ?? []);
+const generationRows = computed(() => generationCandidates.value.slice(0, 100));
+const generationLabels = { generated: '已生成', preserved: '已保留', pending: '待处理' };
+const refinementItems = computed(() => refinementPlan.value?.items ?? []);
+const refinementRows = computed(() => refinementItems.value.slice(refinementPage.value * refinementPageSize, (refinementPage.value + 1) * refinementPageSize));
+const refinementPages = computed(() => Math.max(1, Math.ceil(refinementItems.value.length / refinementPageSize)));
+const refinementSelected = computed(() => refinementItems.value.find(item => item.id === refinementFocus.value) ?? null);
+const refinementOriginExists = computed(() => { tick.value; return nodes.has(refinementOrigin.value); });
+const refinementReviewReady = computed(() => {
+  const item = refinementSelected.value, value = refinementReview.value;
+  return item?.resolvable && ['missing_crossing', 'crossing_wait'].includes(item.kind)
+    && value.evidenceNote.trim().length >= 5
+    && (value.decision === 'closed' || (value.waitSeconds !== '' && Number.isFinite(Number(value.waitSeconds)) && Number(value.waitSeconds) >= 0 && Number(value.waitSeconds) <= 300));
+});
 const incident = computed(() => {
   tick.value;
   return selection.value?.type === 'node' ? graph.value.edges.filter(e => e.from === selected.value?.id || e.to === selected.value?.id) : [];
@@ -127,6 +218,8 @@ function rebuild() {
 function snapshot() { return graphSnapshot(graph.value); }
 function record(before) {
   if (!history.record(before, snapshot())) return false;
+  discardGeneration();
+  discardRefinement();
   updateHistoryCounts();
   dirty.value = true; audit.value = null; engine.value = ''; route.value = null; error.value = '';
   rebuild(); scheduleDraft();
@@ -141,6 +234,8 @@ function change(action) {
 function undo(redo = false) {
   if (busy.value) return;
   if (!(redo ? history.redo(graph.value) : history.undo(graph.value))) return;
+  discardGeneration();
+  discardRefinement();
   updateHistoryCounts();
   clearSelection(); dirty.value = true; route.value = null; audit.value = null; engine.value = '';
   setTool('select'); rebuild(); scheduleDraft(); message.value = redo ? '已重做' : '已撤销';
@@ -162,7 +257,147 @@ async function api(method, endpoint = '', body) {
   return data;
 }
 function payload() { return { revision: revision.value, nodes: graph.value.nodes, edges: graph.value.edges }; }
+function discardGeneration() {
+  generationPreview.value = null; generationFocus.value = null; redraw();
+}
+async function generateNetwork() {
+  if (busy.value || loading.value || !graph.value || region.authoringWorkspace) return;
+  discardRefinement();
+  discardGeneration(); setTool('select', false); showGroup('generation'); generationMode.value = 'roads'; clearSelection(); route.value = null;
+  busy.value = true; generationLoading.value = true; error.value = '';
+  message.value = '正在识别普通路口并生成路网草案…';
+  try {
+    const data = await api('POST', '/generation/preview', payload());
+    if (disposed) return;
+    const next = normalizeEditorGraph(data.graph);
+    const previousEdges = new Map(graph.value.edges.map(edge => [edge.id, edge]));
+    const nextEdges = new Map(next.edges.map(edge => [edge.id, edge]));
+    const geometry = edge => JSON.stringify([edge.from, edge.to, edge.kind, edge.pathMeters]);
+    const changed = edge => !previousEdges.has(edge.id) || geometry(edge) !== geometry(previousEdges.get(edge.id));
+    const removed = edge => !nextEdges.has(edge.id) || geometry(edge) !== geometry(nextEdges.get(edge.id));
+    const wrap = edge => ({ edge, bounds: pathBounds(edge.pathMeters) });
+    generationPreview.value = { ...data, graph: next,
+      addedEdges: next.edges.filter(changed).map(wrap),
+      removedEdges: graph.value.edges.filter(removed).map(wrap),
+      addedNodes: next.nodes.filter(node => !nodes.has(node.id)) };
+    generationFilter.value = data.summary.generated ? 'generated' : data.summary.pending ? 'pending' : 'preserved';
+    showGeneration.value = true; redraw();
+    message.value = data.summary.generated
+      ? `已生成 ${data.summary.generated} 处路口草案。请在右侧审阅后采纳；尚未修改当前路网。`
+      : '没有可新增的普通路口。可在右侧查看已保留和待处理的原因。';
+  } catch (exc) { error.value = exc.message; message.value = '自动生成未完成，当前路网保持原样。'; }
+  finally { busy.value = false; generationLoading.value = false; }
+}
+function acceptGeneration() {
+  if (busy.value || !generationPreview.value?.summary.generated) return;
+  const preview = generationPreview.value;
+  if (change(() => { graph.value.nodes = preview.graph.nodes; graph.value.edges = preview.graph.edges; })) {
+    clearSelection(); setTool('select');
+    message.value = `已采纳 ${preview.summary.generated} 处路口，可撤销。点击“保存本地”写入当前区域。`;
+  } else if (!error.value) { discardGeneration(); message.value = '生成结果与当前路网一致。'; }
+}
+function locateGeneration(candidate) {
+  if (!candidate.centerMeters) return;
+  generationFocus.value = candidate.id;
+  view.x = candidate.centerMeters[0]; view.y = candidate.centerMeters[1]; view.scale = Math.max(view.scale, 3);
+  showGeneration.value = true; redraw(true);
+}
+function downloadGeneration() {
+  if (!generationPreview.value) return;
+  const { candidates, summary } = generationPreview.value;
+  download({ regionId: region.id, candidates, summary }, `${region.id}.generation-review.json`);
+}
+function discardRefinement() {
+  refinementPlan.value = null; refinementFocus.value = null; refinementPage.value = 0; redraw();
+}
+function useRefinementOrigin() {
+  if (busy.value || selection.value?.type !== 'node' || !selected.value) return;
+  refinementOrigin.value = selected.value.id;
+  discardRefinement();
+  message.value = '已设置局部精化起点，可评估候选对 15 分钟节点可达性的影响。';
+}
+function locateRefinementOrigin() {
+  const origin = nodes.get(refinementOrigin.value);
+  if (!origin) return;
+  view.x = origin.xMeters; view.y = origin.yMeters; view.scale = Math.max(view.scale, 3); redraw(true);
+}
+async function planRefinement() {
+  if (busy.value || loading.value || !graph.value) return;
+  if (!refinementOriginExists.value) { error.value = '请先选择一个路网节点，并将它设为精化起点'; return; }
+  const options = Object.fromEntries(Object.entries(refinementForm.value).map(([key, value]) => [key, Number(value)]));
+  if (!Number.isInteger(options.budget) || options.budget < 1 || options.budget > 30 ||
+      !Number.isFinite(options.lowWaitSeconds) || !Number.isFinite(options.highWaitSeconds) ||
+      options.lowWaitSeconds < 0 || options.highWaitSeconds < options.lowWaitSeconds || options.highWaitSeconds > 300) {
+    error.value = '评估数量需为 1 至 30；等待情景需满足 0 ≤ 较短等待 ≤ 较长等待 ≤ 300 秒'; return;
+  }
+  discardGeneration(); discardRefinement(); setTool('select', false); showGroup('review'); reviewMode.value = 'refine'; route.value = null;
+  busy.value = true; refinementLoading.value = true; error.value = '';
+  message.value = '正在比较局部疑点的保守与宽松情景…';
+  try {
+    const data = await api('POST', '/refinement/plan', { ...payload(), originNodeId: refinementOrigin.value, ...options });
+    if (disposed) return;
+    refinementPlan.value = data; refinementPage.value = 0;
+    message.value = `已整理 ${data.summary.candidateCount} 个精化输入，本轮评估 ${data.summary.evaluatedCount} 个。未评估项不代表影响较小。`;
+    redraw();
+  } catch (exc) { error.value = exc.message; message.value = '局部精化评估未完成，可调整输入后重试。'; }
+  finally { busy.value = false; refinementLoading.value = false; }
+}
+function focusRefinement(item) {
+  if (busy.value) return;
+  refinementFocus.value = item.id;
+  refinementReview.value = { decision: item.review?.decision ?? (item.kind === 'crossing_wait' ? 'set_wait' : 'open'),
+    waitSeconds: item.review?.waitSeconds ?? item.currentWaitSeconds ?? 20, evidenceNote: item.review?.evidenceNote ?? '' };
+  if (item.centerMeters) {
+    view.x = item.centerMeters[0]; view.y = item.centerMeters[1]; view.scale = Math.max(view.scale, 3);
+  }
+  redraw(true);
+}
+function refinementEvaluationText(item) {
+  if (item.evaluationStatus === 'evaluated') return `15 分钟节点判定变化 ${item.impact?.changedReachabilityNodeCount ?? 0} 个`;
+  if (item.evaluationReason) return item.evaluationReason;
+  if (item.evaluationStatus === 'reviewed') return '已有审阅记录，本轮不重复评估';
+  if (item.evaluationStatus === 'budget_not_evaluated') return '本轮预算未评估，影响大小尚不确定';
+  return '当前候选还不能表达为可比较的局部情景';
+}
+function refinementDeltaText(item) {
+  if (item.impact?.reachableGapNodeCount > 0) return '可达性发生变化，无法用有限秒数表达';
+  const value = item.impact?.maxTravelTimeDeltaSeconds;
+  return Number.isFinite(value) ? `${value.toFixed(1)} 秒` : '暂无可比较的有限耗时';
+}
+function refinementEvidenceText(item) {
+  return ({ geometry_inferred_unverified: '几何推定，待核查', user_reviewed_unverified: '已记录人工审阅，现场状态仍待核实',
+    map_reviewed_unverified: '地图核查，现场状态仍待核实', online_source_unverified_on_site: '在线来源，现场状态待核实' })[item.evidence?.status] || '来源仍需核查';
+}
+function refinementDecisionLabel(item) {
+  return item.alternatives?.find(choice => choice.id === item.review?.decision)?.label || '已记录的模型选择';
+}
+async function applyRefinement() {
+  const item = refinementSelected.value;
+  if (busy.value || !refinementReviewReady.value || !item) return;
+  const review = refinementReview.value;
+  const request = { ...payload(), inputId: item.id, decision: review.decision,
+    waitSeconds: Number(review.waitSeconds), evidenceNote: review.evidenceNote.trim() };
+  busy.value = true; error.value = ''; message.value = '正在将审阅选择应用到草稿…';
+  let response;
+  try {
+    response = await api('POST', '/refinement/apply', request);
+  } catch (exc) { error.value = exc.message; }
+  finally { busy.value = false; }
+  if (!response || disposed) return;
+  const next = normalizeEditorGraph(response.graph);
+  if (change(() => { graph.value.nodes = next.nodes; graph.value.edges = next.edges; })) {
+    clearSelection();
+    message.value = `${response.note || '已记录本次审阅选择'}。可撤销，保存后写入当前区域；其它精化项需重新评估。`;
+  }
+}
+function downloadRefinement() {
+  if (!refinementPlan.value) return;
+  download({ regionId: region.id, ...refinementPlan.value }, `${region.id}.refinement-plan.json`);
+}
 async function load() {
+  publicationResult.value = null;
+  discardGeneration();
+  discardRefinement();
   loading.value = true; error.value = '';
   try {
     const data = await api('GET'); graph.value = normalizeEditorGraph(data.graph); revision.value = data.revision;
@@ -174,15 +409,17 @@ async function load() {
     dirty.value = false; clearSelection(); route.value = null; engine.value = ''; setTool('select');
     draftAvailable.value = Boolean(localStorage.getItem(draftKey));
     rebuild(); await nextTick(); fit(false);
-    message.value = graph.value.edges.length ? `已加载 ${region.name}，修改后点击“保存到 C++ 路网”` : `已打开 ${region.name} 空白路网，请放大到需要的街区后新增节点并连线`;
+    message.value = graph.value.edges.length ? `已加载 ${region.name}，修改后点击“保存本地”` : `已打开 ${region.name} 空白路网，请放大到需要的街区后新增节点并连线`;
   } catch (exc) { error.value = `${exc.message}。请确认本地后端已启动。`; }
   finally { loading.value = false; }
 }
 async function save() {
   if (busy.value) return;
+  if (generationPreview.value || contourPreview.value) { error.value = '请先处理路网或轮廓预览，再保存路网'; return; }
   busy.value = true; error.value = ''; message.value = '正在检查并保存路网…';
   try {
     const data = await api('PUT', '', payload()); graph.value = normalizeEditorGraph(data.graph); revision.value = data.revision;
+    discardRefinement();
     audit.value = data.audit; engine.value = data.engine || ''; dirty.value = false; rebuild();
     discardContours();
     clearTimeout(draftTimer); localStorage.removeItem(draftKey); draftAvailable.value = false;
@@ -202,7 +439,7 @@ function restoreDraft() {
     const draft = JSON.parse(localStorage.getItem(draftKey));
     if (draft.revision !== revision.value) throw new Error('草稿对应的路网已变化，请先下载草稿，人工核对后再导入');
     change(() => { graph.value.nodes = draft.nodes; graph.value.edges = normalizeEditorGraph(draft).edges; });
-    draftAvailable.value = false; message.value = '已恢复本机草稿，尚未保存到 C++ 路网';
+    draftAvailable.value = false; message.value = '已恢复本机草稿，尚未保存到本地区域包';
   } catch (exc) { error.value = exc.message; }
 }
 function download(data, name) {
@@ -260,7 +497,7 @@ async function generateContours() {
     contourPreview.value = preview; displayContext(preview.context);
     showContext.value = true; showSource.value = true;
     basemap.value = 'local'; await changeBasemap();
-    contourPrompt.value = false; setTool('select');
+    contourPrompt.value = false; setTool('select', false); showGroup('generation'); generationMode.value = 'context';
     message.value = `已生成 ${preview.featureCount} 个本地轮廓，正在预览；在右侧保存到区域包或取消预览`;
   } catch (exc) { error.value = exc.message; message.value = '本地轮廓生成失败，可调整选框后重试'; }
   finally { busy.value = false; }
@@ -271,6 +508,8 @@ async function saveContours() {
   try {
     const data = await api('PUT', '/context', { revision: revision.value, previewId: contourPreview.value.previewId });
     revision.value = data.revision; context = data.context; contourCount.value = data.featureCount;
+    discardGeneration();
+    discardRefinement();
     discardContours(); writeDraft();
     message.value = `已保存 ${data.featureCount} 个本地轮廓。备份：${data.backup}`;
   } catch (exc) { error.value = exc.message; }
@@ -307,7 +546,7 @@ async function importGraph(event) {
     await api('POST', '/validate', { revision: revision.value, nodes: incoming.nodes, edges: incoming.edges });
     busy.value = false;
     change(() => { graph.value.nodes = incoming.nodes; graph.value.edges = incoming.edges; });
-    message.value = '导入并检查通过，尚未保存到 C++ 路网'; fit(true);
+    message.value = '导入并检查通过，尚未保存到本地区域包'; fit(true);
   } catch (exc) { error.value = exc.message; }
   finally { busy.value = false; }
 }
@@ -358,7 +597,14 @@ function wheelZoom(event) {
   } else factor = (pendingWheelZoom?.factor || 1) * Math.exp(-delta * 0.0015);
   pendingWheelZoom = { factor, point: eventPoint(event) }; queueFrame();
 }
-function setTool(id) {
+function setTool(id, syncGroup = true) {
+  if (syncGroup) {
+    const group = toolGroups.find(item => item.tools.includes(id));
+    showGroup(id === 'shape' ? 'structure' : group?.id || 'select');
+    if (id === 'route') reviewMode.value = 'check';
+    if (id === 'context') generationMode.value = 'context';
+    if (id === 'package' && publicationConfig.value === null) void refreshPublicationStatus();
+  }
   if (tool.value === 'draw' && id !== 'draw' && connectStart.value) message.value = '绘制已结束，已画内容保留，可用 Ctrl+Z 撤销';
   if (id === 'context') { discardContours(); contourPrompt.value = false; }
   tool.value = id; if (id !== 'select') multiSelectMode.value = false;
@@ -408,6 +654,8 @@ function selectEdges(ids) {
 }
 function toggleMultiSelect() { setTool('select'); multiSelectMode.value = !multiSelectMode.value; if (selection.value?.type === 'node') clearSelection(); }
 function choose(type, id, locate = false, additive = false) {
+  // Inspect a map item from utility panels without interrupting drawing or refinement.
+  if (tool.value === 'select' && ['files', 'layers'].includes(toolGroup.value)) showGroup('select');
   if (type === 'edge') selectEdges(additive ? (selectedEdgeIds.value.includes(id)
     ? selectedEdgeIds.value.filter(value => value !== id) : [...selectedEdgeIds.value, id]) : [id]);
   else { selectedEdgeIds.value = []; selection.value = { type, id }; }
@@ -465,6 +713,9 @@ watch([selection, tick], () => {
 watch(selectedEdgeIds, () => { batchForm.value = { kind: '', waitSeconds: '' }; selectionPage.value = 0; redraw(); });
 watch(connectKind, () => redraw());
 watch([visible, showContext, showSource, showNodes], () => redraw(true), { deep: true });
+watch(showGeneration, () => redraw());
+watch(refinementForm, () => discardRefinement(), { deep: true });
+watch(revision, () => discardRefinement());
 function hitNode(point) {
   let found = null, best = 9;
   for (const id of nodeGrid?.near(toWorld(point), 9 / view.scale) ?? []) {
@@ -573,12 +824,16 @@ function move(event) {
     if (distance(screen, drag.screen) > 2) drag.moved = true;
     if (drag.moved) {
       if (drag.type === 'node') {
+        if (generationPreview.value) discardGeneration();
+        if (refinementPlan.value) discardRefinement();
         moveNode(graph.value, drag.id, toWorld(screen));
         nodes.set(drag.id, graph.value.nodes.find(node => node.id === drag.id));
         for (const edge of graph.value.edges) if (edge.from === drag.id || edge.to === drag.id) {
           edges.set(edge.id, edge); edgeBounds.set(edge.id, pathBounds(edge.pathMeters));
         }
       } else {
+        if (generationPreview.value) discardGeneration();
+        if (refinementPlan.value) discardRefinement();
         editShapePoint(graph.value, drag.id, drag.index, toWorld(screen));
         const edge = graph.value.edges.find(item => item.id === drag.id);
         edges.set(drag.id, edge); edgeBounds.set(drag.id, pathBounds(edge.pathMeters));
@@ -745,6 +1000,48 @@ function draw() {
   ctx.setTransform(renderDpr, 0, 0, renderDpr, 0, 0); ctx.clearRect(0, 0, width, height);
   ctx.drawImage(baseLayer, 0, 0, width, height);
   if (!graph.value) return;
+  if (generationPreview.value && showGeneration.value) {
+    const a = toWorld([0, 0]), b = toWorld([width, height]);
+    const viewport = { minX: a[0], maxX: b[0], minY: b[1], maxY: a[1] };
+    for (const { edge, bounds } of generationPreview.value.removedEdges) {
+      if (intersectsBounds(bounds, viewport)) stroke(ctx, edge.pathMeters, '#8a959c', 3.5, true);
+    }
+    for (const { edge, bounds } of generationPreview.value.addedEdges) {
+      if (intersectsBounds(bounds, viewport)) stroke(ctx, edge.pathMeters, '#07846f', 3);
+    }
+    for (const candidate of generationPreview.value.candidates) {
+      for (const crossing of candidate.crossings ?? []) {
+        if (crossing.pathMeters?.length >= 2 && intersectsBounds(pathBounds(crossing.pathMeters), viewport)) {
+          stroke(ctx, crossing.pathMeters, '#bd741e', 2.5, true);
+        }
+      }
+    }
+    if (view.scale >= 0.7) for (const node of generationPreview.value.addedNodes) {
+      const [x, y] = toScreen(xy(node));
+      if (x >= 0 && x <= width && y >= 0 && y <= height) dot(ctx, xy(node), '#07846f', 3);
+    }
+    const focused = generationPreview.value.candidates.find(item => item.id === generationFocus.value);
+    if (focused?.centerMeters) {
+      const [x, y] = toScreen(focused.centerMeters);
+      ctx.beginPath(); ctx.arc(x, y, 36, 0, 2 * Math.PI);
+      ctx.strokeStyle = focused.status === 'pending' ? '#b97815' : '#07846f'; ctx.lineWidth = 2; ctx.stroke();
+    }
+  }
+  const refinementItem = refinementSelected.value;
+  if (refinementItem) {
+    for (const id of refinementItem.edgeIds ?? []) {
+      const edge = edges.get(id); if (!edge) continue;
+      stroke(ctx, edge.pathMeters, '#fff', 7); stroke(ctx, edge.pathMeters, '#af6e18', 3.5, true);
+    }
+    const ports = (refinementItem.nodeIds ?? []).map(id => nodes.get(id)).filter(Boolean);
+    if (refinementItem.kind === 'missing_crossing' && ports.length === 2) stroke(ctx, ports.map(xy), '#af6e18', 3, true);
+    for (const node of ports) dot(ctx, xy(node), '#af6e18', 5);
+    if (refinementItem.centerMeters) {
+      const [x, y] = toScreen(refinementItem.centerMeters);
+      ctx.beginPath(); ctx.arc(x, y, 30, 0, 2 * Math.PI); ctx.strokeStyle = '#af6e18'; ctx.lineWidth = 2; ctx.stroke();
+    }
+  }
+  if (refinementPlan.value && nodes.has(refinementOrigin.value)) dot(ctx, xy(nodes.get(refinementOrigin.value)), '#315cc5', 6);
   if (route.value) for (const edge of route.value.edges) { stroke(ctx, edge.pathMeters, '#fff', 7); stroke(ctx, edge.pathMeters, '#cc3977', 4); }
   for (const id of selectedEdgeIds.value) {
     const edge = edges.get(id); if (!edge) continue;
@@ -786,7 +1083,7 @@ function draw() {
   scaleBar.value = metricScale(scaleStart && scaleEnd ? distance(scaleStart, scaleEnd) / 100 : 1 / view.scale, 100);
 }
 onMounted(async () => {
-  document.title = '路网手动编辑器 · Vision China Terminal（VCT）';
+  document.title = '路网编辑器 · Vision China Terminal（VCT）';
   baseLayer = document.createElement('canvas');
   displayContext(context);
   const resize = box => {
@@ -814,23 +1111,45 @@ onUnmounted(() => {
   <main class="ne-app">
     <header class="ne-header">
       <button class="ne-back" type="button" :disabled="busy" title="返回区域包选择" aria-label="返回区域包选择" @click="chooseRegion()">‹</button>
-      <div class="ne-title"><h1>路网手动编辑器</h1><span>{{ region.name }} / v{{ region.version }}</span></div>
+      <div class="ne-title"><h1>路网编辑器</h1><span>{{ region.name }} / v{{ region.version }}</span></div>
       <span class="ne-save-state" :class="{ dirty }">{{ dirty ? '有未保存修改' : '文件已加载' }}</span>
       <div class="ne-file-actions">
-        <button :disabled="busy" @click="chooseRegion()">切换区域</button>
-        <label class="ne-button" :class="{ disabled: loading || busy }">导入 JSON<input type="file" accept=".json,application/json" :disabled="loading || busy" @change="importGraph" /></label>
-        <button :disabled="!graph || busy" @click="exportGraph">导出 JSON</button>
-        <button :disabled="!graph || busy" @click="validate">{{ busy ? '处理中…' : '检查路网' }}</button>
-        <button class="ne-primary" :disabled="!dirty || busy" @click="save">保存到 C++ 路网</button>
+        <button :disabled="busy" @click="openGroup('files')">区域与发布</button>
+        <button class="ne-primary" :disabled="!dirty || busy || generationPreview || contourPreview" :title="generationPreview || contourPreview ? '请先处理路网或轮廓预览' : '保存当前画布到本地区域包，Ctrl+S'" @click="save">保存本地</button>
       </div>
     </header>
-    <div class="ne-toolbar">
-      <div class="ne-tools" role="group" aria-label="编辑工具">
-        <button v-for="item in tools" :key="item.id" :class="{ active: tool === item.id }" :disabled="!graph || busy || (item.id === 'package' && !stats?.edges)"
-          :aria-pressed="tool === item.id" :title="`${item.label} (${item.key})`" @click="setTool(item.id)"><b aria-hidden="true">{{ item.icon }}</b>{{ item.label }}<kbd>{{ item.key }}</kbd></button>
-        <button class="ne-multi-toggle" :class="{ active: multiSelectMode }" :disabled="!graph || busy" :aria-pressed="multiSelectMode" @click="toggleMultiSelect">多选路段</button>
+    <nav class="ne-toolbar" aria-label="路网功能工具栏">
+      <div class="ne-tool-levels" role="group" aria-label="工具类别">
+        <button :class="{ active: toolbarLevel === 'basic' }" :aria-pressed="toolbarLevel === 'basic'" :disabled="busy" @click="selectToolbarLevel('basic')">基础工具</button>
+        <button :class="{ active: toolbarLevel === 'advanced' }" :aria-pressed="toolbarLevel === 'advanced'" :disabled="busy" @click="selectToolbarLevel('advanced')">进阶工具</button>
       </div>
+      <div class="ne-tool-groups" role="group" aria-label="当前类别功能">
+        <button v-for="group in toolGroups.filter(item => item.level === toolbarLevel)" :key="group.id" :class="{ active: toolGroup === group.id }" :aria-pressed="toolGroup === group.id" :disabled="busy" @click="openGroup(group.id)">{{ group.label }}</button>
+      </div>
+      <button class="ne-layer-trigger" :class="{ active: toolGroup === 'layers' }" :aria-pressed="toolGroup === 'layers'" :disabled="busy" @click="openGroup('layers')">图层</button>
       <div class="ne-history"><button :disabled="!undoCount || busy" title="撤销 Ctrl+Z" @click="undo()">↶ 撤销</button><button :disabled="!redoCount || busy" title="重做 Ctrl+Y" @click="undo(true)">↷ 重做</button></div>
+    </nav>
+    <div class="ne-tool-options">
+      <div v-if="propertyGroup" class="ne-tools" role="group" :aria-label="activeToolGroup.label">
+        <button v-for="item in groupTools" :key="item.id" :class="{ active: tool === item.id }" :disabled="!graph || busy" :aria-pressed="tool === item.id" :title="`${item.label} (${item.key})`" @click="setTool(item.id)"><b aria-hidden="true">{{ item.icon }}</b>{{ item.label }}<kbd>{{ item.key }}</kbd></button>
+        <button v-if="toolGroup === 'select'" :class="{ active: multiSelectMode }" :disabled="!graph || busy" :aria-pressed="multiSelectMode" @click="toggleMultiSelect">多选与批量修改</button>
+        <button v-if="toolGroup === 'structure'" :class="{ active: tool === 'shape' }" :disabled="busy || selection?.type !== 'edge' || !selected" :aria-pressed="tool === 'shape'" @click="setTool('shape')">调整线形</button>
+      </div>
+      <div v-else-if="toolGroup === 'review'" class="ne-workflow-tabs" role="group" aria-label="检查与优化操作">
+        <button :class="{ active: reviewMode === 'check' }" :aria-pressed="reviewMode === 'check'" :disabled="busy" @click="openReview('check')">路网与路径检查</button>
+        <button :class="{ active: reviewMode === 'refine' }" :aria-pressed="reviewMode === 'refine'" :disabled="busy" @click="openReview('refine')">局部精化</button>
+      </div>
+      <div v-else-if="toolGroup === 'generation'" class="ne-workflow-tabs" role="group" aria-label="自动建图操作">
+        <button :class="{ active: generationMode === 'roads' }" :aria-pressed="generationMode === 'roads'" :disabled="busy" @click="openGeneration('roads')">生成路网</button>
+        <button :class="{ active: generationMode === 'context' }" :aria-pressed="generationMode === 'context'" :disabled="busy" @click="openGeneration('context')">生成底图轮廓</button>
+      </div>
+      <p v-else class="ne-tool-description">{{ toolGroup === 'files' ? '导入导出、打包选区与数据库发布统一在右侧管理。' : '选择道路图层、节点和辅助底图。' }}</p>
+    </div>
+    <div v-if="generationPreview || contourPreview || refinementPlan" class="ne-pending-work" role="status">
+      <span>当前工作</span>
+      <button v-if="generationPreview" :disabled="busy" @click="openGeneration('roads')">路网预览待处理</button>
+      <button v-if="contourPreview" :disabled="busy" @click="openGeneration('context')">轮廓预览待处理</button>
+      <button v-if="refinementPlan" :disabled="busy" @click="openReview('refine')">返回精化计划</button>
     </div>
     <div v-if="tool === 'connect' || tool === 'draw'" class="ne-connect-options">
       <span class="ne-connect-label">新连线类型</span>
@@ -849,7 +1168,7 @@ onUnmounted(() => {
           @pointerdown="press" @pointermove="move" @pointerup="release" @pointercancel="cancel" @contextmenu.prevent
           @click="drawClick" @dblclick.prevent="finishDrawing"
           @wheel.prevent="wheelZoom" />
-        <div class="ne-map-help"><span class="ne-tool-dot"></span>{{ hint }}</div>
+        <div class="ne-map-help"><span class="ne-tool-dot"></span>{{ generationPreview ? '正在预览生成草案，尚未采纳。可缩放地图，点击右侧候选定位；编辑路网会取消本次预览。' : hint }}</div>
         <div v-if="selectedEdges.length" class="ne-selection-bar"><span>已选 {{ selectedEdges.length }} 条路段</span><button :disabled="busy" @click="clearSelection">清空选择</button></div>
         <div v-if="loading || !graph" class="ne-loading"><strong>{{ loading ? '正在加载路网' : '路网尚未加载' }}</strong><span>需要本机 API 服务，使用项目启动脚本启动。</span><button v-if="!loading" @click="load">重新加载</button></div>
         <div class="ne-map-controls"><button @click="zoom(1.5)" aria-label="放大地图">+</button><button @click="zoom(1 / 1.5)" aria-label="缩小地图">−</button><button @click="fit(false)">样区</button><button @click="fit(true)">全图</button></div>
@@ -857,20 +1176,122 @@ onUnmounted(() => {
         <div v-if="basemapState !== 'ready'" class="ne-attribution">{{ contourCount || contourPreview ? '本地轮廓 © OpenStreetMap contributors · ODbL' : region.geographicCoordType === 'bd09ll' ? '本地米制编辑画布' : '底图 © OpenStreetMap contributors · ODbL' }}</div>
       </section>
       <aside class="ne-inspector">
-        <section class="ne-context-panel ne-package-panel"><h2>本地轮廓</h2><p>框选街区，生成建筑、水体、绿地和道路示意。当前已保存 {{ contourCount.toLocaleString() }} 个轮廓。</p>
+        <section v-if="toolGroup === 'generation' && generationMode === 'roads'" class="ne-generation-panel" aria-labelledby="ne-generation-title" :aria-busy="generationLoading">
+          <h2 id="ne-generation-title">自动生成路网</h2>
+          <p>从当前区域的 OSM 道路源图识别普通路口，生成端口与同侧连接，保留已有人工模型。</p>
+          <p v-if="region.authoringWorkspace" class="ne-small">当前区域没有道路源图，暂不支持自动生成。此入口不会下载 OSM 数据。</p>
+          <template v-if="generationLoading">
+            <div class="ne-generation-skeleton" aria-hidden="true"><span></span><span></span></div>
+            <p role="status">正在识别路口、生成草案，当前路网尚未改变。</p>
+          </template>
+          <template v-else-if="generationPreview">
+            <dl class="ne-generation-counts">
+              <div><dt>已生成</dt><dd>{{ generationPreview.summary.generated }}</dd></div>
+              <div><dt>已保留</dt><dd>{{ generationPreview.summary.preserved }}</dd></div>
+              <div><dt>待处理</dt><dd>{{ generationPreview.summary.pending }}</dd></div>
+            </dl>
+            <p v-if="!generationPreview.summary.generated" role="status">没有可新增的普通路口。已生成或已有模型的路口会保留；不适用的路口可按下方原因处理。</p>
+            <label class="ne-generation-visibility"><input v-model="showGeneration" type="checkbox" />显示生成预览</label>
+            <p class="ne-generation-legend"><span>绿线：新连接或调整后的路段</span><span>灰虚线：将被替换的原路段</span><span>橙虚线：待确认过街，不参与寻路</span></p>
+            <p>{{ generationPreview.summary.crossingCandidates }} 条过街候选暂未启用。采纳后可用过街连线工具确认接入。</p>
+            <div class="ne-generation-actions"><button class="ne-primary" :disabled="busy || !generationPreview.summary.generated" @click="acceptGeneration">采纳草案</button><button :disabled="busy" @click="discardGeneration(); message = '已取消生成预览，当前路网保持原样。'">取消预览</button></div>
+            <p class="ne-small">采纳可撤销；点击“保存本地”后才写入区域文件。</p>
+            <label class="ne-generation-filter" for="ne-generation-filter">候选列表<select id="ne-generation-filter" v-model="generationFilter"><option v-for="(label, status) in generationLabels" :key="status" :value="status">{{ label }}</option></select></label>
+            <div class="ne-generation-list">
+              <button v-for="candidate in generationRows" :key="candidate.id" :class="{ active: generationFocus === candidate.id }" :disabled="!candidate.centerMeters || busy" @click="locateGeneration(candidate)">
+                <strong>{{ candidate.shape === 'four_way' ? '四向路口' : candidate.shape ? `${candidate.shape} 型路口` : '待识别路口' }}<span v-if="candidate.sourceNodeId"> · {{ candidate.sourceNodeId }}</span></strong>
+                <span>{{ candidate.reasonText || generationLabels[candidate.status] }}</span>
+              </button>
+              <p v-if="!generationRows.length" class="ne-small">此类没有候选。</p>
+            </div>
+            <p v-if="generationCandidates.length > 100" class="ne-small">显示前 100 / {{ generationCandidates.length }} 处，完整清单可下载查看。</p>
+            <button :disabled="busy" @click="downloadGeneration">下载候选清单</button>
+          </template>
+          <template v-else>
+            <button :disabled="!graph || loading || busy || region.authoringWorkspace" @click="generateNetwork">生成并预览</button>
+            <p class="ne-small">先预览再采纳，几何推测的过街默认不启用。</p>
+          </template>
+        </section>
+        <section v-if="toolGroup === 'review' && reviewMode === 'refine'" class="ne-refinement-panel" aria-labelledby="ne-refinement-title" :aria-busy="refinementLoading">
+          <h2 id="ne-refinement-title">局部精化</h2>
+          <p>比较局部疑点的保守与宽松情景，优先核查会改变当前起点可达判断的位置。</p>
+          <div class="ne-refinement-origin">
+            <button :disabled="busy || selection?.type !== 'node' || !selected" @click="useRefinementOrigin">以选中节点为起点</button>
+            <template v-if="refinementOrigin"><code>{{ refinementOrigin }}</code><button :disabled="busy || !refinementOriginExists" @click="locateRefinementOrigin">定位起点</button><p v-if="!refinementOriginExists" class="ne-refinement-warning">起点已从路网删除，请重新选择节点。</p></template>
+            <p v-else class="ne-small">在地图上选择一个路网节点，再设置精化起点。</p>
+          </div>
+          <div class="ne-refinement-inputs">
+            <label>本轮评估数量<input v-model.number="refinementForm.budget" type="number" min="1" max="30" step="1" :disabled="busy" /></label>
+            <label>较短等待 / 秒<input v-model.number="refinementForm.lowWaitSeconds" type="number" min="0" max="300" step="1" :disabled="busy" /></label>
+            <label>较长等待 / 秒<input v-model.number="refinementForm.highWaitSeconds" type="number" min="0" max="300" step="1" :disabled="busy" /></label>
+          </div>
+          <p class="ne-small">阈值 15 分钟，步速 1.3 米/秒。等待数值用于情景比较，不是实测参数。</p>
+          <button class="ne-primary" :disabled="busy || loading || !graph || !refinementOriginExists || generationPreview" @click="planRefinement">{{ refinementLoading ? '正在评估…' : '评估精化候选' }}</button>
+          <p v-if="generationPreview" class="ne-small">请先采纳或取消自动生成预览，再评估当前路网。</p>
+          <template v-if="refinementLoading"><div class="ne-generation-skeleton" aria-hidden="true"><span></span><span></span></div><p role="status">正在比较候选情景，当前画布尚未改变。</p></template>
+          <template v-else-if="refinementPlan">
+            <dl class="ne-refinement-counts"><div><dt>候选输入</dt><dd>{{ refinementPlan.summary.candidateCount }}</dd></div><div><dt>本轮已评估</dt><dd>{{ refinementPlan.summary.evaluatedCount }}</dd></div></dl>
+            <p class="ne-small">当前基线在 15 分钟内可达 {{ refinementPlan.baseline.reachableNodeCount }} 个节点。节点数量不是覆盖面积或服务人口。</p>
+            <p class="ne-refinement-warning">以下是单项情景敏感性，不是实测精度或全图误差范围。未纳入本轮评估的候选，影响大小仍未知。</p>
+            <div class="ne-refinement-list" aria-label="精化候选">
+              <button v-for="item in refinementRows" :key="item.id" :class="{ active: refinementFocus === item.id }" :disabled="busy" @click="focusRefinement(item)">
+                <strong><span v-if="item.priority != null">优先 {{ item.priority }} · </span>{{ item.label }}</strong>
+                <span>{{ refinementEvaluationText(item) }}</span>
+                <span v-if="item.review">已记录审阅选择</span>
+              </button>
+              <p v-if="!refinementRows.length" class="ne-small">当前图中没有可列出的精化输入。</p>
+            </div>
+            <div v-if="refinementPages > 1" class="ne-refinement-pagination"><button :disabled="busy || refinementPage === 0" @click="refinementPage--">上一页</button><span>{{ refinementPage + 1 }} / {{ refinementPages }}</span><button :disabled="busy || refinementPage + 1 >= refinementPages" @click="refinementPage++">下一页</button></div>
+            <div class="ne-refinement-actions"><button :disabled="busy" @click="downloadRefinement">下载完整计划</button><button :disabled="busy" @click="discardRefinement">清除计划</button></div>
+            <details v-if="refinementPlan.assumptions?.length" class="ne-refinement-assumptions"><summary>情景口径与限制</summary><p v-for="assumption in refinementPlan.assumptions" :key="assumption">{{ assumption }}</p></details>
+            <article v-if="refinementSelected" class="ne-refinement-review" aria-labelledby="ne-refinement-review-title">
+              <h3 id="ne-refinement-review-title">{{ refinementSelected.label }}</h3>
+              <p>{{ refinementEvidenceText(refinementSelected) }}</p>
+              <p v-if="refinementSelected.evidence?.source" class="ne-small">来源：{{ refinementSelected.evidence.source }}</p>
+              <p v-if="refinementSelected.reasonText">{{ refinementSelected.reasonText }}</p>
+              <p v-if="refinementSelected.requiredEvidence" class="ne-small">所需资料：{{ refinementSelected.requiredEvidence }}</p>
+              <template v-if="refinementSelected.evaluationStatus === 'evaluated'"><p>{{ refinementEvaluationText(refinementSelected) }}；可比较节点的最大耗时变化：{{ refinementDeltaText(refinementSelected) }}。</p><p v-if="refinementSelected.impact?.reachableGapNodeCount" class="ne-small">其中 {{ refinementSelected.impact.reachableGapNodeCount }} 个节点出现连通状态变化。</p></template>
+              <p v-else>{{ refinementEvaluationText(refinementSelected) }}</p>
+              <p v-if="refinementSelected.review" class="ne-small">上次选择：{{ refinementDecisionLabel(refinementSelected) }}；依据：{{ refinementSelected.review.evidenceNote }}。再次修改会生成新的草稿编辑。</p>
+              <p v-if="refinementSelected.previousReview" class="ne-small">{{ refinementSelected.reviewInvalidatedReason }}。旧依据：{{ refinementSelected.previousReview.evidenceNote }}。</p>
+              <template v-if="refinementSelected.resolvable && ['missing_crossing', 'crossing_wait'].includes(refinementSelected.kind)">
+                <label>审阅选择<select v-model="refinementReview.decision" :disabled="busy"><option v-for="alternative in refinementSelected.alternatives" :key="alternative.id" :value="alternative.id">{{ alternative.label }}</option></select></label>
+                <label v-if="refinementReview.decision !== 'closed'">采用的过街等待 / 秒<input v-model.number="refinementReview.waitSeconds" type="number" min="0" max="300" step="1" :disabled="busy" /></label>
+                <label>依据说明<textarea v-model="refinementReview.evidenceNote" rows="3" minlength="5" maxlength="1000" placeholder="记录地图来源、现场观察或采用该模型的理由，至少 5 字" :disabled="busy"></textarea></label>
+                <p class="ne-small">保存说明会保留人工审阅状态，不会自动升级为现场已核实。</p>
+                <button class="ne-primary" :disabled="busy || !refinementReviewReady" @click="applyRefinement">应用审阅选择到草稿</button>
+                <p class="ne-small">应用后可撤销；点击“保存本地”才写入区域文件。</p>
+              </template>
+              <p v-else class="ne-small">此项需要补充路口结构或入口通行资料，暂不自动建立连接；可定位后用现有编辑工具处理。</p>
+            </article>
+          </template>
+        </section>
+        <section v-if="toolGroup === 'generation' && generationMode === 'context'" class="ne-context-panel ne-package-panel"><h2>本地轮廓</h2><p>框选街区，生成建筑、水体、绿地和道路示意。当前已保存 {{ contourCount.toLocaleString() }} 个轮廓。</p>
           <p v-if="contourBounds" class="ne-metric">选框 {{ Math.round(contourBounds.maxX-contourBounds.minX) }} × {{ Math.round(contourBounds.maxY-contourBounds.minY) }} 米</p>
           <div><button :disabled="busy || !graph" @click="selectContours">{{ contourBounds ? '重新框选轮廓' : '生成本地轮廓' }}</button><button v-if="contourBounds && !contourPreview" :disabled="busy" @click="contourPrompt = true">生成选区轮廓</button></div>
           <template v-if="contourPreview"><p class="ne-contour-preview" role="status">正在预览 {{ contourPreview.featureCount }} 个轮廓，尚未保存。</p><p>保存后用本次轮廓替换该区域的本地底图。</p><div><button class="ne-primary" :disabled="busy" @click="saveContours">保存轮廓到区域包</button><button :disabled="busy" @click="discardContours">取消预览</button></div></template>
         </section>
-        <section class="ne-search"><label for="ne-search">定位节点或路段</label><input id="ne-search" v-model="search" placeholder="输入 ID、道路组或 OSM 编号" />
+        <section v-if="propertyGroup || toolGroup === 'review'" class="ne-search"><label for="ne-search">定位节点或路段</label><input id="ne-search" v-model="search" placeholder="输入 ID、道路组或 OSM 编号" />
           <div v-if="search.trim()" class="ne-results"><button v-for="item in results" :key="`${item.type}:${item.id}`" @click="chooseSearchResult(item, $event)"><span>{{ item.type === 'node' ? '节点' : '路段' }}</span>{{ item.id }}</button><p v-if="!results.length">没有匹配结果</p></div>
         </section>
-        <section class="ne-layers"><h2>图层</h2><label v-for="(value, key) in kinds" :key="key"><input v-model="visible[key]" type="checkbox" /><i :style="{ background: value.color }"></i>{{ value.label }}</label>
+        <section v-if="toolGroup === 'layers'" class="ne-layers"><h2>图层</h2><label v-for="(value, key) in kinds" :key="key"><input v-model="visible[key]" type="checkbox" /><i :style="{ background: value.color }"></i>{{ value.label }}</label>
           <div class="ne-basemap-options"><label>辅助底图<select v-model="basemap" @change="changeBasemap"><option value="local">区域包本地轮廓</option><option value="baidu">百度地图</option></select></label><p v-if="basemapState === 'loading'" role="status">正在加载百度底图…</p><p v-if="basemapState === 'ready'">百度底图已叠加，路网编辑操作保持一致。</p><p v-if="basemapError" role="alert">{{ basemapError }}</p></div>
           <div class="ne-layer-extras"><label><input v-model="showNodes" type="checkbox" />{{ showToolNodes ? '节点（当前工具自动显示）' : '节点（放大可见）' }}</label><label><input v-model="showContext" type="checkbox" :disabled="basemapState === 'ready'" />本地建筑、水体与绿地</label><label><input v-model="showSource" type="checkbox" :disabled="basemapState === 'ready'" />本地道路中心线</label></div>
         </section>
-        <section class="ne-package-panel"><h2>区域数据包</h2><p>{{ stats?.edges ? '框选一块路网，保存为可独立打开的区域包。' : '当前为空白草稿，先新增节点并连接步行通道。' }}</p><p v-if="packageBounds" class="ne-metric">选框 {{ Math.round(packageBounds.maxX-packageBounds.minX) }} × {{ Math.round(packageBounds.maxY-packageBounds.minY) }} 米</p><div><button :disabled="busy || !stats?.edges" @click="setTool('package')">{{ packageBounds ? '重新框选' : '框选区域' }}</button><button v-if="packageBounds" :disabled="busy" @click="previewPackage">打包选区</button></div></section>
-        <section class="ne-properties">
+        <template v-if="toolGroup === 'files'">
+          <section class="ne-file-panel"><h2>本地区域文件</h2><p>导入和导出当前画布；保存本地后，再发布完整区域包。</p>
+            <div class="ne-panel-actions"><button :disabled="loading || busy" @click="importInput?.click()">导入 JSON</button><input ref="importInput" type="file" accept=".json,application/json" :disabled="loading || busy" @change="importGraph" /><button :disabled="!graph || busy" @click="exportGraph">导出 JSON</button><button :disabled="busy" @click="reload">重新加载</button><button :disabled="busy" @click="chooseRegion()">切换区域</button></div>
+          </section>
+          <section class="ne-package-panel"><h2>打包子区域</h2><p>{{ stats?.edges ? '框选一块路网，保存为可独立打开的区域包。' : '当前为空白草稿，先新增节点并连接步行通道。' }}</p><p v-if="packageBounds" class="ne-metric">选框 {{ Math.round(packageBounds.maxX-packageBounds.minX) }} × {{ Math.round(packageBounds.maxY-packageBounds.minY) }} 米</p><div><button :disabled="busy || !stats?.edges" :aria-pressed="tool === 'package'" title="框选打包（B）" @click="setTool('package')">{{ packageBounds ? '重新框选' : '框选区域' }}</button><button v-if="packageBounds" :disabled="busy" @click="previewPackage">打包选区</button></div></section>
+          <section class="ne-publication-panel" :aria-busy="publishing"><h2>发布到数据库</h2><p>发布当前已经保存的完整区域包，包括路网、地点、标定和编辑源数据。画布中的未保存修改不会入库。</p>
+            <p v-if="publicationBlocked" class="ne-publication-notice">{{ publicationBlocked }}</p>
+            <p v-else class="ne-small">发布配置已具备，连接和数据校验将在发布时进行。数据库需由维护者提前初始化。</p>
+            <div class="ne-panel-actions"><button class="ne-primary" :disabled="busy || Boolean(publicationBlocked)" @click="publishRegion">{{ publishing ? '正在发布…' : '发布已保存版本' }}</button><button :disabled="busy || publicationLoading" @click="refreshPublicationStatus">{{ publicationLoading ? '读取中…' : '刷新配置状态' }}</button></div>
+            <p class="ne-small">日常编辑使用文件模式；发布后，使用 MySQL 的展示后端重启才会加载新版本。</p>
+            <div v-if="publicationResult" class="ne-publication-result" role="status"><strong>完整区域包已发布</strong><p>包版本 {{ publicationResult.packageVersion }}</p><code>{{ publicationResult.versionId }}</code><p>使用 MySQL 的展示后端重启后生效。</p></div>
+          </section>
+        </template>
+        <section v-if="propertyGroup" class="ne-properties">
           <h2>{{ selectedEdges.length > 1 ? `已选 ${selectedEdges.length} 条路段` : selection?.type === 'node' ? '节点属性' : selection?.type === 'edge' ? '路段属性' : '开始手动校对' }}</h2>
           <template v-if="selectedEdges.length > 1">
             <p>总长度 {{ selectedLength.toFixed(2) }} 米</p>
@@ -909,8 +1330,11 @@ onUnmounted(() => {
           </template>
           <template v-else><p>放大到要修改的街口，点击节点或线条。</p><p>错误连线可直接删除；缺失连接用“连线”补入。接入路段中间时，先拆分路段。</p><p class="ne-small">线条相交、节点重合都不会自动连通。每条新连接由你明确建立。</p></template>
         </section>
-        <section v-if="route" class="ne-route"><h2>路径检查</h2><strong>{{ route.seconds.toFixed(1) }} 秒</strong><p>步速 1.3 米/秒，过街等待 {{ route.waitSeconds }} 秒。</p><ol><li v-for="edge in route.edges" :key="edge.id"><button @click="choose('edge', edge.id, true)">{{ edge.id }}</button></li></ol><button @click="route = null; redraw()">清除路径</button></section>
-        <section class="ne-summary"><h2>当前路网</h2><p v-if="stats">{{ stats.nodes.toLocaleString() }} 个节点 / {{ stats.edges.toLocaleString() }} 条路段</p><p v-if="audit">{{ audit.componentCount }} 个连通分量 · {{ audit.isolatedNodes }} 个孤立节点<span v-if="engine"> · C++ {{ engine }} 检查通过</span></p><p v-else-if="dirty">修改后尚未检查</p><p class="ne-small">合成数据，人工编辑继续标为未核实。连通分量和孤立点只作提示。</p><button :disabled="busy" @click="reload">重新加载文件</button></section>
+        <section v-if="toolGroup === 'review' && reviewMode === 'check'" class="ne-summary"><h2>路网与路径检查</h2><p v-if="stats">{{ stats.nodes.toLocaleString() }} 个节点 / {{ stats.edges.toLocaleString() }} 条路段</p>
+          <div class="ne-panel-actions"><button :disabled="!graph || busy || generationPreview" @click="validate">{{ busy ? '处理中…' : '检查当前路网' }}</button><button :class="{ active: tool === 'route' }" :aria-pressed="tool === 'route'" :disabled="!graph || busy" title="选择起终点检查路径（R）" @click="setTool('route')">选择起终点</button></div>
+          <p v-if="tool === 'route'" class="ne-small">在地图点选起点和终点；也可先用上方搜索定位，再到地图点选。</p><p v-if="audit">{{ audit.componentCount }} 个连通分量 · {{ audit.isolatedNodes }} 个孤立节点<span v-if="engine"> · C++ {{ engine }} 检查通过</span></p><p v-else-if="dirty">修改后尚未检查</p><p class="ne-small">合成数据，人工编辑继续标为未核实。连通分量和孤立点只作提示。</p>
+        </section>
+        <section v-if="toolGroup === 'review' && reviewMode === 'check' && route" class="ne-route"><h2>路径检查结果</h2><strong>{{ route.seconds.toFixed(1) }} 秒</strong><p>步速 1.3 米/秒，过街等待 {{ route.waitSeconds }} 秒。</p><ol><li v-for="edge in route.edges" :key="edge.id"><button @click="choose('edge', edge.id, true)">{{ edge.id }}</button></li></ol><button @click="route = null; redraw()">清除路径</button></section>
       </aside>
     </div>
     <footer class="ne-status" role="status"><span>{{ message }}</span><code>X {{ pointer[0].toFixed(2) }} / Y {{ pointer[1].toFixed(2) }} 米</code></footer>

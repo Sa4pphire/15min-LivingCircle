@@ -1,0 +1,3 @@
+# Optional package storage. File mode does not import this driver.
+# RSA extra supports MySQL 8's caching_sha2_password authentication.
+PyMySQL[rsa]>=1.1.1,<2.0

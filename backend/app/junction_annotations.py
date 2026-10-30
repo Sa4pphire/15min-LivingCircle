@@ -17,6 +17,7 @@ def _finite_point(value: Any) -> bool:
 def expand_reviewed_junction(
     annotation: dict[str, Any], nodes: dict[str, dict[str, Any]],
     edges: list[dict[str, Any]],
+    *, approach_bindings: dict[str, list[dict[str, str]]] | None = None,
 ) -> dict[str, Any]:
     """Expand *explicitly selected* approach groups into sidewalk corner ports.
 
@@ -52,7 +53,12 @@ def expand_reviewed_junction(
         node = nodes[node_id]
         return [node["xMeters"], node["yMeters"]]
 
+    bound_nodes = ({binding["endpointNodeId"] for bindings in approach_bindings.values()
+                    for binding in bindings} if approach_bindings is not None else None)
+
     def original_node(node_id: str) -> bool:
+        if bound_nodes is not None:
+            return node_id in bound_nodes
         return any(node_id == f"shared:{raw}" or f":{raw}:" in node_id
                    for raw in raw_nodes)
 
@@ -63,7 +69,11 @@ def expand_reviewed_junction(
         candidates: list[dict[str, Any]] = []
         directions: list[list[float]] = []
         for raw_edge_id in group["edgeIds"]:
-            ids = ([raw_edge_id] if raw_edge_id in by_id else
+            bindings = approach_bindings.get(raw_edge_id, []) if approach_bindings is not None else None
+            if bindings is not None and not bindings:
+                raise ValueError(f"missing explicit approach binding: {raw_edge_id}")
+            ids = ([binding["edgeId"] for binding in bindings] if bindings is not None else
+                   [raw_edge_id] if raw_edge_id in by_id else
                    [f"{raw_edge_id}:left", f"{raw_edge_id}:right"])
             for edge_id in ids:
                 edge = by_id.get(edge_id)
@@ -71,7 +81,11 @@ def expand_reviewed_junction(
                     raise ValueError(f"unknown reviewed approach: {edge_id}")
                 if edge_id in selected:
                     raise ValueError("reviewed approach edge selected twice")
-                endpoints = [nid for nid in (edge["from"], edge["to"]) if original_node(nid)]
+                endpoints = ([binding["endpointNodeId"] for binding in bindings
+                              if binding["edgeId"] == edge_id and
+                              binding["endpointNodeId"] in (edge["from"], edge["to"])]
+                             if bindings is not None else
+                             [nid for nid in (edge["from"], edge["to"]) if original_node(nid)])
                 if len(endpoints) != 1:
                     raise ValueError("reviewed approach must leave the explicitly selected junction")
                 endpoint = endpoints[0]

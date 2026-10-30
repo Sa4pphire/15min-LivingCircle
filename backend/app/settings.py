@@ -15,10 +15,10 @@ def _server_ak() -> str:
         return os.environ["BAIDU_SERVER_AK"].strip()
     # Read only the server key. Do not load browser variables into the server
     # environment or expose this value in health responses/logs/cache entries.
-    for path in (REPO_ROOT / ".env", APP_ROOT / ".env", REPO_ROOT / "frontend/.env.local"):
+    for path in (REPO_ROOT / ".env", APP_ROOT / ".env"):
         if path.is_file():
             values = dotenv_values(path, interpolate=False)
-            value = values.get("BAIDU_SERVER_AK") or values.get("VITE_BAIDU_SERVER_AK")
+            value = values.get("BAIDU_SERVER_AK")
             if value:
                 return value.strip()
     return ""
@@ -41,10 +41,10 @@ SYNTHETIC_NETWORK_PATH = _repo_path(os.getenv(
 @dataclass(frozen=True)
 class Settings:
     region_id: str = REGION_ID
+    region_storage_backend: str = os.getenv("REGION_STORAGE_BACKEND", "file")
     app_env: str = os.getenv("APP_ENV", "development")
     local_container_editor: bool = os.getenv(
         "LOCAL_CONTAINER_EDITOR", "false").strip().lower() in ("true", "1")
-    static_dir: Path = Path(os.getenv("STATIC_DIR", "static"))
     cpp_engine_path: Path = Path(
         os.getenv("CPP_ENGINE_PATH", "cpp-engine/build/isochrone_engine")
     )
@@ -94,6 +94,8 @@ class Settings:
         "POI_MAP_ASSET_PATH", str(REGION_ROOT / "alignment.bd09.json")))
 
     def __post_init__(self) -> None:
+        if self.region_storage_backend not in ("file", "mysql"):
+            raise ValueError("REGION_STORAGE_BACKEND must be file or mysql")
         if self.cpp_engine_transport not in ("subprocess", "grpc"):
             raise ValueError("CPP_ENGINE_TRANSPORT must be subprocess or grpc")
         if type(self.cpp_engine_rpc_port) is not int or not 1 <= self.cpp_engine_rpc_port <= 65535:
@@ -101,6 +103,13 @@ class Settings:
         if (type(self.cpp_engine_rpc_capacity) is not int or
                 not 1 <= self.cpp_engine_rpc_capacity <= 2_147_483_647):
             raise ValueError("CPP_ENGINE_RPC_CAPACITY must be an integer from 1 to 2147483647")
+
+    @property
+    def network_editor_enabled(self) -> bool:
+        # Container opt-in only affects local request checks. It cannot enable
+        # authoring endpoints when the application runs in production.
+        # Database releases are immutable; author with a separate file-mode app.
+        return self.app_env == "development" and self.region_storage_backend == "file"
 
 
 settings = Settings()

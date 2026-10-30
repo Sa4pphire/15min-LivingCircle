@@ -1,11 +1,4 @@
-FROM node:22-bookworm-slim AS frontend-builder
-ARG VITE_BAIDU_BROWSER_AK=""
-WORKDIR /src/frontend
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN VITE_BAIDU_BROWSER_AK="$VITE_BAIDU_BROWSER_AK" npm run build
-
+# Backend image only. Build the Vue/Nginx image from frontend/Dockerfile.
 FROM debian:bookworm-slim AS cpp-builder
 RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential cmake \
@@ -19,11 +12,12 @@ RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF \
     && cmake --build build --parallel
 
 FROM python:3.12-slim-bookworm AS runtime
+ARG WITH_MYSQL=false
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    APP_ENV=production \
     APP_HOST=0.0.0.0 \
     APP_PORT=8000 \
-    STATIC_DIR=/app/static \
     CPP_ENGINE_PATH=/app/bin/isochrone_engine \
     ANALYSIS_CACHE_DIR=/app/data/cache \
     REGION_ID=shanghai-new-jiangwan
@@ -32,15 +26,17 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends libstdc++6 \
     && rm -rf /var/lib/apt/lists/*
 COPY backend/requirements.txt ./requirements.txt
+COPY backend/requirements-mysql.txt ./requirements-mysql.txt
 RUN pip install --no-cache-dir -r requirements.txt
+RUN if [ "$WITH_MYSQL" = "true" ]; then pip install --no-cache-dir -r requirements-mysql.txt; fi
 COPY backend/app/ ./app/
+COPY backend/sql/ ./sql/
 COPY data/networks/ ./data/networks/
 COPY data/regions/ ./data/regions/
 COPY contracts/engine-input.example.json ./contracts/engine-input.example.json
-COPY --from=frontend-builder /src/frontend/dist/ ./static/
 COPY --from=cpp-builder /src/cpp-engine/build/isochrone_engine ./bin/isochrone_engine
-RUN mkdir -p /app/data/cache && /app/bin/isochrone_engine --health
+RUN mkdir -p /app/data/cache
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD ["python", "-m", "app.deployment_health"]
-CMD ["sh", "-c", "uvicorn app.main:app --host ${APP_HOST} --port ${APP_PORT}"]
+CMD ["sh", "-c", "exec uvicorn app.main:app --host ${APP_HOST} --port ${APP_PORT}"]

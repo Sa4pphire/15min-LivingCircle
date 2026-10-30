@@ -1,0 +1,6 @@
+# Optional override for the Windows editor to reach the Docker MySQL service.
+# Combine with mysql.compose.yml; the normal database deployment stays internal.
+services:
+  mysql:
+    ports:
+      - "127.0.0.1:${MYSQL_LOCAL_PORT:-3306}:3306"

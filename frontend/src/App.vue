@@ -399,7 +399,6 @@ onUnmounted(() => {
       </div>
       <div class="header-right">
         <button type="button" class="header-nav-button region-switch-button" @click="emit('choose-region')">切换区域</button>
-        <a class="header-nav-button" :href="`/?mode=editor&region=${encodeURIComponent(region.id)}`">编辑路网</a>
         <button type="button" class="header-nav-button" @click="goToPage(1)">查看结果 <span aria-hidden="true">↓</span></button>
         <a class="header-contact" href="https://github.com/Sa4pphire" target="_blank" rel="noopener noreferrer" aria-label="在 GitHub 联系项目作者">联系 <span class="github-label">/ GitHub</span> <span aria-hidden="true">↗</span></a>
       </div>

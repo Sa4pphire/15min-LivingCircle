@@ -1,0 +1,23 @@
+# Optional, separately deployed authoritative region store. No public DB port.
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-livingcircle}
+      MYSQL_USER: ${MYSQL_USER:-livingcircle}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env.mysql}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env.mysql}
+    command: ["--max-allowed-packet=128M"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - deployment
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+
+networks:
+  deployment:
+    external: true
+    name: ${DEPLOY_NETWORK:-vct}

@@ -1,0 +1,44 @@
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Resolve on requests so the frontend can start without the backend and
+    # can discover its new address after an independent container replacement.
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $api_upstream "${API_UPSTREAM}";
+    client_max_body_size 32m;
+
+    # Keep API errors as API responses, never turn them into the SPA HTML.
+    location = /api {
+        include /etc/nginx/api-proxy.conf;
+    }
+    location ^~ /api/ {
+        include /etc/nginx/api-proxy.conf;
+    }
+    location = /docs {
+        include /etc/nginx/api-proxy.conf;
+    }
+    location = /docs/oauth2-redirect {
+        include /etc/nginx/api-proxy.conf;
+    }
+    location = /redoc {
+        include /etc/nginx/api-proxy.conf;
+    }
+    location = /openapi.json {
+        include /etc/nginx/api-proxy.conf;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+    location /assets/ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+    }
+}
