@@ -1,6 +1,7 @@
 from pathlib import Path
 import asyncio
 from collections.abc import Awaitable, Callable
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 from functools import partial
 import math
@@ -28,6 +29,7 @@ from .network import UnsupportedAreaError, build_analysis_result, load_engine_re
 from .pois import CATEGORIES, PoiService, add_poi_result, enrich_engine_pois
 from .poi_routes import PoiRouteStore, RouteUnavailable
 from .sampled_poi_routes import route_sampled_poi
+from .service_coverage import collect_service_coverage
 from .baidu.client import BaiduClient
 from .sampled_service import run_sampled_analysis as build_sampled_result
 from .baidu.errors import BaiduApiError
@@ -57,9 +59,11 @@ if not analysis_logger.handlers:
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    global _sampled_task_semaphore
+    global _sampled_task_semaphore, _coverage_gate
     # A contended semaphore belongs to its event loop, just like the scheduler.
     _sampled_task_semaphore = asyncio.Semaphore(1)
+    _coverage_gate = asyncio.Semaphore(1)
+    _coverage_cache.clear()
     engine_runtime = get_engine_runtime(restart=True)
     application.state.engine_runtime = engine_runtime
     scheduler = AnalysisScheduler(workers=2, pending_limit=8,
@@ -676,6 +680,48 @@ async def route_sampled_analysis_poi(analysis_id: str, request: PoiRouteRequest)
         raise HTTPException(503, detail={'code': 'BAIDU_ROUTE_UNAVAILABLE', 'message': str(exc)}) from exc
     finally:
         await client.aclose()
+
+
+# Bounded cache is separate from published reports/revisions and POI browsing.
+_coverage_cache = OrderedDict()
+_coverage_gate = asyncio.Semaphore(1)
+
+
+async def _service_coverage(store, mode, analysis_id, revision, online):
+    state = store.get(analysis_id)
+    if state is None or state.result is None:
+        raise HTTPException(409, detail={'message': '分析已过期，请重新计算步行范围。'})
+    if state.status != 'completed' or state.resultRevision != revision:
+        raise HTTPException(409, detail={'message': '分析尚未完成或已更新，请等待最新结果。'})
+    report = state.result
+    key = (mode, analysis_id, revision)
+    async with _coverage_gate:
+        if not online and key in _coverage_cache:
+            _coverage_cache.move_to_end(key)
+            return _coverage_cache[key]
+        client = BaiduClient(cache_enabled=True)
+        try:
+            result = await collect_service_coverage(client, report, online=online)
+        except (BaiduApiError, OSError, sqlite3.Error, TimeoutError, ValueError, KeyError) as exc:
+            raise HTTPException(503, detail={'message': '服务覆盖数据暂不可用：' + str(exc)}) from exc
+        finally:
+            await client.aclose()
+        result.update(analysisId=analysis_id, resultRevision=revision)
+        _coverage_cache[key] = result
+        _coverage_cache.move_to_end(key)
+        while len(_coverage_cache) > 16:
+            _coverage_cache.popitem(last=False)
+        return result
+
+
+@app.post('/api/v1/analyses/{analysis_id}/service-coverage')
+async def cpp_service_coverage(analysis_id: str, revision: int = Query(ge=0), online: bool = False):
+    return await _service_coverage(_analyses, 'synthetic', analysis_id, revision, online)
+
+
+@app.post('/api/v1/sampled-analyses/{analysis_id}/service-coverage')
+async def sampled_service_coverage(analysis_id: str, revision: int = Query(ge=0), online: bool = False):
+    return await _service_coverage(_sampled_analyses, 'real', analysis_id, revision, online)
 
 
 @app.get("/api/v1/local-experiments/{experiment_id}", response_model=AnalysisState)

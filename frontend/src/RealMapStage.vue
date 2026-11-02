@@ -14,10 +14,12 @@ import {
   geometryToSvgPath,
   localToWgs,
   wgsToLocal,
+  pointInPolygon,
 } from "./mapGeometry";
 import "./realMap.css";
 import { poiAccessLabel, poiCategoryStyles, visiblePois } from "./poiFacilities.js";
 import { cppOverviewFit, cppOverviewInsets, cppOverviewPoints } from "./cppOverview.js";
+import { coverageFeatures, coverageColor, coverageDescription } from './serviceCoverage.js';
 
 const props = defineProps({
   candidate: { type: Object, default: null },
@@ -30,8 +32,11 @@ const props = defineProps({
   analysisMode: { type: String, default: "preview" },
   selectionDisabled: { type: Boolean, default: false },
   showBlindZones: { type: Boolean, default: false },
+  serviceCoverage: { type: Object, default: null },
+  coverageCategory: { type: String, default: 'all' },
+  coverageEstimate: { type: Boolean, default: false },
 });
-const emit = defineEmits(["select", "poi-select", "poi-dismiss"]);
+const emit = defineEmits(["select", "poi-select", "poi-dismiss", "coverage-select"]);
 const blindClipId = useId();
 
 const browserAk = import.meta.env.VITE_BAIDU_BROWSER_AK?.trim();
@@ -244,23 +249,22 @@ const fallbackDemoResult = computed(() => {
   }
   return null;
 });
-function blindZoneStyle(missingCategories = []) {
-  const known = missingCategories.filter(category => Object.hasOwn(poiCategoryStyles, category));
-  const color = known.length === 1 ? poiCategoryStyles[known[0]].color
-    : known.length === Object.keys(poiCategoryStyles).length ? '#d3484a' : '#855ba7';
-  return { '--blind-fill': `${color}38`, '--blind-stroke': `${color}99` };
+function blindZoneStyle(properties, surface) {
+  const color = coverageColor(properties, props.coverageCategory);
+  return { '--blind-fill': properties.unknown ? `url(#${blindClipId}-${surface}-unknown)` : `${color}38`, '--blind-stroke': `${color}99` };
 }
+const visibleCoverage = computed(() => props.showBlindZones
+  ? coverageFeatures(props.serviceCoverage, props.coverageCategory, props.coverageEstimate) : []);
 const fallbackBlindZones = computed(() => {
-  const result = props.analysisResult;
-  if (!props.showBlindZones || result?.source !== 'baidu-sampled-idw' || !mapAlignment.value) return [];
-  return (result.blindZones?.features ?? []).flatMap(feature => {
+  if (!mapAlignment.value) return [];
+  return visibleCoverage.value.flatMap(feature => {
     try {
       const d = geometryToSvgPath(feature.geometry, point => {
         const local = bd09ToLocal(point);
         if (!finitePoint(local)) throw new Error('OUTSIDE_ALIGNMENT');
         return local;
       });
-      return d ? [{ d, missingCategories: feature.properties?.missingCategories ?? [] }] : [];
+      return d ? [{ d, properties: feature.properties }] : [];
     } catch { return []; }
   });
 });
@@ -323,8 +327,8 @@ const projectedResult = computed(() => {
       projectGeometry(feature.geometry)),
     gaps: (result.blindZoneWalkways?.features ?? []).map((feature) =>
       projectGeometry(feature.geometry)),
-    blindZones: (props.showBlindZones ? result.blindZones?.features ?? [] : []).map((feature) => ({
-      d: projectGeometry(feature.geometry), missingCategories: feature.properties?.missingCategories ?? [],
+    blindZones: visibleCoverage.value.map((feature) => ({
+      d: geometryToSvgPath(feature.geometry, project), properties: feature.properties,
     })),
   };
 });
@@ -685,7 +689,19 @@ function selectPoint(lng, lat, coordType, localPoint = null) {
 
 function handleMapClick(event) {
   if (performance.now() - lastNativeDragAt < 260) return;
+  if (event.point && inspectCoverage([event.point.lng, event.point.lat])) return;
   if (event.point) selectPoint(event.point.lng, event.point.lat, "bd09ll");
+}
+
+function inspectCoverage(point) {
+  if (!props.showBlindZones || !props.serviceCoverage || !point) return false;
+  const feature = visibleCoverage.value.find(item => {
+    const polygons = item.geometry.type === 'Polygon' ? [item.geometry.coordinates] : item.geometry.coordinates;
+    return polygons.some(polygon => pointInPolygon(point, polygon));
+  });
+  if (feature) emit('coverage-select', feature.properties);
+  else showNotice('此处没有当前筛选项的覆盖缺失标记。关闭服务覆盖后可重新选起点。');
+  return true;
 }
 
 function handleFallbackClick(event) {
@@ -693,6 +709,7 @@ function handleFallbackClick(event) {
     event.target.closest("button, a, .real-map-toast, .real-poi-marker, .real-poi-popover")) return;
   const local = fallbackPointFromClient(event.clientX, event.clientY);
   if (!local) return;
+  if (inspectCoverage(localToBd09(local))) return;
   const [lng, lat] = localToWgs(local, fallbackOrigin);
   selectPoint(lng, lat, region.geographicCoordType, local);
 }
@@ -948,7 +965,7 @@ onUnmounted(() => {
   <div
     ref="stageEl"
     class="real-map-stage"
-    :class="{ 'is-outside': !hoverInside, 'can-pan': fallbackActive, 'is-panning': fallbackDragging, 'can-animate': fallbackAnimated, 'has-cpp-result': cppSyntheticResult }"
+    :class="{ 'is-outside': !hoverInside, 'can-pan': fallbackActive, 'is-panning': fallbackDragging, 'can-animate': fallbackAnimated, 'has-cpp-result': cppSyntheticResult, 'coverage-visible': showBlindZones }"
     role="group"
     aria-label="现有路网数据范围地图，可点击范围内位置设置候选起点"
     @click="handleFallbackClick"
@@ -982,6 +999,9 @@ onUnmounted(() => {
       aria-label="基于公开道路资料的演示区 SVG 轮廓示意"
     >
       <defs>
+        <pattern :id="`${blindClipId}-fallback-unknown`" width="12" height="12" patternUnits="userSpaceOnUse">
+          <rect width="12" height="12" fill="#7b878b15" /><path d="M0 12L12 0" stroke="#7b878b80" stroke-width="1" />
+        </pattern>
         <pattern id="real-map-grid" width="30" height="30" patternUnits="userSpaceOnUse">
           <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#dce8e1" stroke-width=".65" />
         </pattern>
@@ -1013,7 +1033,8 @@ onUnmounted(() => {
         <g v-if="fallbackDemoResult?.displayArea.type === 'polygon'" class="real-blind-zones"
           :clip-path="`url(#${blindClipId}-fallback)`">
           <path v-for="(zone, index) in fallbackBlindZones" :key="`blind-${index}`" :d="zone.d"
-            class="real-blind-zone" :style="blindZoneStyle(zone.missingCategories)" fill-rule="evenodd" />
+            class="real-blind-zone" :style="blindZoneStyle(zone.properties, 'fallback')" fill-rule="evenodd"
+            @click.stop="emit('coverage-select', zone.properties)"><title>{{ coverageDescription(zone.properties) }}</title></path>
         </g>
       </g>
       <g v-if="fallbackCandidate" :style="{ transform: fallbackCandidateTransform }" class="real-candidate-mark" aria-hidden="true">
@@ -1031,6 +1052,9 @@ onUnmounted(() => {
       aria-hidden="true"
     >
       <defs>
+        <pattern :id="`${blindClipId}-live-unknown`" width="10" height="10" patternUnits="userSpaceOnUse">
+          <rect width="10" height="10" fill="#7b878b15" /><path d="M-2 2L2 -2M0 10L10 0M8 12L12 8" stroke="#7b878b80" stroke-width="1" />
+        </pattern>
         <clipPath :id="`${blindClipId}-live`" clipPathUnits="userSpaceOnUse">
           <path :d="liveDemoResult?.rawArea || projectedResult?.area || ''" clip-rule="evenodd" fill-rule="evenodd" />
         </clipPath>
@@ -1038,10 +1062,6 @@ onUnmounted(() => {
       <path v-if="projectedResult?.area" :d="projectedResult.area" class="real-analysis-area" fill-rule="evenodd" />
       <path v-for="(path, index) in projectedResult?.walkways ?? []" :key="`walk-${index}`" :d="path" class="real-analysis-walkway" />
       <path v-for="(path, index) in projectedResult?.gaps ?? []" :key="`gap-${index}`" :d="path" class="real-analysis-gap" />
-      <g v-if="liveDemoResult?.area || projectedResult?.area" class="real-blind-zones"
-        :clip-path="`url(#${blindClipId}-live)`">
-        <path v-for="(zone, index) in projectedResult?.blindZones ?? []" :key="`blind-${index}`" :d="zone.d" class="real-blind-zone" :style="blindZoneStyle(zone.missingCategories)" fill-rule="evenodd" />
-      </g>
       <path :d="liveBoundaryPath" class="real-live-boundary-fill" fill-rule="evenodd" />
       <path :d="liveBoundaryPath" class="real-live-boundary-outline" />
       <g v-if="liveDemoResult" class="real-demo-result">
@@ -1050,6 +1070,12 @@ onUnmounted(() => {
         <path v-for="segment in liveDemoResult.samplingRoutes" :key="`sample-${segment.id}`" :d="segment.d" class="real-sampled-route" pathLength="1" :style="{ '--route-delay': segment.delay }" />
         <path v-for="segment in liveDemoResult.poiRoutes" :key="`poi-${segment.id}`" :d="segment.d" class="real-poi-route" pathLength="1" :style="{ '--route-delay': segment.delay }" />
         <path v-if="analysisMode !== 'cpp' && analysisResult.accessLink?.length > 2" :d="liveDemoResult.access" class="real-demo-access" />
+      </g>
+      <g v-if="liveDemoResult?.area || projectedResult?.area" class="real-blind-zones"
+        :clip-path="`url(#${blindClipId}-live)`">
+        <path v-for="(zone, index) in projectedResult?.blindZones ?? []" :key="`blind-${index}`" :d="zone.d"
+          class="real-blind-zone" :style="blindZoneStyle(zone.properties, 'live')" fill-rule="evenodd"
+          @click.stop="emit('coverage-select', zone.properties)"><title>{{ coverageDescription(zone.properties) }}</title></path>
       </g>
       <g v-if="liveCandidate" :transform="`translate(${liveCandidate.x} ${liveCandidate.y})`" class="real-candidate-mark">
         <g class="real-candidate-glyph">

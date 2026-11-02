@@ -9,6 +9,7 @@ import { normalizeCppPoiRoute, requestCppMapAnalysis, requestCppPoiRoute } from 
 import { normalizeSampledPoiRoute, requestSampledMapAnalysis, requestSampledPoiRoute } from "./sampledAnalysisClient.js";
 import { sameAgentContext } from "./agentClient.js";
 import { getActiveRegion } from "./regionLoader.js";
+import { requestServiceCoverage, serviceLabels, coverageDescription } from './serviceCoverage.js';
 
 const region = getActiveRegion();
 const emit = defineEmits(['choose-region']);
@@ -53,6 +54,53 @@ const agentContext = computed(() => {
   if (state !== 'complete' || !result?.analysisId || !Number.isInteger(result.resultRevision) || result.resultRevision < 0) return null;
   return { regionId: region.id, mode: mapMode.value, analysisId: result.analysisId, resultRevision: result.resultRevision };
 });
+const serviceCoverage = ref(null);
+const coverageCategory = ref('all');
+const coverageEstimate = ref(false);
+const coverageLoading = ref(false);
+const coverageError = ref('');
+const coverageSelection = ref(null);
+let coverageAbort;
+const coverageKey = computed(() => JSON.stringify(agentContext.value));
+const coverageStatus = computed(() => {
+  if (!agentContext.value) return '先生成步行范围，再查看服务覆盖。';
+  if (coverageLoading.value) return '正在查询市场、药店、小学的服务覆盖…';
+  if (coverageError.value) return coverageError.value;
+  if (!serviceCoverage.value) return '正在准备服务覆盖数据。';
+  if (!serviceCoverage.value.complete) return coverageEstimate.value && serviceCoverage.value.canEstimate
+    ? '基于现有服务点的覆盖估算 · 清单不完整，不能据此确认盲区'
+    : '灰色斜线：数据不足，无法判定；可补充查询或查看估算。';
+  return '直线 1 公里服务覆盖 · 检索分页已完成，非实地核验结果';
+});
+async function loadCoverage(online = false) {
+  coverageAbort?.abort();
+  const context = agentContext.value;
+  if (!context || !showBlindZones.value) return;
+  const controller = new AbortController();
+  coverageAbort = controller;
+  coverageLoading.value = true;
+  coverageError.value = '';
+  coverageSelection.value = null;
+  try {
+    const result = await requestServiceCoverage(context, { online, signal: controller.signal });
+    if (!controller.signal.aborted) serviceCoverage.value = result;
+  } catch (error) {
+    if (!controller.signal.aborted) coverageError.value = error.message;
+  } finally {
+    if (coverageAbort === controller) coverageLoading.value = false;
+  }
+}
+watch([coverageKey, showBlindZones], () => {
+  coverageAbort?.abort();
+  serviceCoverage.value = null;
+  coverageLoading.value = false;
+  coverageError.value = '';
+  coverageSelection.value = null;
+  coverageEstimate.value = false;
+  if (showBlindZones.value) loadCoverage();
+});
+watch([coverageCategory, coverageEstimate], () => { coverageSelection.value = null; });
+onUnmounted(() => coverageAbort?.abort());
 const agentResetKey = computed(() => {
   const candidate = mapMode.value === 'real' ? realCandidate.value : cppCandidate.value;
   const result = mapMode.value === 'real' ? realAnalysisResult.value : cppAnalysisResult.value;
@@ -302,8 +350,6 @@ function switchMapMode(mode) {
 }
 
 function toggleBlindZones() {
-  // Keep the existing real-area layer behavior without treating it as a mode.
-  if (mapMode.value !== "real") mapMode.value = "real";
   showBlindZones.value = !showBlindZones.value;
 }
 
@@ -428,6 +474,8 @@ onUnmounted(() => {
                 :analysis-complete="mapMode === 'synthetic' ? cppAnalysisState === 'complete' : realAnalysisState === 'complete'"
                 :zoom-tier="mapZoomTier" :overview-request-id="mapOverviewRequestId"
                 :show-blind-zones="showBlindZones"
+                :service-coverage="serviceCoverage" :coverage-category="coverageCategory" :coverage-estimate="coverageEstimate"
+                @coverage-select="coverageSelection = $event"
                 :poi-focus-request="mapMode === 'synthetic' ? cppPoiFocusRequest : realPoiFocusRequest"
                 :poi-route="mapMode === 'synthetic' ? cppPoiRoute : realPoiRoute"
                 :selection-disabled="mapMode === 'synthetic' && cppAnalysisState === 'running'"
@@ -436,6 +484,26 @@ onUnmounted(() => {
             </Transition>
             <!-- Replay a light reveal without remounting the shared base map. -->
             <div :key="mapMode" class="map-mode-wash" aria-hidden="true"></div>
+            <aside v-if="showBlindZones" class="service-coverage-panel" aria-label="三类服务覆盖"
+              @pointerdown.stop @click.stop @dblclick.stop @wheel.stop>
+              <strong>1 公里服务覆盖</strong>
+              <label>查看 <select v-model="coverageCategory">
+                <option value="all">综合缺失</option>
+                <option v-for="(label, key) in serviceLabels" :key="key" :value="key">缺少{{ label }}</option>
+              </select></label>
+              <p role="status">{{ coverageStatus }}</p>
+              <p v-if="serviceCoverage" class="coverage-counts">
+                <span v-for="(label, key) in serviceLabels" :key="key">{{ label }} {{ serviceCoverage.categoryCounts[key] }} · {{ serviceCoverage.categoryCompleteness[key] ? '查询完整' : '待补齐' }}</span>
+              </p>
+              <label v-if="serviceCoverage?.canEstimate"><input type="checkbox" v-model="coverageEstimate">查看现有服务点的覆盖估算</label>
+              <div v-if="serviceCoverage?.complete || (coverageEstimate && serviceCoverage?.canEstimate)" class="coverage-legend">
+                <template v-if="coverageCategory === 'all'"><span><i style="background:#d2aa32"></i>缺 1 类</span><span><i style="background:#e48636"></i>缺 2 类</span><span><i style="background:#d3484a"></i>缺 3 类</span></template>
+                <span v-else>仅显示缺少{{ serviceLabels[coverageCategory] }}的区域</span>
+              </div>
+              <button type="button" :disabled="coverageLoading || !agentContext" @click="loadCoverage(true)">补充查询服务点</button>
+              <small>按直线距离估算，非步行距离。连续覆盖面不代表 10 米定位精度。</small>
+              <p v-if="coverageSelection">{{ coverageDescription(coverageSelection) }}</p>
+            </aside>
             <div class="map-layer-controls"
               @pointerdown.stop @click.stop @dblclick.stop>
               <div class="map-mode-switch" role="group" aria-label="地图展示模式"
@@ -472,14 +540,13 @@ onUnmounted(() => {
           <div class="map-bottomline real-mode">
             <span v-if="mapMode === 'real'"><span class="line-signal"></span>{{ realAnalysisState === 'error' ? realAnalysisError : realAnalysisState === 'running' ? '正在计算步行范围，请稍候' : realAnalysisResult ? '步行范围和参考路线已显示' : realCandidate ? '已选起点 · 点击右上角计算步行范围' : '点击地图，选个出发点' }}</span>
             <span v-else-if="mapMode === 'synthetic'" role="status"><span class="line-signal"></span>{{ cppAnalysisState === 'error' ? cppAnalysisError : cppAnalysisState === 'running' ? '正在计算步行范围' : cppAnalysisState === 'enriching' ? '范围已显示 · 正在补充地点' : cppAnalysisResult ? '范围已显示 · 点击地点查看路线' : cppCandidate ? '已选起点 · 点击右上角计算步行范围' : '合成模拟 · 点击地图选个起点' }}</span>
-            <span><span class="line-signal"></span>{{ showBlindZones ? (realAnalysisResult?.blindZoneStatus === 'confirmed' ? '附近服务提醒 · 看看哪些地方离生活服务较远' : realAnalysisResult?.blindZoneStatus === 'provisional' ? '部分地点信息还不齐，先看看已找到的服务' : realAnalysisResult?.blindZoneStatus === 'unknown' ? '地点信息还不齐，暂时无法显示服务提醒' : '计算范围后，可查看附近服务提醒') : '点击眼睛图标，查看附近服务提醒' }}</span>
+            <span><span class="line-signal"></span>{{ showBlindZones ? coverageStatus : '点击眼睛图标，查看三类服务覆盖' }}</span>
             <span><a v-if="region.source?.provider === 'OpenStreetMap contributors'" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">区域轮廓与路网 © OpenStreetMap contributors · ODbL</a><template v-else>区域轮廓与路网：{{ region.source?.provider || '当前区域包' }}</template></span>
           </div>
           <div v-if="mapMode === 'real' && realAnalysisResult" class="real-route-legend" aria-label="在线计算路线图例">
             <span><i class="legend-sampled-route"></i>步行参考路线 {{ realAnalysisResult.summary.samplingRouteCount }}</span>
             <span v-if="realPoiRoute?.status === 'ready'"><i class="legend-poi-route"></i>选中设施的百度步行路线</span>
             <span v-else><i class="legend-poi-route"></i>地点参考路线 {{ realAnalysisResult.summary.poiRouteCount }}<small v-if="realAnalysisResult.summary.poiRouteCount === 0">（暂时没有 15 分钟内的参考路线）</small></span>
-            <span v-if="showBlindZones && ['confirmed', 'provisional'].includes(realAnalysisResult?.blindZoneStatus)"><i class="legend-blind-zone"></i>{{ realAnalysisResult.blindZoneStatus === 'provisional' ? '附近服务提醒（信息待补充）' : '附近服务提醒' }}</span>
           </div>
         </div>
       </section>

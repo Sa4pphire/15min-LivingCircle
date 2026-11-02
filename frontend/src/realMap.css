@@ -1,4 +1,17 @@
 .real-map-stage { position: relative; width: 100%; height: 100%; overflow: hidden; background: #eaf0ec; cursor: crosshair; isolation: isolate; }
+.coverage-visible .real-sampled-route, .coverage-visible .real-demo-route,
+.coverage-visible .real-analysis-walkway { opacity: .28; }
+.real-blind-zones { pointer-events: none; }
+.service-coverage-panel { position: absolute; z-index: 8; top: 78px; left: 18px; width: min(300px, calc(100% - 36px)); max-height: calc(100% - 180px); overflow: auto; padding: 16px; border-radius: 10px; background: rgba(251,253,251,.96); box-shadow: 0 4px 20px #173c3a18; color: #254f48; display: grid; gap: 10px; font-size: 12px; line-height: 1.6; }
+.service-coverage-panel p { margin: 0; }
+.service-coverage-panel label { display: flex; align-items: center; gap: 8px; }
+.service-coverage-panel select, .service-coverage-panel button { border: 1px solid #bbd2c9; border-radius: 5px; padding: 5px 9px; color: inherit; background: #edf5f0; }
+.service-coverage-panel button { cursor: pointer; }
+.service-coverage-panel button:disabled { opacity: .5; cursor: wait; }
+.service-coverage-panel small { color: #657c75; }
+.coverage-counts { display: grid; grid-template-columns: 1fr; }
+.coverage-legend { display: flex; gap: 12px; flex-wrap: wrap; }
+.coverage-legend i { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 2px; }
 .real-poi-layer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
 .real-cpp-route-layer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
 .real-cpp-route-casing, .real-cpp-selected-route { fill: none; stroke-linecap: round; stroke-linejoin: round; }
