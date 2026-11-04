@@ -4,6 +4,7 @@
 #include <charconv>
 #include <cmath>
 #include <cstdlib>
+#include <initializer_list>
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -346,7 +347,7 @@ JsonValue parse_root(std::string_view input) {
   return root;
 }
 
-void parse_local_experiment(const JsonValue& root, EngineInput& result) {
+void parse_local_experiment(const JsonValue& root, AnalysisRequest& result) {
   if (const auto* local = optional_field(root, "localExperiment")) {
     LocalExperiment experiment;
     if (const auto* status = optional_field(*local, "topologyStatus")) {
@@ -355,11 +356,12 @@ void parse_local_experiment(const JsonValue& root, EngineInput& result) {
     for (const auto& node_id : array(field(*local, "boundaryNodeIds"))) {
       experiment.boundary_node_ids.push_back(string(node_id));
     }
-    result.request.local_experiment = std::move(experiment);
+    result.local_experiment = std::move(experiment);
   }
 }
 
-EngineInput parse_graph(const JsonValue& root, EngineInput result) {
+RoadGraph parse_graph_fields(const JsonValue& root, bool canonical_only = false) {
+  RoadGraph result;
   const auto& nodes = array(field(root, "nodes"));
   const auto& edges = array(field(root, "edges"));
   // The synthetic full-map fixture duplicates major-road centreline vertices
@@ -367,10 +369,10 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
   if (nodes.size() > 30'000 || edges.size() > 50'000) {
     throw std::invalid_argument("walking graph exceeds engine limits");
   }
-  result.graph.nodes.reserve(nodes.size());
-  result.graph.edges.reserve(edges.size());
+  result.nodes.reserve(nodes.size());
+  result.edges.reserve(edges.size());
   for (const auto& value : nodes) {
-    result.graph.nodes.push_back({string(field(value, "id")), point(value)});
+    result.nodes.push_back({string(field(value, "id")), point(value)});
   }
   for (const auto& value : edges) {
     WalkEdge edge;
@@ -378,6 +380,9 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
     edge.from = string(field(value, "from"));
     edge.to = string(field(value, "to"));
     const std::string kind = string(field(value, "kind"));
+    if (canonical_only && (kind == "sidewalk" || kind == "shared_way")) {
+      throw std::invalid_argument("graph snapshot requires canonical walkway kind");
+    }
     edge.kind = edge_kind(kind);
     if (edge.kind == EdgeKind::walkway) {
       const auto* declared = optional_field(value, "accessMode");
@@ -411,8 +416,12 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
     for (const auto& coordinate : array(field(value, "pathMeters"))) {
       edge.path.push_back(path_point(coordinate));
     }
-    result.graph.edges.push_back(std::move(edge));
+    result.edges.push_back(std::move(edge));
   }
+  return result;
+}
+
+void parse_request_collections(const JsonValue& root, AnalysisRequest& result) {
   if (const auto* facilities = optional_field(root, "facilities")) {
     if (array(*facilities).size() > 10'000) {
       throw std::invalid_argument("too many facilities");
@@ -444,7 +453,7 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
         facility.access_edge_id = string(field(value, "accessEdgeId"));
         facility.access_point = path_point(field(value, "accessPointMeters"));
       }
-      result.request.facilities.push_back(std::move(facility));
+      result.facilities.push_back(std::move(facility));
     }
   }
   if (const auto* categories = optional_field(root, "serviceCategories")) {
@@ -458,11 +467,173 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
       if (const auto* inventory = optional_field(value, "localInventoryStatus")) {
         category.local_inventory_status = string(*inventory);
       }
-      result.request.service_categories.push_back(std::move(category));
+      result.service_categories.push_back(std::move(category));
     }
   }
+}
+
+AnalysisRequest parse_request_parameters(const JsonValue& root) {
+  AnalysisRequest result;
+  result.origin = point(field(root, "originMeters"));
+  if (const auto* value = optional_field(root, "originEdgeId")) {
+    if (value->type != JsonValue::Type::null_value) {
+      result.origin_edge_id = string(*value);
+    }
+  }
+  parse_local_experiment(root, result);
+  if (const auto* target = optional_field(root, "routeFacilityId")) {
+    result.route_facility_id = string(*target);
+  }
+  if (const auto* route_only = optional_field(root, "routeOnly")) {
+    result.route_only = boolean(*route_only);
+  }
+  if (const auto* facilities_only = optional_field(root, "facilitiesOnly")) {
+    result.facilities_only = boolean(*facilities_only);
+  }
+  if (const auto* threshold = optional_field(root, "thresholdSeconds")) {
+    result.threshold_seconds = number(*threshold);
+  } else if (result.local_experiment) {
+    result.threshold_seconds = 180.0;
+  } else {
+    result.threshold_seconds = number(field(root, "thresholdSeconds"));
+  }
+  result.walking_speed_meters_per_second =
+      number(field(root, "walkingSpeedMetersPerSecond"));
+  result.crossing_wait_seconds = number(field(root, "crossingWaitSeconds"));
+  if (const auto* value = optional_field(root, "maxOriginSnapMeters")) {
+    result.max_origin_snap_meters = number(*value);
+  }
+  if (const auto* value = optional_field(root, "allowOffNetworkOrigin")) {
+    result.allow_off_network_origin = boolean(*value);
+  }
+  if (const auto* value = optional_field(root, "displayBufferMeters")) {
+    result.display_buffer_meters = number(*value);
+  }
+  if (const auto* value = optional_field(root, "displayAreaRadiusMeters")) {
+    result.display_area_radius_meters = number(*value);
+  }
+  if (const auto* value = optional_field(root, "displayMinHoleAreaSquareMeters")) {
+    result.display_min_hole_area_square_meters = number(*value);
+  }
+  if (const auto* value = optional_field(root, "displayGridStepMeters")) {
+    result.display_grid_step_meters = number(*value);
+  }
+  return result;
+}
+
+AnalysisRequest parse_request_fields(const JsonValue& root) {
+  AnalysisRequest result = parse_request_parameters(root);
+  parse_request_collections(root, result);
+  return result;
+}
+
+// Keep legacy parse order: parameters -> graph -> facilities/categories ->
+// joint validation. Request collections are deliberately not moved before graph.
+EngineInput finish_complete_input(const JsonValue& root, EngineInput result) {
+  result.graph = parse_graph_fields(root);
+  parse_request_collections(root, result.request);
   validate_graph(result);
   return result;
+}
+
+void require_snapshot_version(const JsonValue& root, const char* key) {
+  if (number(field(root, key)) != 1.0) {
+    throw std::invalid_argument(std::string(key) + " must be 1");
+  }
+}
+
+// Context geometry is validated for the Python preparation contract, but is
+// not retained in the C++ calculation snapshot. The artifact's byte digest
+// still covers it together with the graph and its coordinate frame.
+void validate_context_ring(const JsonValue& value) {
+  const auto& ring = array(value);
+  if (ring.size() < 4) {
+    throw std::invalid_argument("snapshot context ring must have at least four points");
+  }
+  const Point first = path_point(ring.front());
+  Point last = first;
+  for (const auto& coordinate : ring) {
+    last = path_point(coordinate);
+  }
+  if (first.x != last.x || first.y != last.y) {
+    throw std::invalid_argument("snapshot context ring must be closed");
+  }
+}
+
+void validate_snapshot_context(const JsonValue& root) {
+  const auto& bounds = field(root, "supportedCenterBoundsMeters");
+  const double min_x = number(field(bounds, "minX"));
+  const double max_x = number(field(bounds, "maxX"));
+  const double min_y = number(field(bounds, "minY"));
+  const double max_y = number(field(bounds, "maxY"));
+  if (min_x > max_x || min_y > max_y) {
+    throw std::invalid_argument("snapshot supported bounds must be ordered");
+  }
+  const bool synthetic = boolean(field(root, "synthetic"));
+  const auto* areas = optional_field(root, "publicWalkableAreasMeters");
+  if (!synthetic && (!areas || array(*areas).empty())) {
+    throw std::invalid_argument("non-synthetic snapshot needs public walkable areas");
+  }
+  if (areas) {
+    for (const auto& ring : array(*areas)) validate_context_ring(ring);
+  }
+  if (const auto* polygon = optional_field(root, "supportedCenterPolygonMeters")) {
+    validate_context_ring(*polygon);
+  }
+}
+
+GraphSnapshotMetadata parse_snapshot_metadata(const JsonValue& root) {
+  require_snapshot_version(root, "snapshotFormatVersion");
+  require_snapshot_version(root, "normalizationVersion");
+  GraphSnapshotMetadata result;
+  result.region_id = string(field(root, "regionId"));
+  if (result.region_id.empty()) {
+    throw std::invalid_argument("snapshot regionId must not be empty");
+  }
+  const auto& frame = field(root, "coordinateFrame");
+  result.geographic_coordinate_type = string(field(frame, "geographicType"));
+  if (result.geographic_coordinate_type != "bd09ll" &&
+      result.geographic_coordinate_type != "wgs84ll") {
+    throw std::invalid_argument("snapshot geographicType must be bd09ll or wgs84ll");
+  }
+  const auto& origin = field(frame, "origin");
+  result.origin_longitude = number(field(origin, "lng"));
+  result.origin_latitude = number(field(origin, "lat"));
+  if (result.origin_longitude < -180.0 || result.origin_longitude > 180.0 ||
+      result.origin_latitude < -90.0 || result.origin_latitude > 90.0) {
+    throw std::invalid_argument("snapshot geographic origin is out of range");
+  }
+  if (const auto* source = optional_field(root, "sourcePackageVersionId")) {
+    const std::string version = string(*source);
+    if (version.size() != 64) {
+      throw std::invalid_argument("sourcePackageVersionId must be lowercase SHA-256 hex");
+    }
+    for (char digit : version) {
+      if (!((digit >= '0' && digit <= '9') || (digit >= 'a' && digit <= 'f'))) {
+        throw std::invalid_argument("sourcePackageVersionId must be lowercase SHA-256 hex");
+      }
+    }
+    result.source_package_version_id = version;
+  }
+  validate_snapshot_context(root);
+  return result;
+}
+
+void reject_snapshot_request_fields(const JsonValue& root) {
+  // An artifact supplies stable graph/context data, never request defaults.
+  // Reject even empty fields so that a caller cannot mistake ignored data for
+  // parameters that will actually be used by later calculations.
+  for (const char* key : {
+      "originMeters", "originEdgeId", "thresholdSeconds",
+      "walkingSpeedMetersPerSecond", "crossingWaitSeconds",
+      "maxOriginSnapMeters", "allowOffNetworkOrigin", "displayBufferMeters",
+      "displayAreaRadiusMeters", "displayMinHoleAreaSquareMeters",
+      "displayGridStepMeters", "facilities", "serviceCategories",
+      "localExperiment", "routeFacilityId", "routeOnly", "facilitiesOnly"}) {
+    if (optional_field(root, key)) {
+      throw std::invalid_argument(std::string("graph snapshot must not contain request field: ") + key);
+    }
+  }
 }
 
 }  // namespace
@@ -470,51 +641,28 @@ EngineInput parse_graph(const JsonValue& root, EngineInput result) {
 EngineInput parse_engine_input(std::string_view input) {
   const JsonValue root = parse_root(input);
   EngineInput result;
-  result.request.origin = point(field(root, "originMeters"));
-  if (const auto* value = optional_field(root, "originEdgeId")) {
-    if (value->type != JsonValue::Type::null_value) {
-      result.request.origin_edge_id = string(*value);
-    }
+  result.request = parse_request_parameters(root);
+  return finish_complete_input(root, std::move(result));
+}
+
+AnalysisRequest parse_analysis_request(std::string_view input) {
+  const JsonValue root = parse_root(input);
+  if (optional_field(root, "nodes") || optional_field(root, "edges")) {
+    throw std::invalid_argument("analysis request must not contain nodes or edges");
   }
-  parse_local_experiment(root, result);
-  if (const auto* target = optional_field(root, "routeFacilityId")) {
-    result.request.route_facility_id = string(*target);
+  return parse_request_fields(root);
+}
+
+ParsedGraphSnapshot parse_graph_snapshot(std::string_view input) {
+  if (input.size() > kMaxGraphSnapshotBytes) {
+    throw std::invalid_argument("graph snapshot input is too large");
   }
-  if (const auto* route_only = optional_field(root, "routeOnly")) {
-    result.request.route_only = boolean(*route_only);
-  }
-  if (const auto* facilities_only = optional_field(root, "facilitiesOnly")) {
-    result.request.facilities_only = boolean(*facilities_only);
-  }
-  if (const auto* threshold = optional_field(root, "thresholdSeconds")) {
-    result.request.threshold_seconds = number(*threshold);
-  } else if (result.request.local_experiment) {
-    result.request.threshold_seconds = 180.0;
-  } else {
-    result.request.threshold_seconds = number(field(root, "thresholdSeconds"));
-  }
-  result.request.walking_speed_meters_per_second =
-      number(field(root, "walkingSpeedMetersPerSecond"));
-  result.request.crossing_wait_seconds = number(field(root, "crossingWaitSeconds"));
-  if (const auto* value = optional_field(root, "maxOriginSnapMeters")) {
-    result.request.max_origin_snap_meters = number(*value);
-  }
-  if (const auto* value = optional_field(root, "allowOffNetworkOrigin")) {
-    result.request.allow_off_network_origin = boolean(*value);
-  }
-  if (const auto* value = optional_field(root, "displayBufferMeters")) {
-    result.request.display_buffer_meters = number(*value);
-  }
-  if (const auto* value = optional_field(root, "displayAreaRadiusMeters")) {
-    result.request.display_area_radius_meters = number(*value);
-  }
-  if (const auto* value = optional_field(root, "displayMinHoleAreaSquareMeters")) {
-    result.request.display_min_hole_area_square_meters = number(*value);
-  }
-  if (const auto* value = optional_field(root, "displayGridStepMeters")) {
-    result.request.display_grid_step_meters = number(*value);
-  }
-  return parse_graph(root, std::move(result));
+  const JsonValue root = parse_root(input);
+  reject_snapshot_request_fields(root);
+  ParsedGraphSnapshot result;
+  result.metadata = parse_snapshot_metadata(root);
+  result.graph = parse_graph_fields(root, true);
+  return result;
 }
 
 EngineInput parse_synthetic_network(std::string_view input, Point origin,
@@ -534,11 +682,11 @@ EngineInput parse_synthetic_network(std::string_view input, Point origin,
     result.request.threshold_seconds = 180.0;
     result.request.local_experiment = LocalExperiment{};
     // Missing boundary declarations stay incomplete; never infer them from degree.
-    parse_local_experiment(root, result);
+    parse_local_experiment(root, result.request);
   } else if (optional_field(root, "localExperiment")) {
     throw std::invalid_argument("local experiment graph requires --local");
   }
-  return parse_graph(root, std::move(result));
+  return finish_complete_input(root, std::move(result));
 }
 
 }  // namespace isochrone

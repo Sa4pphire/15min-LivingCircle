@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include "isochrone/engine.hpp"
+#include "isochrone/graph_snapshot_format.hpp"
 
 namespace isochrone {
 
@@ -15,6 +16,12 @@ namespace isochrone {
                                      std::string_view message);
 
 [[nodiscard]] EngineInput parse_engine_input(std::string_view input);
+// Parse request-only v2 JSON, rejecting nodes/edges. Scalar business rules and
+// references to the selected graph are checked by the computation entry point.
+[[nodiscard]] AnalysisRequest parse_analysis_request(std::string_view input);
+// Parse the fixed-graph artifact format and its coordinate/context contract.
+// Byte identity and static graph validation belong to the snapshot loader.
+[[nodiscard]] ParsedGraphSnapshot parse_graph_snapshot(std::string_view input);
 // Load the existing synthetic graph without adding nodes, edges or facilities.
 // Runtime coordinates are local meters; Python remains responsible for map coordinates.
 [[nodiscard]] EngineInput parse_synthetic_network(

@@ -37,6 +37,7 @@ isochrone_target_defaults(isochrone_geometry)
 add_library(isochrone_core
   src/engine.cpp
   src/road_graph.cpp
+  src/graph_snapshot.cpp
   src/path_geometry.cpp
   src/origin_snap.cpp
   src/input_validation.cpp
@@ -62,6 +63,17 @@ isochrone_target_defaults(isochrone_engine)
 target_compile_definitions(isochrone_engine PRIVATE
   ISOCHRONE_SYNTHETIC_NETWORK_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../data/networks/synthetic-preview.json"
 )
+
+option(BUILD_GRAPH_SNAPSHOT_LOADER "Build the optional file/SHA-256 snapshot loader" OFF)
+if(BUILD_GRAPH_SNAPSHOT_LOADER)
+  # Explicit opt-in: the core, JSON adapter and default CLI do not acquire a
+  # crypto dependency. No dependency is fetched or installed automatically.
+  find_package(OpenSSL 3.0 REQUIRED COMPONENTS Crypto)
+  add_library(isochrone_snapshot_io src/graph_snapshot_loader.cpp)
+  target_link_libraries(isochrone_snapshot_io
+      PUBLIC isochrone_json PRIVATE OpenSSL::Crypto)
+  isochrone_target_defaults(isochrone_snapshot_io)
+endif()
 
 option(BUILD_RPC_SERVER "Build the optional Linux gRPC server and client" OFF)
 if(BUILD_RPC_SERVER)

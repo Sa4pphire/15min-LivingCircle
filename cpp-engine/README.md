@@ -532,7 +532,7 @@ CPP_ENGINE_TRANSPORT=grpc CPP_ENGINE_RPC_PORT=50051 CPP_ENGINE_RPC_CAPACITY=2 \
 
 [服务处理函数](rpc/engine_service.cpp)中的 RAII 守卫在外层 try 之前构造，成功取得名额后持有门。它覆盖解析、校验、计算、序列化、应用回复构造以及异常栈展开，真实处理结束后才减少活动计数。成功、业务错误、取消和内部异常都沿同一所有权路径回收；不因客户端已停止等待而提前归还名额。gRPC 在 handler 返回后的发送资源仍不由该计数覆盖。
 
-每个 handler 独立拥有完整的解析输入、本次 `ExecutionControl`、临时拆边图、距离／前驱、几何中间数据和结果。控制对象仍只借给该次同步计算；不跨请求共用轮询计数。当前每次 RPC 仍发送整张图，未引入图 ID 或跨请求图缓存。并发会使更多输入和中间数据同时存活，CPU／内存和耗时变化需要实测，计算容量不是整个进程的内存上限。
+每个 handler 独立拥有解析输入、本次 `ExecutionControl`、临时拆边图、距离／前驱、几何中间数据和结果。控制对象仍只借给该次同步计算；不跨请求共用轮询计数。本节交付时仍发送整张图；第17节新增固定图调用后，原 `Compute` 继续使用完整输入，新 `ComputeOnGraph` 借用常驻快照，两者共用此计算门。并发会使更多输入和中间数据同时存活，CPU／内存和耗时变化需要实测，计算容量不是整个进程的内存上限。
 
 ### 15.3 同步 handler、健康检查与关闭
 
@@ -558,3 +558,51 @@ Python 超时／取消后会归还已完成本地清理的客户端许可；C++ 
 - 多个在途请求关闭时先停止受理，原宽限和协作取消生效，`Wait()` 完成后再销毁服务和计算门；不出现任务继续借用已销毁上下文的情况。
 
 实际并发容量、QPS、尾延迟、CPU／内存及复杂路段表现另以授权后的测量为准，压测工具和原始记录继续放在项目外临时目录。
+
+## 16. 固定图预加载第一阶段：快照、加载器与校验拆分
+
+本阶段先交付 C++ 库能力：同一份经过加载和验证的基础图可以被多次同步计算只读借用，每次请求仍持有自己的参数、临时拆边图、搜索数组、几何和结果。第一阶段未修改 RPC 调用入口；启动预加载、`FixedGraphStore` 和新 RPC 随后在第17节接入，Python 轻请求适配见第18节。这里记录源码能力，不代表运行中的服务已经复用图。
+
+### 16.1 数据所有权与加载
+
+[`GraphSnapshot`](include/isochrone/graph_snapshot.hpp) 自己拥有 `RoadGraph`、图身份、坐标/来源元数据、节点/边 ID 到下标的索引以及源字节和结构数量统计。它只提供 const 访问器，禁止复制和移动；调用方通过 `unique_ptr<const GraphSnapshot>` 持有资源，并让它存活到所有同步计算结束。请求私有的 `ExecutionControl` 不进入快照。
+
+[`GraphSnapshotLoader::load`](src/graph_snapshot_loader.cpp) 先检查预期 `sha256:<64位小写hex>` 身份，再按实际字节有界读取、核对整文件 SHA-256、解析和静态验证，最后返回完整快照。文件、摘要上下文、原文、DOM 和校验临时对象依照 RAII 清理，失败不返回半成品或选择其他文件。读取上限包含整份产物，不能把输入字节限制当作 RSS 硬预算。
+
+图产物字段、所有权调用示例、错误边界和依赖说明见[快照 v1 契约](docs/graph-snapshot-v1.md)。图身份绑定实际产物字节及其中的坐标和范围元数据；后续 Python 必须使用相同来源计算局部坐标和接纳起点。
+
+### 16.2 图解析、请求解析与两类计算入口
+
+[`json_parser.cpp`](src/json_parser.cpp) 提取了图字段、请求参数和设施/类别解析 helper。原 `parse_engine_input` / `parse_synthetic_network` 继续按旧顺序组合，保留默认值、道路兼容类型和联合校验；新 `parse_analysis_request` 拒绝夹带 nodes/edges。新 `parse_graph_snapshot` 返回的是拥有数据的 `ParsedGraphSnapshot`，尚不表示图已通过静态验证。
+
+[`input_validation.cpp`](src/input_validation.cpp) 把固定图检查与请求关联检查分开。旧 `validate_input` 保持请求数值、图节点、局部边界引用、图边/拓扑、类别/设施的先后顺序。快照私有构造执行静态图验证并保留索引；快照计算每次仍检查参数、设施 ID/贴边几何及边界引用，随后进入共同计算主体。模式组合、起点投影、临时建图、Dijkstra、显示几何和取消检查继续执行。
+
+[`compute_reachability`](src/engine.cpp) 新增 `const GraphSnapshot&` 重载，以类型区分已验证快照与普通 `RoadGraph`，不公开任意跳过校验的布尔开关。原接口继续完整验证。`graphValidation` 阶段名称保留，但新路径计量的是请求验证，加载阶段的静态验证应单独看待；不能将不同工作量的时间直接等同。
+
+### 16.3 可选依赖与静态交付
+
+快照数据与计算位于 `isochrone_core`，仍不依赖 JSON、文件系统、OpenSSL 或 gRPC。`isochrone_json` 提供新旧解析。仅打开默认 OFF 的 `BUILD_GRAPH_SNAPSHOT_LOADER` 时，才查找 OpenSSL 3.0+ Crypto 并建立 `isochrone_snapshot_io`。默认 CLI 不自动接入它；第17节让同时开启 RPC 和加载器的服务链接此 IO 库，不下载或安装依赖。
+
+已按源码和差异审阅接口、成员初始化/释放顺序、旧解析与校验顺序、请求检查、计算主体、取消路径、输入限额和 CMake 依赖方向，并进行独立交叉静态复核。**未配置或生成构建、编译、执行测试/程序/服务或压测。** 本阶段是源码交付，尚无编译、运行兼容、并发安全或性能验收证据；S1–S5 和此前稳定性问题的待验收状态继续保留。
+
+## 17. 固定图预加载第二阶段：服务与 RPC
+
+2026-11-04，本阶段接通 `FixedGraphStore`、启动加载、新 `ComputeOnGraph` 和共用计算门。详细启动选项、协议、错误和生命周期见[固定图服务与 RPC 契约](docs/fixed-graph-rpc.md)。第三阶段随后完成[Python 固定上下文、导出与轻请求衔接](../docs/fixed-graph-python.md)，显式配置匹配区域才使用新方法，默认仍保留完整输入 `Compute`。
+
+[`FixedGraphStore`](rpc/fixed_graph_store.hpp) 作为服务成员独占一份 `unique_ptr<const GraphSnapshot>`；请求凭完整 `graph_id` 获取 const 引用，不复制基础图。它只有选择和只读描述接口，不负责调度，不提供运行期替换、淘汰或按需加载。无快照时仍可用旧 `Compute`，新方法会明确返回 `GRAPH_NOT_LOADED`。
+
+[`server_main.cpp`](rpc/server_main.cpp) 新增必须成对提供的 `--graph-artifact PATH --graph-id ID`。启用加载器的构建在创建 `ServerBuilder` 前完成读取、摘要核对和验证；失败即退出，成功后把所有权移入服务。不开启加载器的构建会拒绝这些参数；省略两个参数保留旧启动方式。关闭依次 `BeginDrain → Shutdown → Wait → 销毁 server → 销毁 service/store`，在途计算完成前不会清空固定图。
+
+[`engine_service.proto`](rpc/engine_service.proto) 保留旧方法及原字段编号，新增只带 `graph_id` 和 `analysis_request_json` 的方法，回复携带实际使用的 ID。Health 的原 JSON 保持不变，在外层 `JsonReply.graph_snapshot` 提供已加载身份和数量。新增嵌套消息字段采用 Protobuf 的增量兼容方式；这只是协议设计判断，实际新旧客户端兼容仍未运行验证。
+
+[`RunComputeCall`](rpc/engine_service.cpp) 统一新旧入口的受理检查、唯一 `computing_`、RAII 许可、异常转换与回复。默认容量仍为2，两个方法合计争取这2个名额；取消被观察到后，要等应用工作和清理退出才归还。图未加载/不匹配属于 RPC 前置条件错误；分析参数错误继续使用业务 JSON 封套。共同 `SetReply` 检查完整 Protobuf 消息大小，包含新增 ID/Health 信息；失败清空整个回复。
+
+[`client_main.cpp`](rpc/client_main.cpp) 新增 `compute-on-graph --graph-id ID`，RPC OK 后先核对返回 ID，再输出业务 JSON；Health 的快照描述写入 stderr，原 stdout JSON 保留。没有增加重试或自动退回旧方法。客户端只包含 ID 格式检查头，不因这一检查链接 core 或 OpenSSL。
+
+本轮仅完成源码、差异与独立交叉静态审阅。**未生成 Protobuf 代码、配置/编译、运行测试、程序、服务或压测。** 轻请求计算、错误映射、混合入口总容量、取消/关闭和兼容性均待用户明确要求后的运行验收；QPS、P99、RSS 仍无本阶段实测结论。
+
+## 18. 固定图第三阶段：Python 衔接
+
+Python 导出器共用完整输入的图正规化/字段规则，生成图文件及图 ID 绑定的请求上下文配套文件。两端核对同一图字节，Python 在启动时持有原点、范围、图及请求模板，通过 Health 核对 C++ 版本后开始受理。匹配区域的首算、设施补算、覆盖重算和路线查询显式携带准备阶段 graphId；本地几何仍供 POI 使用，RPC 不再编码 nodes/edges。原有 Python 许可和 C++ Gate 共用关系保持。
+
+固定图只在配置三项 Python 图参数并选择 grpc 时启用，其他区域/局部实验保持明确旧路径，不因版本错误回退。设施和 POI 记录按请求复制，固定请求不读取当前编辑图或校准；该服务实例关闭编辑能力。相关实现与边界见[Python 衔接文档](../docs/fixed-graph-python.md)和[后端说明](../backend/README.md#9-固定版本路网与轻请求)。本阶段没有再次修改 C++ 源码，也没有生成实际产物、运行协议生成/构建/测试/服务或压测，三个阶段均待运行验收。

@@ -18,10 +18,9 @@ void validate_schema_version(int schema_version) {
   }
 }
 
-// Preserve the existing cross-domain validation order. This is deliberately
-// not split into independently cached graph and request checks.
-void validate_input(const RoadGraph& graph, const AnalysisRequest& request,
-                    const ExecutionControl& control) {
+namespace {
+
+void validate_request_scalars(const AnalysisRequest& request) {
   if (!finite(request.origin) ||
       !std::isfinite(request.threshold_seconds) ||
       request.threshold_seconds <= 0.0 ||
@@ -41,17 +40,28 @@ void validate_input(const RoadGraph& graph, const AnalysisRequest& request,
       request.display_grid_step_meters <= 0.0) {
     throw std::invalid_argument("invalid engine parameters");
   }
+}
+
+void validate_graph_nodes(const RoadGraph& graph, GraphIndex& index,
+                          const ExecutionControl& control) {
   if (graph.nodes.empty() || graph.edges.empty()) {
     throw std::invalid_argument("walking graph must contain nodes and edges");
   }
-  std::unordered_map<std::string, Point> nodes;
-  for (const auto& node : graph.nodes) {
+  auto& nodes = index.node_indices;
+  for (std::size_t node_index = 0; node_index < graph.nodes.size(); ++node_index) {
     control.Poll();
+    const auto& node = graph.nodes[node_index];
     if (node.id.empty() || !finite(node.point) ||
-        !nodes.emplace(node.id, node.point).second) {
+        !nodes.emplace(node.id, node_index).second) {
       throw std::invalid_argument("invalid or duplicate walking node");
     }
   }
+}
+
+void validate_local_references(const AnalysisRequest& request,
+                               const GraphIndex& index,
+                               const ExecutionControl& control) {
+  const auto& nodes = index.node_indices;
   if (request.local_experiment) {
     if (request.allow_off_network_origin ||
         (request.local_experiment->topology_status != "verified" &&
@@ -66,28 +76,34 @@ void validate_input(const RoadGraph& graph, const AnalysisRequest& request,
       }
     }
   }
-  std::unordered_set<std::string> edge_ids;
-  std::unordered_map<std::string, const WalkEdge*> edge_lookup;
+}
+
+void validate_graph_edges(const RoadGraph& graph, GraphIndex& index,
+                          const ExecutionControl& control) {
+  const auto& nodes = index.node_indices;
+  auto& edge_lookup = index.edge_indices;
   std::unordered_map<std::string, int> block_kinds;
   std::unordered_map<std::string, std::unordered_map<std::string, std::string>>
       block_node_sides;
   std::unordered_map<std::string, std::unordered_map<std::string, std::string>>
       node_block_sides;
-  for (const auto& edge : graph.edges) {
+  for (std::size_t edge_index = 0; edge_index < graph.edges.size(); ++edge_index) {
     control.Poll();
-    if (edge.id.empty() || !edge_ids.insert(edge.id).second ||
+    const auto& edge = graph.edges[edge_index];
+    if (edge.id.empty() || !edge_lookup.emplace(edge.id, edge_index).second ||
         edge.from == edge.to || !nodes.count(edge.from) ||
         !nodes.count(edge.to) || edge.path.size() < 2 ||
         edge.path.size() > 1000) {
       throw std::invalid_argument("invalid walking edge identity or endpoints");
     }
-    edge_lookup.emplace(edge.id, &edge);
     for (Point point : edge.path) {
       control.Poll();
       if (!finite(point)) throw std::invalid_argument("invalid edge coordinate");
     }
-    if (distance(edge.path.front(), nodes.at(edge.from)) > kEndpointTolerance ||
-        distance(edge.path.back(), nodes.at(edge.to)) > kEndpointTolerance ||
+    if (distance(edge.path.front(), graph.nodes[nodes.at(edge.from)].point) >
+            kEndpointTolerance ||
+        distance(edge.path.back(), graph.nodes[nodes.at(edge.to)].point) >
+            kEndpointTolerance ||
         path_length(edge.path, control) <= kEpsilon) {
       throw std::invalid_argument("edge path does not match its nodes");
     }
@@ -148,6 +164,13 @@ void validate_input(const RoadGraph& graph, const AnalysisRequest& request,
       }
     }
   }
+}
+
+void validate_categories_and_facilities(const RoadGraph& graph,
+                                        const AnalysisRequest& request,
+                                        const GraphIndex& index,
+                                        const ExecutionControl& control) {
+  const auto& edge_lookup = index.edge_indices;
   std::unordered_set<std::string> category_ids;
   for (const auto& category : request.service_categories) {
     control.Poll();
@@ -188,11 +211,11 @@ void validate_input(const RoadGraph& graph, const AnalysisRequest& request,
       }
       const auto edge = edge_lookup.find(entrance.access_edge_id);
       if (edge == edge_lookup.end() ||
-          edge->second->kind != EdgeKind::walkway) {
+          graph.edges[edge->second].kind != EdgeKind::walkway) {
         throw std::invalid_argument("facility accessEdgeId must identify a traversable edge");
       }
       const Snap access = project_to_edge(
-          entrance.street_access_point, *edge->second, 0, control);
+          entrance.street_access_point, graph.edges[edge->second], 0, control);
       if (access.surface_distance_meters > kFacilityAccessTolerance) {
         throw std::invalid_argument("facility street access is outside its walkable edge");
       }
@@ -213,6 +236,36 @@ void validate_input(const RoadGraph& graph, const AnalysisRequest& request,
       }
     }
   }
+}
+
+}  // namespace
+
+void validate_input(const RoadGraph& graph, const AnalysisRequest& request,
+                    const ExecutionControl& control) {
+  // Keep the legacy first-error order, including local references before edges.
+  validate_request_scalars(request);
+  GraphIndex index;
+  validate_graph_nodes(graph, index, control);
+  validate_local_references(request, index, control);
+  validate_graph_edges(graph, index, control);
+  validate_categories_and_facilities(graph, request, index, control);
+}
+
+GraphIndex validate_static_graph(const RoadGraph& graph,
+                                  const ExecutionControl& control) {
+  GraphIndex index;
+  validate_graph_nodes(graph, index, control);
+  validate_graph_edges(graph, index, control);
+  return index;
+}
+
+void validate_snapshot_request(const GraphSnapshot& snapshot,
+                               const AnalysisRequest& request,
+                               const ExecutionControl& control) {
+  validate_request_scalars(request);
+  validate_local_references(request, snapshot.index(), control);
+  validate_categories_and_facilities(
+      snapshot.graph(), request, snapshot.index(), control);
 }
 
 }  // namespace isochrone::detail

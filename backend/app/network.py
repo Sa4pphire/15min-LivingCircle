@@ -60,6 +60,42 @@ def _to_map_coordinate(point: list[float], origin: dict[str, float]) -> list[flo
             latitude + point[1] / METERS_PER_DEGREE]
 
 
+def build_engine_payload(network: dict[str, Any], x_meters: float, y_meters: float,
+                         origin_edge_id: str | None = None) -> dict[str, Any]:
+    """Build request defaults after the caller has validated its graph/context.
+
+    Graph containers are borrowed; mutable facilities/categories must belong to
+    this request. FixedGraphContext supplies independent copies of those lists.
+    """
+    synthetic = network.get("synthetic") is True
+    payload = {
+        "schemaVersion": 2,
+        "originMeters": {"xMeters": x_meters, "yMeters": y_meters},
+        "thresholdSeconds": 900,
+        "walkingSpeedMetersPerSecond": 1.3,
+        "crossingWaitSeconds": 20,
+        # Only the synthetic preview may estimate an unverified straight-line
+        # connector from an arbitrary point to the nearest walkable edge.
+        "maxOriginSnapMeters": 900 * 1.3 if synthetic else 5,
+        "allowOffNetworkOrigin": synthetic,
+        "displayBufferMeters": 15,
+        "displayAreaRadiusMeters": 80,
+        "displayMinHoleAreaSquareMeters": 2500,
+        "displayGridStepMeters": 10,
+        "nodes": network["nodes"],
+        "edges": network["edges"],
+        "facilities": network.get("facilities", []),
+        "serviceCategories": network.get("serviceCategories", []),
+    }
+    if origin_edge_id is not None:
+        if not origin_edge_id:
+            raise UnsupportedAreaError("originEdgeId 不能为空")
+        payload["originEdgeId"] = origin_edge_id
+    elif math.hypot(x_meters, y_meters) < 1 and network.get("originEdgeId"):
+        payload["originEdgeId"] = network["originEdgeId"]
+    return payload
+
+
 def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None,
                         network_path: Path | None = None, *,
                         allow_local_experiment: bool = False
@@ -173,31 +209,9 @@ def load_engine_request(center: CenterPoint, origin_edge_id: str | None = None,
             bounds["minY"] <= y_meters <= bounds["maxY"]):
         raise UnsupportedAreaError("该中心点不在已标注的演示区域内")
 
-    payload = {
-        "schemaVersion": 2,
-        "originMeters": {"xMeters": x_meters, "yMeters": y_meters},
-        "thresholdSeconds": 900,
-        "walkingSpeedMetersPerSecond": 1.3,
-        "crossingWaitSeconds": 20,
-        # Only the synthetic preview may estimate an unverified straight-line
-        # connector from an arbitrary point to the nearest walkable edge.
-        "maxOriginSnapMeters": 900 * 1.3 if synthetic else 5,
-        "allowOffNetworkOrigin": synthetic,
-        "displayBufferMeters": 15,
-        "displayAreaRadiusMeters": 80,
-        "displayMinHoleAreaSquareMeters": 2500,
-        "displayGridStepMeters": 10,
-        "nodes": network["nodes"],
-        "edges": network["edges"],
-        "facilities": facilities,
-        "serviceCategories": categories,
-    }
-    if origin_edge_id is not None:
-        if not origin_edge_id:
-            raise UnsupportedAreaError("originEdgeId 不能为空")
-        payload["originEdgeId"] = origin_edge_id
-    elif math.hypot(x_meters, y_meters) < 1 and network.get("originEdgeId"):
-        payload["originEdgeId"] = network["originEdgeId"]
+    payload = build_engine_payload(
+        {**network, "facilities": facilities, "serviceCategories": categories},
+        x_meters, y_meters, origin_edge_id)
     metadata = {
         origin_key: origin,
         "coordType": coord_type,

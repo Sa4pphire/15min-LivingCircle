@@ -4,6 +4,7 @@ package livingcircle.engine.v1;
 
 service EngineService {
   rpc Compute(ComputeRequest) returns (JsonReply);
+  rpc ComputeOnGraph(GraphComputeRequest) returns (GraphComputeReply);
   rpc Health(HealthRequest) returns (JsonReply);
 }
 
@@ -14,7 +15,31 @@ message ComputeRequest {
 
 message HealthRequest {}
 
+message GraphComputeRequest {
+  // Must match the artifact already loaded by this service instance.
+  string graph_id = 1;
+  // Request-only v2 JSON: nodes/edges are rejected by the parser.
+  bytes analysis_request_json = 2;
+}
+
+message GraphComputeReply {
+  // Actual selected snapshot identity, including for JSON business errors.
+  string graph_id = 1;
+  bytes response_json = 2;
+}
+
+message GraphSnapshotInfo {
+  string graph_id = 1;
+  uint64 source_bytes = 2;
+  uint64 node_count = 3;
+  uint64 edge_count = 4;
+  uint64 path_point_count = 5;
+}
+
 message JsonReply {
   // RPC OK is independent of JSON business success; inspect the JSON result.
   bytes response_json = 1;
+  // Present only on Health when this instance has a fixed snapshot. Existing
+  // response_json and field numbers remain compatible with older clients.
+  GraphSnapshotInfo graph_snapshot = 2;
 }

@@ -39,8 +39,19 @@ def project_bd09(region):
 
 def validate_document(document, region):
     key, origin = graph_origin(region.graph())
+    return validate_poi_snapshot(document, {
+        'regionId': region.manifest['id'],
+        'coordType': 'wgs84ll' if key == 'originWgs84' else 'bd09ll',
+        key: {'lng': origin[0], 'lat': origin[1]},
+    })
+
+
+def validate_poi_snapshot(document, metadata):
+    """Validate an owned POI document against the fixed graph's coordinate frame."""
+    key = 'originWgs84' if metadata['coordType'] == 'wgs84ll' else 'originBd09'
+    origin = [metadata[key]['lng'], metadata[key]['lat']]
     if (not isinstance(document, dict) or document.get('schemaVersion') != 1 or
-            document.get('regionId') != region.manifest['id'] or document.get('coordType') != 'bd09ll' or
+            document.get('regionId') != metadata['regionId'] or document.get('coordType') != 'bd09ll' or
             document.get('engineAxis') != 'east-north' or document.get(key) != origin or
             not isinstance(document.get('items'), list)):
         raise ValueError('区域 POI 数据标识、坐标或格式无效')
@@ -163,8 +174,31 @@ def search_region_pois(region, center, radius, category_ids, *, bounds=None):
         return None
     graph = region.graph()
     key, origin = graph_origin(graph)
+    metadata = {'regionId': region.manifest['id'],
+                'coordType': 'wgs84ll' if key == 'originWgs84' else 'bd09ll',
+                key: {'lng': origin[0], 'lat': origin[1]}}
+    project = project_bd09(region) if center.coordType == 'bd09ll' else None
+    return search_poi_snapshot(document, metadata, center, radius, category_ids,
+                               bounds=bounds, project_bd09=project)
+
+
+def search_poi_snapshot(document, metadata, center, radius, category_ids, *,
+                        bounds=None, project_bd09=None):
+    """Search a validated startup document; each returned record is request-owned.
+
+    Coordinates and optional projection come from the same prepared context.
+    There is no region lookup or alignment-file read in this helper.
+    """
+    key = 'originWgs84' if metadata['coordType'] == 'wgs84ll' else 'originBd09'
+    origin = [metadata[key]['lng'], metadata[key]['lat']]
     if center.coordType == 'bd09ll':
-        center_local = project_bd09(region)([center.lng, center.lat])
+        if project_bd09 is not None:
+            center_local = project_bd09([center.lng, center.lat])
+        elif key == 'originBd09':
+            center_local = [(center.lng-origin[0])*METERS_PER_DEGREE*math.cos(math.radians(origin[1])),
+                            (center.lat-origin[1])*METERS_PER_DEGREE]
+        else:
+            raise ValueError('固定区域缺少可离线使用的 POI 坐标校准网格')
     elif key == 'originWgs84':
         center_local = [(center.lng-origin[0])*METERS_PER_DEGREE*math.cos(math.radians(origin[1])),
                         (center.lat-origin[1])*METERS_PER_DEGREE]
@@ -188,7 +222,7 @@ def search_region_pois(region, center, radius, category_ids, *, bounds=None):
         record['categories'], record['category'] = categories, categories[0]
         records.append(record)
     info = {'status': 'partial', 'provider': 'baidu_place_v2', 'dataSource': 'region_package',
-            'cacheBackend': 'region_pois_json', 'regionId': region.manifest['id'],
+            'cacheBackend': 'region_pois_json', 'regionId': metadata['regionId'],
             'snapshotCreatedAt': document.get('createdAt'), 'candidateCount': len(records),
             'snapshotCount': len(document['items']), 'cacheOnly': True, 'apiRequests': 0,
             'cacheHits': 1, 'cacheMisses': 0, 'stalePages': 0, 'refreshRequired': False,

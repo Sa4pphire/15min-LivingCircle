@@ -9,6 +9,8 @@
 
 namespace isochrone {
 
+class GraphSnapshot;
+
 // v2 protocol envelope. Parsing keeps the JSON flat while assigning fields
 // to their owning domain objects.
 struct EngineInput {
@@ -27,6 +29,13 @@ void validate_graph(const EngineInput& input);
 // at explicit checkpoints; it does not interrupt a single library operation.
 [[nodiscard]] EngineResult compute_reachability(
     const RoadGraph& graph, const AnalysisRequest& request,
+    const ExecutionControl& control);
+// Reuse a loader-created, statically validated snapshot. Request validation,
+// temporary graph construction and all search/result state remain per call.
+[[nodiscard]] EngineResult compute_reachability(
+    const GraphSnapshot& snapshot, const AnalysisRequest& request);
+[[nodiscard]] EngineResult compute_reachability(
+    const GraphSnapshot& snapshot, const AnalysisRequest& request,
     const ExecutionControl& control);
 // Compatibility entry point: check the schema, then delegate without copying.
 [[nodiscard]] EngineResult compute_reachability(const EngineInput& input);

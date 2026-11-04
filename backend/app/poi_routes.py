@@ -156,6 +156,9 @@ class PoiRouteStore:
         base = {"schemaVersion": 1, "analysisId": analysis_id, "poiId": poi_id,
                 "algorithm": "dijkstra", "coordType": metadata["coordType"],
                 "networkSource": "synthetic", "accessVerified": False}
+        graph_id = metadata.get("graphId")
+        if graph_id is not None:
+            base["graphId"] = graph_id
         estimated_access = facility is None
         access_distance = 0
         if estimated_access:
@@ -173,7 +176,9 @@ class PoiRouteStore:
         # rasterization and category coverage, while retaining the same origin.
         request = {**payload, "facilities": [facility],
                    "routeFacilityId": facility["id"], "routeOnly": True}
-        result = await run_engine(request)
+        # Keep the graph selected by the original analysis for derived routes.
+        result = (await run_engine(request, graph_id=graph_id) if graph_id is not None
+                  else await run_engine(request))
         route = result.get("facilityRoute")
         if not isinstance(route, dict) or route.get("facilityId") != facility["id"]:
             raise ValueError("C++ 引擎缺少匹配的 POI 路径结果，请更新引擎后重试。")

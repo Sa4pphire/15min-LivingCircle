@@ -1,5 +1,7 @@
 #include "isochrone/engine.hpp"
 
+#include "isochrone/graph_snapshot.hpp"
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -19,28 +21,13 @@ namespace isochrone {
 
 namespace {
 using detail::kEpsilon;
-}  // namespace
 
-void validate_graph(const EngineInput& input) {
-  detail::validate_schema_version(input.schema_version);
-  detail::validate_input(input.graph, input.request, ExecutionControl{});
-}
-
-EngineResult compute_reachability(const EngineInput& input) {
-  detail::validate_schema_version(input.schema_version);
-  return compute_reachability(input.graph, input.request);
-}
-
-EngineResult compute_reachability(const RoadGraph& graph,
-                                  const AnalysisRequest& request) {
-  return compute_reachability(graph, request, ExecutionControl{});
-}
-
-EngineResult compute_reachability(const RoadGraph& graph,
-                                  const AnalysisRequest& request,
-                                  const ExecutionControl& control) {
-  control.Checkpoint();
-  const auto started = std::chrono::steady_clock::now();
+// Both public paths validate their inputs before entering this shared body.
+// Starting the clock before validation keeps the existing stage timing scope.
+EngineResult compute_validated(const RoadGraph& graph,
+                               const AnalysisRequest& request,
+                               const ExecutionControl& control,
+                               std::chrono::steady_clock::time_point started) {
   auto checkpoint = started;
   EngineResult result;
   const auto record_stage = [&](const char* name) {
@@ -50,7 +37,6 @@ EngineResult compute_reachability(const RoadGraph& graph,
         std::chrono::duration<double, std::milli>(now - checkpoint).count());
     checkpoint = now;
   };
-  detail::validate_input(graph, request, control);
   if (request.facilities_only &&
       (request.local_experiment || request.route_facility_id || request.route_only)) {
     throw std::invalid_argument("facilitiesOnly cannot be combined with local or route requests");
@@ -146,6 +132,46 @@ EngineResult compute_reachability(const RoadGraph& graph,
   record_stage("coverage");
   control.Checkpoint();
   return result;
+}
+
+}  // namespace
+
+void validate_graph(const EngineInput& input) {
+  detail::validate_schema_version(input.schema_version);
+  detail::validate_input(input.graph, input.request, ExecutionControl{});
+}
+
+EngineResult compute_reachability(const EngineInput& input) {
+  detail::validate_schema_version(input.schema_version);
+  return compute_reachability(input.graph, input.request);
+}
+
+EngineResult compute_reachability(const RoadGraph& graph,
+                                  const AnalysisRequest& request) {
+  return compute_reachability(graph, request, ExecutionControl{});
+}
+
+EngineResult compute_reachability(const RoadGraph& graph,
+                                  const AnalysisRequest& request,
+                                  const ExecutionControl& control) {
+  control.Checkpoint();
+  const auto started = std::chrono::steady_clock::now();
+  detail::validate_input(graph, request, control);
+  return compute_validated(graph, request, control, started);
+}
+
+EngineResult compute_reachability(const GraphSnapshot& snapshot,
+                                  const AnalysisRequest& request) {
+  return compute_reachability(snapshot, request, ExecutionControl{});
+}
+
+EngineResult compute_reachability(const GraphSnapshot& snapshot,
+                                  const AnalysisRequest& request,
+                                  const ExecutionControl& control) {
+  control.Checkpoint();
+  const auto started = std::chrono::steady_clock::now();
+  detail::validate_snapshot_request(snapshot, request, control);
+  return compute_validated(snapshot.graph(), request, control, started);
 }
 
 }  // namespace isochrone

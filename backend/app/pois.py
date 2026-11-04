@@ -35,8 +35,9 @@ def _grid_query(center: CenterPoint, radius: int):
 
 
 class PoiService:
-    def __init__(self, *, client=None, cache=None, region=None):
+    def __init__(self, *, client=None, cache=None, region=None, fixed_context=None):
         self.region = region
+        self.fixed_context = fixed_context
         self._cache = cache
         self._cache_enabled = False
         self.client = client or BaiduClient()
@@ -52,7 +53,11 @@ class PoiService:
 
     async def search(self, center: CenterPoint, radius: int, category_ids, *, refresh=False, bounds=None,
                      cache_only=False):
-        if self.region is not None and not refresh:
+        if self.fixed_context is not None and not refresh:
+            bundled = self.fixed_context.search_pois(center, radius, category_ids, bounds=bounds)
+            if bundled is not None:
+                return bundled
+        elif self.region is not None and not refresh:
             bundled = search_region_pois(self.region, center, radius, category_ids, bounds=bounds)
             if bundled is not None:
                 return bundled
@@ -92,11 +97,16 @@ class PoiService:
         """
         coord_type = metadata["coordType"]
         origin = metadata["originWgs84" if coord_type == "wgs84ll" else "originBd09"]
-        alignment_path = settings.poi_map_asset_path
-        if metadata.get('regionId'):
-            from .region_package import load_region_by_id
-            alignment_path = load_region_by_id(metadata['regionId']).file('alignment')
-        grid_frame = load_grid_frame(metadata, alignment_path)
+        if self.fixed_context is not None:
+            # A fixed request never consults an authoring package's current
+            # calibration. Missing grid data uses only this fixed origin below.
+            grid_frame = self.fixed_context.poi_frame()
+        else:
+            alignment_path = settings.poi_map_asset_path
+            if metadata.get('regionId'):
+                from .region_package import load_region_by_id
+                alignment_path = load_region_by_id(metadata['regionId']).file('alignment')
+            grid_frame = load_grid_frame(metadata, alignment_path)
         if grid_frame is not None:
             return grid_frame
         if coord_type == "bd09ll":
@@ -174,9 +184,13 @@ async def enrich_engine_pois(payload: dict, metadata: dict, center: CenterPoint,
     service = None
     records, info = [], {"status": "unavailable", "provider": "baidu_place_v2"}
     try:
-        from .region_package import load_region_by_id
-        region = load_region_by_id(metadata['regionId']) if metadata.get('regionId') else None
-        service = PoiService(**({'region': region} if region is not None else {}))
+        fixed_context = metadata.get('_fixedGraphContext')
+        if fixed_context is not None:
+            service = PoiService(fixed_context=fixed_context)
+        else:
+            from .region_package import load_region_by_id
+            region = load_region_by_id(metadata['regionId']) if metadata.get('regionId') else None
+            service = PoiService(**({'region': region} if region is not None else {}))
         bounds = None
         if engine_result is not None:
             geometry = engine_result.get("displayGeometryMeters", {})

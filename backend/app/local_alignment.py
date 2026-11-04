@@ -10,6 +10,19 @@ def load_grid_frame(metadata, path):
     if metadata["coordType"] != "wgs84ll" or not path.is_file():
         return None
     asset = json.loads(path.read_text(encoding="utf-8"))
+    return grid_frame_from_asset(metadata, asset)
+
+
+def grid_frame_from_asset(metadata, asset):
+    """Build a projection from an already-owned asset, without reading live files.
+
+    The fixed-graph context calls this once at startup and retains the asset for
+    the closure's lifetime. The projection itself only reads its grid data.
+    """
+    if metadata["coordType"] != "wgs84ll":
+        return None
+    if not isinstance(asset, dict):
+        raise ValueError("POI 地图校准网格无效")
     origin = metadata["originWgs84"]
     if asset.get("input", {}).get("originWgs84") != [origin["lng"], origin["lat"]]:
         return None

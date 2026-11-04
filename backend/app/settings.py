@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 import os
+import re
 from dotenv import dotenv_values, load_dotenv
 
 APP_ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +30,11 @@ def _repo_path(value: str) -> Path:
     return path if path.is_absolute() else REPO_ROOT / path
 
 
+def _optional_repo_path(name: str) -> Path | None:
+    value = os.getenv(name, "").strip()
+    return _repo_path(value) if value else None
+
+
 REGION_ID = os.getenv("REGION_ID", "shanghai-new-jiangwan")
 if not REGION_ID or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789-_" for c in REGION_ID):
     raise ValueError("REGION_ID must be a region package identifier")
@@ -51,6 +57,9 @@ class Settings:
     cpp_engine_transport: str = os.getenv("CPP_ENGINE_TRANSPORT", "subprocess")
     cpp_engine_rpc_port: int = int(os.getenv("CPP_ENGINE_RPC_PORT", "50051"))
     cpp_engine_rpc_capacity: int = int(os.getenv("CPP_ENGINE_RPC_CAPACITY", "2"))
+    cpp_engine_graph_artifact: Path | None = _optional_repo_path("CPP_ENGINE_GRAPH_ARTIFACT")
+    cpp_engine_graph_id: str = os.getenv("CPP_ENGINE_GRAPH_ID", "").strip()
+    cpp_engine_graph_context: Path | None = _optional_repo_path("CPP_ENGINE_GRAPH_CONTEXT")
     analysis_cache_dir: Path = Path(
         os.getenv("ANALYSIS_CACHE_DIR", str(REPO_ROOT / "data/cache"))
     )
@@ -103,13 +112,25 @@ class Settings:
         if (type(self.cpp_engine_rpc_capacity) is not int or
                 not 1 <= self.cpp_engine_rpc_capacity <= 2_147_483_647):
             raise ValueError("CPP_ENGINE_RPC_CAPACITY must be an integer from 1 to 2147483647")
+        graph_options = (self.cpp_engine_graph_artifact is not None,
+                         bool(self.cpp_engine_graph_id), self.cpp_engine_graph_context is not None)
+        if any(graph_options) and not all(graph_options):
+            raise ValueError("CPP_ENGINE_GRAPH_ARTIFACT, CPP_ENGINE_GRAPH_ID and CPP_ENGINE_GRAPH_CONTEXT must be set together")
+        if all(graph_options):
+            if self.cpp_engine_transport != "grpc":
+                raise ValueError("Fixed graph mode requires CPP_ENGINE_TRANSPORT=grpc")
+            if re.fullmatch(r"sha256:[0-9a-f]{64}", self.cpp_engine_graph_id) is None:
+                raise ValueError("CPP_ENGINE_GRAPH_ID must be sha256:<64 lowercase hex digits>")
 
     @property
     def network_editor_enabled(self) -> bool:
         # Container opt-in only affects local request checks. It cannot enable
         # authoring endpoints when the application runs in production.
         # Database releases are immutable; author with a separate file-mode app.
-        return self.app_env == "development" and self.region_storage_backend == "file"
+        # Fixed-graph serving pins one exported version. Author in a separate
+        # file-mode instance, then export and restart to select the new version.
+        return (self.app_env == "development" and self.region_storage_backend == "file"
+                and self.cpp_engine_graph_artifact is None)
 
 
 settings = Settings()

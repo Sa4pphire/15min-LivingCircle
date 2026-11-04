@@ -23,6 +23,7 @@ from .agent_runtime import AgentError, AgentRuntime
 from .agent_tools import ToolError
 from .engine import (EngineBusy, EngineError, check_engine, engine_wait_scope,
                      get_engine_runtime, run_engine)
+from .fixed_graph import FixedGraphContext, load_fixed_graph_context
 from .local_experiment import (build_local_experiment_result,
                                load_local_experiment_request)
 from .network import UnsupportedAreaError, build_analysis_result, load_engine_request
@@ -57,9 +58,12 @@ if not analysis_logger.handlers:
     analysis_logger.addHandler(logging.StreamHandler())
 
 
+_fixed_graph_context: FixedGraphContext | None = None
+
+
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    global _sampled_task_semaphore, _coverage_gate
+    global _sampled_task_semaphore, _coverage_gate, _fixed_graph_context
     # A contended semaphore belongs to its event loop, just like the scheduler.
     _sampled_task_semaphore = asyncio.Semaphore(1)
     _coverage_gate = asyncio.Semaphore(1)
@@ -73,6 +77,16 @@ async def lifespan(application: FastAPI):
     try:
         # Pin SQL releases once for this lifetime. No database work on requests.
         await _prepare_analysis_input(initialize_region_storage)
+        if settings.cpp_engine_graph_artifact is not None:
+            _fixed_graph_context = await _prepare_analysis_input(partial(
+                load_fixed_graph_context, settings.cpp_engine_graph_artifact,
+                settings.cpp_engine_graph_id, settings.cpp_engine_graph_context))
+            # Fixed serving starts only after both sides report the selected
+            # identity. Every ComputeOnGraph reply is checked again by transport.
+            engine_health = await engine_runtime.check_engine()
+            if engine_health.status != "ok":
+                raise EngineError(engine_health.detail or "固定图 RPC 服务尚未准备好",
+                                  code="ENGINE_CONFIGURATION_ERROR")
         await scheduler.start()
         agent_runtime = AgentRuntime(AgentConfig.from_env(), _resolve_agent_context, _route_agent_poi)
         application.state.agent_runtime = agent_runtime
@@ -86,6 +100,7 @@ async def lifespan(application: FastAPI):
             agent_runtime.closed = True
 
         async def cleanup():
+            global _fixed_graph_context
             operations = [shutdown_services(scheduler, engine_runtime)]
             if agent_runtime is not None:
                 operations.append(agent_runtime.close())
@@ -95,6 +110,10 @@ async def lifespan(application: FastAPI):
                     if isinstance(result, BaseException):
                         raise result
             finally:
+                # Requests/routes are settled before releasing their shared
+                # context. Persisted public reports do not own graph internals.
+                _poi_routes.contexts.clear()
+                _fixed_graph_context = None
                 close_region_storage()
 
         owner = asyncio.create_task(cleanup(), name='application-agent-shutdown')
@@ -283,6 +302,14 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
     analysis.progress = Progress(stage="walking-graph", percent=30)
     started = perf_counter()
 
+    async def compute(payload: dict) -> dict:
+        # Carry the identity selected during preparation through every stage;
+        # never attach today's configured ID to an independently loaded graph.
+        graph_id = network_meta.get("graphId")
+        if graph_id is not None:
+            return await run_engine(payload, graph_id=graph_id)
+        return await run_engine(payload)
+
     def record_engine(prefix: str, result: dict, elapsed: float) -> None:
         analysis.timingsMs[prefix] = round(elapsed * 1000, 3)
         for name, value in result.get("diagnostics", {}).get("timingsMs", {}).items():
@@ -304,6 +331,9 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
             report['metadata']['regionId'] = metadata['regionId']
         if metadata.get('packageVersionId'):
             report['metadata']['packageVersionId'] = metadata['packageVersionId']
+        if metadata.get('graphId'):
+            report['metadata']['graphId'] = metadata['graphId']
+        report['metadata']['engineInputMode'] = metadata.get('engineInputMode', 'full_graph')
         analysis.timingsMs["report"] = round((perf_counter() - before) * 1000, 3)
         report["metadata"].update({"timingsMs": dict(analysis.timingsMs),
                                   "engineBuildMode": result.get("diagnostics", {}).get("buildMode", "unknown"),
@@ -313,7 +343,7 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
 
     try:
         before = perf_counter()
-        engine_result = await run_engine(engine_input)
+        engine_result = await compute(engine_input)
         record_engine("cpp", engine_result, perf_counter() - before)
         wants_pois = include_pois and center is not None
         pending_meta = {**network_meta, "poiRecords": [], "poi": {
@@ -356,7 +386,7 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
             if engine_input.get("facilities", []) != original_facilities:
                 analysis.progress = Progress(stage="facility-times", percent=90)
                 before = perf_counter()
-                facility_result = await run_engine({**engine_input, "facilitiesOnly": True})
+                facility_result = await compute({**engine_input, "facilitiesOnly": True})
                 record_engine("facilityCpp", facility_result, perf_counter() - before)
                 if facility_result.get("displayGeometryMeters", {}).get("coordinates"):
                     raise EngineError("当前引擎不支持设施专用计算，请重新构建 Debug 引擎",
@@ -373,7 +403,7 @@ async def _run_analysis(analysis_id: str, engine_input: dict,
         else:
             # Preserve full coverage semantics for any reviewed categories.
             before = perf_counter()
-            engine_result = await run_engine(engine_input)
+            engine_result = await compute(engine_input)
             record_engine("coverageCpp", engine_result, perf_counter() - before)
             geometry_revision = 2
         status = network_meta.get("poi", {}).get("status", "unavailable")
@@ -475,6 +505,11 @@ async def _run_local_experiment(experiment_id: str, engine_input: dict,
 
 def _load_analysis_input(request: AnalysisRequest, network_path: Path | None):
     """Only file/input preparation runs in the thread pool, not admission/state."""
+    fixed = _select_fixed_graph(request.regionId, network_path)
+    if fixed is not None:
+        engine_input, network_meta = fixed.prepare_request(request.center, request.originEdgeId)
+        return (engine_input, network_meta, request.center,
+                request.includePois, request.refreshPois)
     region = _analysis_region(request.regionId)
     if region:
         network_path = region.file('network')
@@ -485,6 +520,28 @@ def _load_analysis_input(request: AnalysisRequest, network_path: Path | None):
         network_meta['packageVersionId'] = region.storage_version
     return (engine_input, network_meta, request.center,
             request.includePois, request.refreshPois)
+
+
+def _select_fixed_graph(region_id: str | None, network_path: Path | None) -> FixedGraphContext | None:
+    """Select before reading editable files, following existing region precedence.
+
+    An explicit region chooses its graph for either analysis endpoint. Without
+    one, SQL chooses REGION_ID; file mode preserves the real/synthetic endpoints.
+    Other regions and local experiments continue their explicit complete input.
+    """
+    fixed = _fixed_graph_context
+    if fixed is None:
+        return None
+    if region_id is not None:
+        return fixed if region_id == fixed.region_id else None
+    if settings.region_id != fixed.region_id:
+        return None
+    if settings.region_storage_backend == "mysql":
+        return fixed
+    synthetic_endpoint = network_path is not None
+    if synthetic_endpoint and network_path.resolve() != settings.synthetic_network_path.resolve():
+        return None
+    return fixed if fixed.synthetic == synthetic_endpoint else None
 
 
 def _load_sampled_input(request: AnalysisRequest):

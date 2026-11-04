@@ -48,10 +48,19 @@ add_executable(isochrone_rpc_server rpc/server_main.cpp rpc/engine_service.cpp)
 add_dependencies(isochrone_rpc_server isochrone_rpc_protocol)
 target_link_libraries(isochrone_rpc_server PRIVATE
     isochrone_json isochrone_rpc_protocol Threads::Threads)
+if(BUILD_GRAPH_SNAPSHOT_LOADER)
+  target_link_libraries(isochrone_rpc_server PRIVATE isochrone_snapshot_io)
+  target_compile_definitions(isochrone_rpc_server PRIVATE
+      ISOCHRONE_WITH_GRAPH_SNAPSHOT_LOADER=1)
+endif()
 isochrone_target_defaults(isochrone_rpc_server)
 
 add_executable(isochrone_rpc_client rpc/client_main.cpp)
 add_dependencies(isochrone_rpc_client isochrone_rpc_protocol)
 target_link_libraries(isochrone_rpc_client PRIVATE
     isochrone_rpc_protocol Threads::Threads)
+# Shared identity syntax is header-only; the client does not link the graph
+# loader, computation library or OpenSSL just to validate an RPC argument.
+target_include_directories(isochrone_rpc_client PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include")
 isochrone_target_defaults(isochrone_rpc_client)

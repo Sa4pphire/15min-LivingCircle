@@ -1,4 +1,4 @@
-"""The unchanged v2 JSON codec, independent of its transport."""
+"""Full-input and request-only v2 JSON codecs, independent of transport."""
 
 import json
 from typing import Any
@@ -7,16 +7,47 @@ from .engine_errors import EngineError
 from .walking_types import normalize_graph
 
 
+_EDGE_WIRE_FIELDS = frozenset({
+    "id", "from", "to", "kind", "accessMode", "pathMeters", "streetBlockId",
+    "side", "sharedWayType", "widthMeters", "waitSeconds",
+})
+
+
+def is_graph_snapshot_id(value: object) -> bool:
+    """Check ID syntax only; artifact loaders separately verify actual bytes."""
+    return (isinstance(value, str) and len(value) == 71 and
+            value.startswith("sha256:") and
+            all(character in "0123456789abcdef" for character in value[7:]))
+
+
+def compact_graph_fields(graph: dict[str, Any]) -> dict[str, Any]:
+    """Share canonical wire graph fields between full requests and export.
+
+    Keep annotations in Python and preserve meter precision. Missing nodes stay
+    missing for the legacy encoder; artifact export validates its own inputs.
+    Returned nested geometry is borrowed read-only, never edited here.
+    """
+    normalized = normalize_graph(graph)
+    fields = {"edges": [
+        {key: value for key, value in edge.items() if key in _EDGE_WIRE_FIELDS}
+        for edge in normalized["edges"]]}
+    if "nodes" in normalized:
+        fields["nodes"] = normalized["nodes"]
+    return fields
+
+
 def encode_engine_input(payload: dict[str, Any]) -> bytes:
-    # Keep annotations in Python; compact only the v2 wire representation.
-    # Meter coordinates retain their original precision.
-    payload = normalize_graph(payload)
-    edge_fields = {"id", "from", "to", "kind", "accessMode", "pathMeters", "streetBlockId",
-                   "side", "sharedWayType", "widthMeters", "waitSeconds"}
-    wire = {**payload, "edges": [
-        {key: value for key, value in edge.items() if key in edge_fields}
-        for edge in payload.get("edges", [])]}
+    wire = {**payload, **compact_graph_fields(payload)}
     return json.dumps(wire, ensure_ascii=False, allow_nan=False,
+                      separators=(",", ":")).encode("utf-8")
+
+
+def encode_analysis_request(payload: dict[str, Any]) -> bytes:
+    """Encode request-only input without normalizing or copying the graph."""
+    if "nodes" in payload or "edges" in payload:
+        raise EngineError("INVALID_INPUT: analysis request must not contain nodes or edges",
+                          code="INVALID_INPUT")
+    return json.dumps(payload, ensure_ascii=False, allow_nan=False,
                       separators=(",", ":")).encode("utf-8")
 
 

@@ -161,7 +161,11 @@ async def _check_engine() -> EngineHealth:
 class SubprocessTransport:
     """Keep the original process entry points and their cleanup behavior."""
 
-    async def run_engine(self, payload: dict[str, Any]) -> dict[str, Any]:
+    async def run_engine(self, payload: dict[str, Any], *,
+                         graph_id: str | None = None) -> dict[str, Any]:
+        if graph_id is not None:
+            raise EngineError("固定图计算要求 CPP_ENGINE_TRANSPORT=grpc",
+                              code="ENGINE_CONFIGURATION_ERROR")
         return await _run_engine(payload)
 
     async def check_engine(self) -> EngineHealth:
@@ -223,7 +227,8 @@ class EngineRuntime:
         # In RPC mode idle describes local calls, not remote CPU completion.
         await self._idle.wait()
 
-    async def run_engine(self, payload: dict[str, Any]) -> dict[str, Any]:
+    async def run_engine(self, payload: dict[str, Any], *,
+                         graph_id: str | None = None) -> dict[str, Any]:
         if self._closing or (self._draining and not _engine_admitted_analysis.get()):
             raise EngineBusy("服务正在关闭")
         caller = asyncio.current_task()
@@ -249,7 +254,10 @@ class EngineRuntime:
             permit_wait_ms = round((perf_counter() - waiting_since) * 1000, 3)
             if self._closing:
                 raise EngineBusy("服务正在关闭")
-            result = await self._transport.run_engine(payload)
+            if graph_id is None:
+                result = await self._transport.run_engine(payload)
+            else:
+                result = await self._transport.run_engine(payload, graph_id=graph_id)
             # Keep totalMs scoped to the original invocation; permit waiting
             # is a separate Python diagnostic and never enters the C++ wire.
             result.setdefault("diagnostics", {}).setdefault("invocation", {})[
@@ -352,16 +360,20 @@ def get_engine_runtime(*, restart: bool = False) -> EngineRuntime:
             # Optional dependencies and generated modules are never imported
             # by the default transport. Construct the channel on this loop.
             from .engine_rpc import GrpcTransport
-            runtime = EngineRuntime(capacity=settings.cpp_engine_rpc_capacity,
-                                    transport=GrpcTransport(settings.cpp_engine_rpc_port))
+            runtime = EngineRuntime(
+                capacity=settings.cpp_engine_rpc_capacity,
+                transport=GrpcTransport(
+                    settings.cpp_engine_rpc_port,
+                    expected_graph_id=settings.cpp_engine_graph_id or None))
         else:
             runtime = EngineRuntime()
         setattr(loop, "_livingcircle_engine_runtime", runtime)
     return runtime
 
 
-async def run_engine(payload: dict[str, Any]) -> dict[str, Any]:
-    return await get_engine_runtime().run_engine(payload)
+async def run_engine(payload: dict[str, Any], *,
+                     graph_id: str | None = None) -> dict[str, Any]:
+    return await get_engine_runtime().run_engine(payload, graph_id=graph_id)
 
 
 async def check_engine() -> EngineHealth:
